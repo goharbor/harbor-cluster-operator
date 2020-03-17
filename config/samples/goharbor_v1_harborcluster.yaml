@@ -1,0 +1,7 @@
+apiVersion: goharbor.goharbor.io/v1
+kind: HarborCluster
+metadata:
+  name: harborcluster-sample
+spec:
+  # Add fields here
+  foo: bar
