@@ -10,10 +10,12 @@ ensure its high-availability operation, thanks to the [Kubernetes control loop](
 
 This operator aims to build a Kubernetes operator on top of the harbor-operator to deploy and manage a full Harbor service stack including both the harbor service components 
 and its relevant dependent services such as database(PostgresSQL), Cache(Redis) and default in-cluster storage(minIO) services in a scalable and high-available way. It provides 
-a solid unified solution to cover the lifecycle management of Harbor service. The customize resource `harbor-cluster` is defined to describe the full harbor stack that includes 
-the dependencies. The CR `harbor-cluster` owns the underlying CRs like `harbor` managed by harbor-operator, `database` managed by PostgresSQL operator, `redis-cluster` managed by Redis 
-operator and `storage` managed by minIO operator. The reconcile process of `harbor-cluster` wil make sure the actual state of the `harbor-cluster` CR matches the designed state set 
+a solid unified solution to cover the lifecycle management of Harbor service. The customize resource `HarborCluster` is defined to describe the full harbor stack that includes 
+the dependencies. The CR `HarborCluster` owns the underlying CRs like `Harbor` managed by harbor-operator, `Postgresql` managed by PostgresSQL operator, `RedisFailover` managed by Redis 
+operator and `MinIOInstance` managed by minIO operator. The reconcile process of `HarborCluster` wil make sure the actual state of the `HarborCluster` CR matches the designed state set 
 in the spec by the users. The reconcile process also takes care of the service creation and ready order to reflect the real service dependent topology to avoid starting failures issues.
+
+Project codebase is scaffolded by [kubebuilder](https://kubebuilder.io/) V2(.2).
 
 ## Features
 
