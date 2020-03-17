@@ -1,6 +1,6 @@
 # harbor-cluster-operator
 
-ATTENTIONS: THIS PROJECT IS STILL UNDER DEVELOPMENT AND NOT READY YET.
+**ATTENTIONS: THIS PROJECT IS STILL UNDER DEVELOPMENT AND NOT READY YET.**
 
 [Harbor](https://github.com/goharbor/harbor) is a CNCF hosted open source trusted cloud native registry project that stores, signs, and scans content.
 
