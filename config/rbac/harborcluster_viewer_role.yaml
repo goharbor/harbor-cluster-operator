@@ -4,17 +4,17 @@ kind: ClusterRole
 metadata:
   name: harborcluster-viewer-role
 rules:
-- apiGroups:
-  - goharbor.goharbor.io
-  resources:
-  - harborclusters
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - goharbor.goharbor.io
-  resources:
-  - harborclusters/status
-  verbs:
-  - get
+  - apiGroups:
+      - goharbor.goharbor.io
+    resources:
+      - harborclusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - goharbor.goharbor.io
+    resources:
+      - harborclusters/status
+    verbs:
+      - get

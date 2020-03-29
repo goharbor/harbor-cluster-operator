@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"os"
+	"src/github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -64,10 +65,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	dClient, err := k8s.NewDynamicClient()
+	if err != nil {
+		panic(err)
+	}
+
 	if err = (&controllers.HarborClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("HarborCluster"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("HarborCluster"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("HarborCluster-Controller"),
+		DClient:  dClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)

@@ -17,11 +17,16 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
+	"src/github.com/goharbor/harbor-cluster-operator/controllers/cache"
 
 	goharborv1 "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 )
@@ -29,20 +34,43 @@ import (
 // HarborClusterReconciler reconciles a HarborCluster object
 type HarborClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
+	DClient  dynamic.Interface
 }
 
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("harborcluster", req.NamespacedName)
+	var err error
+	ctx := context.Background()
+	log := r.Log.WithValues("harborCluster", req.NamespacedName)
 
-	// your logic here
+	var harborCluster harborCluster.HarborCluster
+	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info(fmt.Sprintf("HarborCluster %s has been deleted", req.Name))
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	results := cache.NewDefaultCache(cache.ReconcileCache{
+		Client:   r.Client,
+		Recorder: r.Recorder,
+		Log:      r.Log,
+		CTX:      ctx,
+		Request:  req,
+		DClient:  r.DClient,
+		Harbor:   &harborCluster,
+		Scheme:   r.Scheme,
+	}).Reconcile()
+
+	return results.WithError(err).Aggregate()
 }
 
 func (r *HarborClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
