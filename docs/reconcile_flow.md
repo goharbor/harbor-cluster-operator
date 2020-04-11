@@ -14,6 +14,8 @@
     When the available replicas of redis is equal to `.spec.redis.replicas` in Redis CR. 
     And the available replicas of redis sentinel is equal to `.spec.sentinel.replicas` is Redis CR.
     
+    And using `PING` command to check redis can be connected.
+    
  - PostgreSQL
     
     In Postgres CR's status, there is string field named `PostgresClusterStatus`, which indicates whether the PostgreSQL services is Healthy.
