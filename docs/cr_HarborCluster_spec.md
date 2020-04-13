@@ -35,23 +35,6 @@ imageSource:
   registry: harbor.com
   imagePullSecrets:
    - pSecret
-   
-# log configurations
-log:
-  level: debug
-  
-# The option to set repository read only.
-readOnly: false
-
-# set proxy
-proxy:
-  http_proxy: 10.10.20.2
-  https_proxy: 10.10.20.2
-  no_proxy: 10.123.111.10
-    components:
-    - core
-    - jobservice
-    - clair
 
 # extra configuration options for jobservices
 jobService:
@@ -74,8 +57,24 @@ chartMuseum:
   absoluteURL: true
   
 # cache service(Redis) configurations
+# might be external redis services or inCluster redis services
 # required
 redis:
+  # set the kind of which redis service to be used, inCluster or external.
+  # setting up a harbor-cluster with external redis service should provide client params to communicate. The difference between inCluster redis and external redis is that the inCluster redis installed automatically. the params of external kind are in the following comments.
+  # kind: external
+  #   // the secret must contains "address:port","usernane" and "password".
+  #   // required
+  #   secretName: secret
+  #.  // Maximum number of socket connections.
+  #   // Default is 10 connections per every CPU as reported by runtime.NumCPU.
+  #   // optional
+  #   poolSize: 10
+  #   // TLS Config to use. When set TLS will be negotiated.
+  #   // set the secret which type of Opaque, and contains "tls.key","tls.crt","ca.crt".
+  #   // optional
+  #   tlsConfig: secretName
+  kind: inCluster
   server:
     replicas: 3
     # optional
@@ -95,19 +94,31 @@ redis:
 # database service (PostgresSQL) configuration
 # required
 database:
-  storage: 1Gi
-  replicas: 2
-  version: "12"
-  # optional
-  storageClassName: default
-  # optional
-  resources:
-    limits:
-      cpu: 500m
-      memory: 500Mi
-    requests:
-      cpu: 100m
-      memory: 250Mi
+  # set the kind of which redis service to be used, inCluster or external.
+  # a sample of external kind.
+  # kind: external
+  #.  // the secret must contains "address:port","usernane" and "password".
+  #   // required
+  #   secretName: secret
+  #   // TLS Config to use. When set TLS will be negotiated.
+  #   // set the secret which type of Opaque, and contains "tls.key","tls.crt","ca.crt".
+  #   // optional
+  #   sslConfig: secretName
+  #   connect_timeout: 10
+  kind: inCluster
+    storage: 1Gi
+    replicas: 2
+    version: "12"
+    # optional
+    storageClassName: default
+    # optional
+    resources:
+      limits:
+        cpu: 500m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 250Mi
 
 # storage service configurations
 # might be external cloud storage services or inCluster storage (minIO)
