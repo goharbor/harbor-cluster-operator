@@ -1,10 +1,11 @@
 package cache
 
 import (
-	"encoding/json"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	redisCli "src/github.com/goharbor/harbor-cluster-operator/controllers/cache/client/api/v1"
 	"src/github.com/goharbor/harbor-cluster-operator/controllers/utils"
@@ -15,12 +16,6 @@ var (
 		Group:    "databases.spotahome.com",
 		Version:  "v1",
 		Resource: "redisfailovers",
-	}
-
-	groupVersionKind = schema.GroupVersionKind{
-		Group:   "databases.spotahome.com",
-		Version: "v1",
-		Kind:    "RedisFailover",
 	}
 )
 
@@ -53,15 +48,35 @@ func (d *defaultCache) generateRedisCR() (*unstructured.Unstructured, error) {
 					Limits:   resource,
 				},
 			},
+			Auth: redisCli.AuthSettings{SecretPath: name},
 		},
 	}
 
-	var mapResult map[string]interface{}
-	confBytes, _ := json.Marshal(conf)
-	if err := json.Unmarshal(confBytes, &mapResult); err != nil {
+	mapResult, err := runtime.DefaultUnstructuredConverter.ToUnstructured(conf)
+	if err != nil {
 		return nil, err
 	}
 	data := unstructured.Unstructured{Object: mapResult}
 
 	return &data, nil
+}
+
+func (d *defaultCache) generateRedisSecret(labels map[string]string) *corev1.Secret {
+	name := d.Request.Name
+	namespace := d.Request.Namespace
+
+	labels = MergeLabels(labels, generateLabels(RoleName, name))
+
+	passStr := RandomString(8, "a")
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		StringData: map[string]string{
+			"password": passStr,
+		},
+	}
 }
