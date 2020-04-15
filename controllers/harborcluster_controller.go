@@ -40,6 +40,21 @@ type HarborClusterReconciler struct {
 	DClient  dynamic.Interface
 }
 
+type CRStatus struct {
+	Synced          bool   `json:"synced,omitempty"`
+	Phase           Phase  `json:"phase,omitempty"`
+	ExternalService string `json:"service,omitempty"`
+}
+
+type Phase string
+
+const (
+	PendingPhase   Phase = "Pending"
+	DeployingPhase Phase = "Deploying"
+	RunningPhase   Phase = "Running"
+	UpgradePhase   Phase = "Upgrade"
+)
+
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
