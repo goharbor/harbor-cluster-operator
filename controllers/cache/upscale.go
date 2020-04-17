@@ -5,19 +5,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 	redisCli "src/github.com/goharbor/harbor-cluster-operator/controllers/cache/client/api/v1"
 
 	//appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (d *defaultCache) UpScale() error {
-	//[BUG] upscale.go:13 +0x51 集群刚刚启动，无法获取到期待sts，导致operator crush
+func (d *defaultCache) UpScale(status *harborCluster.CRStatus) (*harborCluster.CRStatus, error) {
 	name := d.Request.Name
 	nameSpace := d.Request.Namespace
 	crdClient := d.DClient.Resource(virtualServiceGVR)
 	if d.ExpectCR == nil {
-		return nil
+		return status, nil
 	}
 
 	var actualCR redisCli.RedisFailover
@@ -25,12 +25,12 @@ func (d *defaultCache) UpScale() error {
 
 	if err := runtime.DefaultUnstructuredConverter.
 		FromUnstructured(d.ActualCR.UnstructuredContent(), &actualCR); err != nil {
-		return err
+		return status, err
 	}
 
 	if err := runtime.DefaultUnstructuredConverter.
 		FromUnstructured(d.ExpectCR.UnstructuredContent(), &expectCR); err != nil {
-		return err
+		return status, err
 	}
 
 	expectReplica := expectCR.Spec.Redis.Replicas
@@ -53,14 +53,15 @@ func (d *defaultCache) UpScale() error {
 
 		data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&expectCR)
 		if err != nil {
-			return err
+			return status, err
 		}
 		d.ExpectCR = &unstructured.Unstructured{Object: data}
 
 		_, err = crdClient.Namespace(nameSpace).Update(d.ExpectCR, metav1.UpdateOptions{})
 		if err != nil {
-			return err
+			return status, err
 		}
+		status.Phase = harborCluster.UpgradingPhase
 	}
-	return nil
+	return status, nil
 }

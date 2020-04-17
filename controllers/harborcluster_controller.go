@@ -25,10 +25,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	goharborv1 "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 	"src/github.com/goharbor/harbor-cluster-operator/controllers/cache"
-
-	goharborv1 "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 )
 
 // HarborClusterReconciler reconciles a HarborCluster object
@@ -40,21 +39,6 @@ type HarborClusterReconciler struct {
 	DClient  dynamic.Interface
 }
 
-type CRStatus struct {
-	Synced          bool   `json:"synced,omitempty"`
-	Phase           Phase  `json:"phase,omitempty"`
-	ExternalService string `json:"service,omitempty"`
-}
-
-type Phase string
-
-const (
-	PendingPhase   Phase = "Pending"
-	DeployingPhase Phase = "Deploying"
-	RunningPhase   Phase = "Running"
-	UpgradePhase   Phase = "Upgrade"
-)
-
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
@@ -65,8 +49,8 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	ctx := context.Background()
 	log := r.Log.WithValues("harborCluster", req.NamespacedName)
 
-	var harborCluster harborCluster.HarborCluster
-	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
+	var cluster harborCluster.HarborCluster
+	if err := r.Get(ctx, req.NamespacedName, &cluster); err != nil {
 		if errors.IsNotFound(err) {
 			log.Info(fmt.Sprintf("HarborCluster %s has been deleted", req.Name))
 			return ctrl.Result{}, nil
@@ -74,16 +58,20 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	results := cache.NewDefaultCache(cache.ReconcileCache{
+	status, results := cache.NewDefaultCache(cache.ReconcileCache{
 		Client:   r.Client,
 		Recorder: r.Recorder,
 		Log:      r.Log,
 		CTX:      ctx,
 		Request:  req,
 		DClient:  r.DClient,
-		Harbor:   &harborCluster,
+		Harbor:   &cluster,
 		Scheme:   r.Scheme,
 	}).Reconcile()
+
+	if status.Phase == harborCluster.ReadyPhase {
+		r.Log.Info("Redis is ready.....")
+	}
 
 	return results.WithError(err).Aggregate()
 }

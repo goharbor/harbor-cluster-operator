@@ -130,6 +130,29 @@ func (d *defaultCache) GetDeploymentPods() (*appsv1.Deployment, *corev1.PodList,
 	return deploy, pod, nil
 }
 
+func (d *defaultCache) GetStatefulSetPods() (*appsv1.StatefulSet, *corev1.PodList, error) {
+	sts := &appsv1.StatefulSet{}
+	name := fmt.Sprintf("%s-%s", "rfr", d.Request.Name)
+	namespace := d.Request.Namespace
+	fmt.Println(name, namespace)
+	err := d.Client.Get(d.CTX, types.NamespacedName{Name: name, Namespace: namespace}, sts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	opts := &client.ListOptions{}
+	set := labels1.SelectorFromSet(sts.Spec.Selector.MatchLabels)
+	opts.LabelSelector = set
+
+	pod := &corev1.PodList{}
+	err = d.Client.List(d.CTX, pod, opts)
+	if err != nil {
+		d.Log.Error(err, "fail to get pod.", "namespace", namespace, "name", name)
+		return nil, nil, err
+	}
+	return sts, pod, nil
+}
+
 func (d *defaultCache) GetServiceUrl(pods []corev1.Pod) string {
 	var url string
 	_, err := rest.InClusterConfig()

@@ -4,6 +4,7 @@ import (
 	"errors"
 	rediscli "github.com/go-redis/redis"
 	corev1 "k8s.io/api/core/v1"
+	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 	"strings"
 	"time"
 )
@@ -24,58 +25,52 @@ func NewRedisConnection(endpoint, port, password, groupName string) *RedisConnec
 	}
 }
 
-func (d *defaultCache) Readiness() error {
+func (d *defaultCache) Readiness(status *harborCluster.CRStatus) (*harborCluster.CRStatus, error) {
 	password, err := d.GetRedisPassword()
 	if err != nil {
-		return err
+		return status, err
 	}
 
-	_, podList, err := d.GetDeploymentPods()
+	_, sentinelPodList, err := d.GetDeploymentPods()
 	if err != nil {
 		d.Log.Error(err, "Fail to get deployment pods.")
-		return err
+		return status, err
 	}
 
-	if len(podList.Items) == 0 {
+	_, redisPodList, err := d.GetStatefulSetPods()
+	if err != nil {
+		d.Log.Error(err, "Fail to get deployment pods.")
+		return status, err
+	}
+
+	if len(sentinelPodList.Items) == 0 || len(redisPodList.Items) == 0 {
 		d.Log.Info("pod list is empty，pls wait.")
-		return nil
+		return status, nil
 	}
 
-	podArray := podList.Items
+	sentinelPodArray := sentinelPodList.Items
+	redisPodArray := redisPodList.Items
 
-	deletingPods := make([]corev1.Pod, 0)
-	currentPods := make([]corev1.Pod, 0, len(podArray))
-	currentPodsByPhase := make(map[corev1.PodPhase][]corev1.Pod)
+	_, currentSentinelPods := d.GetPodsStatus(sentinelPodArray)
+	_, currentRedisPods := d.GetPodsStatus(redisPodArray)
 
-	for _, p := range podArray {
-		if p.DeletionTimestamp != nil {
-			deletingPods = append(deletingPods, p)
-			continue
-		}
-		currentPods = append(currentPods, p)
-		podsInPhase, ok := currentPodsByPhase[p.Status.Phase]
-		if !ok {
-			podsInPhase = []corev1.Pod{p}
-		} else {
-			podsInPhase = append(podsInPhase, p)
-		}
-		currentPodsByPhase[p.Status.Phase] = podsInPhase
+	if len(currentSentinelPods) == 0 {
+		return status, errors.New("Need to Requeue")
 	}
-
-	if len(currentPods) == 0 {
-		return errors.New("Need to Requeue")
-	}
-	endpoint := d.GetServiceUrl(currentPods)
+	endpoint := d.GetServiceUrl(currentSentinelPods)
 	connect := NewRedisConnection(endpoint, "26379", password, "mymaster")
 	client := connect.NewRedisPool()
 	defer client.Close()
 
 	if err := client.Ping().Err(); err != nil {
 		d.Log.Error(err, "Fail to check Redis.", "namespace", d.Request.Namespace, "name", d.Request.Name)
-		return err
+		return status, err
 	}
-	d.Log.Info("Redis is ready.")
-	return nil
+
+	status.Phase = harborCluster.ReadyPhase
+	status.AvailableNodes = len(currentRedisPods)
+	status.ExternalService = endpoint
+	return status, nil
 }
 
 func (c *RedisConnect) NewRedisPool() *rediscli.Client {
@@ -112,4 +107,26 @@ func BuildRedisPool(redisSentinelIP, redisSentinelPort, redisSentinelPassword, r
 
 	return client
 
+}
+
+func (d *defaultCache) GetPodsStatus(podArray []corev1.Pod) ([]corev1.Pod, []corev1.Pod) {
+	deletingPods := make([]corev1.Pod, 0)
+	currentPods := make([]corev1.Pod, 0, len(podArray))
+	currentPodsByPhase := make(map[corev1.PodPhase][]corev1.Pod)
+
+	for _, p := range podArray {
+		if p.DeletionTimestamp != nil {
+			deletingPods = append(deletingPods, p)
+			continue
+		}
+		currentPods = append(currentPods, p)
+		podsInPhase, ok := currentPodsByPhase[p.Status.Phase]
+		if !ok {
+			podsInPhase = []corev1.Pod{p}
+		} else {
+			podsInPhase = append(podsInPhase, p)
+		}
+		currentPodsByPhase[p.Status.Phase] = podsInPhase
+	}
+	return deletingPods, currentPods
 }

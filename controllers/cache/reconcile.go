@@ -20,11 +20,7 @@ var (
 )
 
 type Cache interface {
-	Reconcile() *reconciler.Results
-	Deploy() error
-	Readiness() error
-	DownScale() error
-	RollingUpgrades()
+	Reconcile() (*harborCluster.CRStatus, *reconciler.Results)
 }
 
 // NewDefaultCache returns the default cache implementation.
@@ -50,40 +46,37 @@ type defaultCache struct {
 	ReconcileCache
 }
 
-func (d *defaultCache) Reconcile() *reconciler.Results {
+func (d *defaultCache) Reconcile() (*harborCluster.CRStatus, *reconciler.Results) {
+	var err error
 	results := &reconciler.Results{}
+	status := &harborCluster.CRStatus{
+		Phase:           harborCluster.PendingPhase,
+		ExternalService: "",
+		AvailableNodes:  0,
+	}
 	fmt.Println("Reconcile is Running....")
 
 	d.Labels = d.mergeLabels()
 
-	//deploy redis
-	if err := d.Deploy(); err != nil {
-		return results.WithError(err)
+	status, err = d.Deploy(status)
+	if err != nil {
+		return status, results.WithError(err)
 	}
 
-	if err := d.Readiness(); err != nil {
-		return results.WithResult(defaultRequeue)
+	status, err = d.Readiness(status)
+	if err != nil {
+		return status, results.WithResult(defaultRequeue)
 	}
 
-	//if err := d.Observer(); err != nil {
-	//	return results.WithError(err)
-	//}
-	//
-	//if err := d.Finalizers(); err != nil {
-	//	return results.WithError(err)
-	//}
-
-	if err := d.UpScale(); err != nil {
-		return results.WithError(err)
+	status, err = d.UpScale(status)
+	if err != nil {
+		return status, results.WithError(err)
 	}
 
-	if err := d.DownScale(); err != nil {
-		return results.WithError(err)
+	status, err = d.DownScale(status)
+	if err != nil {
+		return status, results.WithError(err)
 	}
 
-	//if err := d.RollingUpgrades(); err != nil {
-	//	return results.WithError(err)
-	//}
-
-	return results
+	return status, results
 }

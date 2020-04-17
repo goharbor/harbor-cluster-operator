@@ -9,9 +9,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
 )
 
-func (d *defaultCache) Deploy() error {
+func (d *defaultCache) Deploy(status *harborCluster.CRStatus) (*harborCluster.CRStatus, error) {
 	var actualCR *unstructured.Unstructured
 	var expectCR *unstructured.Unstructured
 	name := d.Request.Name
@@ -20,34 +21,35 @@ func (d *defaultCache) Deploy() error {
 
 	expectCR, err := d.generateRedisCR()
 	if err != nil {
-		return err
+		return status, err
 	}
 	if err := controllerutil.SetControllerReference(d.Harbor, expectCR, d.Scheme); err != nil {
-		return err
+		return status, err
 	}
 
 	actualCR, err = crdClient.Namespace(nameSpace).Get(name, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
 
 		if err := d.DeploySecret(); err != nil {
-			return err
+			return status, err
 		}
 
 		d.Log.Info("Creating Redis.", "namespace", nameSpace, "name", name)
 		_, err = crdClient.Namespace(nameSpace).Create(expectCR, metav1.CreateOptions{})
 		if err != nil {
-			return err
+			return status, err
 		}
+		status.Phase = harborCluster.DeployingPhase
 
 		d.Log.Info("Redis create complete.", "namespace", nameSpace, "name", name)
 	} else if err != nil {
-		return err
+		return status, err
 	} else {
 		d.ExpectCR = expectCR
 		d.ActualCR = actualCR
 	}
 
-	return nil
+	return status, nil
 }
 
 // DeploySecret deploy the Redis Password Secret

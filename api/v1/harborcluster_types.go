@@ -60,3 +60,19 @@ type HarborClusterList struct {
 func init() {
 	SchemeBuilder.Register(&HarborCluster{}, &HarborClusterList{})
 }
+
+type CRStatus struct {
+	Phase           Phase  `json:"phase,omitempty"`
+	ExternalService string `json:"service,omitempty"`
+	AvailableNodes  int    `json:"availableNodes,omitempty"`
+}
+
+type Phase string
+
+const (
+	PendingPhase    Phase = "Pending"
+	DeployingPhase  Phase = "Deploying"
+	ReadyPhase      Phase = "Ready"
+	UpgradingPhase  Phase = "Upgrading"
+	DestroyingPhase Phase = "Destroying"
+)
