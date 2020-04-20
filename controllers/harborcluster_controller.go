@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,12 +38,98 @@ type HarborClusterReconciler struct {
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("harborcluster", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("harborcluster", req.NamespacedName)
 
-	// your logic here
+	var harborCluster goharborv1.HarborCluster
+	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
+		log.Error(err, "unable to fetch HarborCluster")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
+	if harborCluster.DeletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
+
+	if r.RequiredRedis(&harborCluster) {
+		if err := r.ReconcileRedis(ctx, req, &harborCluster); err != nil {
+			log.Error(err, "error when reconcile redis components.")
+			return ctrl.Result{}, err
+		}
+	}
+
+	if r.RequiredDatabase(&harborCluster) {
+		if err := r.ReconcileDatabase(ctx, req, &harborCluster); err != nil {
+			log.Error(err, "error when reconcile database components.")
+			return ctrl.Result{}, err
+		}
+	}
+
+	if r.RequiredStorage(&harborCluster) {
+		if err := r.ReconcileStorage(ctx, req, &harborCluster); err != nil {
+			log.Error(err, "error when reconcile storage components.")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// if components is not all ready, reenqueue the HarborCluster
+	if !r.ComponentsIsAllReady(&harborCluster) {
+		return ctrl.Result{
+			Requeue:      true,
+			// TODO: config requeue time when operator started.
+			RequeueAfter: time.Second * 1,
+		}, nil
+	}
+
+	if err := r.ReconcileHarborCore(ctx, req, &harborCluster); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+// check whether required deploy redis.
+func (r *HarborClusterReconciler) RequiredRedis(harborCluster *goharborv1.HarborCluster) bool {
+	// TODO
+	return false
+}
+
+// check whether required deploy storage(MinIO)
+func (r *HarborClusterReconciler) RequiredStorage(harborCluster *goharborv1.HarborCluster) bool {
+	// TODO
+	return false
+}
+
+// check whether required deploy database(PostgreSQL)
+func (r *HarborClusterReconciler) RequiredDatabase(harborCluster *goharborv1.HarborCluster) bool {
+	// TODO
+	return false
+}
+
+func (r *HarborClusterReconciler) ComponentsIsAllReady(harborCluster *goharborv1.HarborCluster) bool {
+	// TODO
+	return false
+}
+
+func (r *HarborClusterReconciler) ReconcileRedis(ctx context.Context, req ctrl.Request, harborCluster *goharborv1.HarborCluster) error {
+	// TODO
+	return nil
+}
+
+func (r *HarborClusterReconciler) ReconcileStorage(ctx context.Context, req ctrl.Request, harborCluster *goharborv1.HarborCluster) error {
+	// TODO
+	return nil
+}
+
+func (r *HarborClusterReconciler) ReconcileDatabase(ctx context.Context, req ctrl.Request, harborCluster *goharborv1.HarborCluster) error {
+	// TODO
+	return nil
+}
+
+func (r *HarborClusterReconciler) ReconcileHarborCore(ctx context.Context, req ctrl.Request, harborCluster *goharborv1.HarborCluster) error {
+	// TODO
+	return nil
 }
 
 func (r *HarborClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
