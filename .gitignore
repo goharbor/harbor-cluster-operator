@@ -29,3 +29,5 @@ pkged.go
 
 ## Mac file
 .DS_Store
+
+config

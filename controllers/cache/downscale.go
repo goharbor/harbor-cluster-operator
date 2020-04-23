@@ -2,11 +2,11 @@ package cache
 
 import (
 	"fmt"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	harborCluster "src/github.com/goharbor/harbor-cluster-operator/api/v1"
-	redisCli "src/github.com/goharbor/harbor-cluster-operator/controllers/cache/client/api/v1"
 
 	//appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -7,7 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	redisCli "src/github.com/goharbor/harbor-cluster-operator/controllers/cache/client/api/v1"
+	//redisCli "src/github.com/goharbor/harbor-cluster-operator/controllers/cache/client/api/v1"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"src/github.com/goharbor/harbor-cluster-operator/controllers/utils"
 )
 

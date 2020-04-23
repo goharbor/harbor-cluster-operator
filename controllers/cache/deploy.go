@@ -61,7 +61,7 @@ func (d *defaultCache) DeploySecret() error {
 	if err := controllerutil.SetControllerReference(d.Harbor, sc, d.Scheme); err != nil {
 		return err
 	}
-	err := d.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, secret)
+	err := d.Client.Get(d.CTX, types.NamespacedName{Name: name, Namespace: namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		log.Printf("Creating Redis Password Secret %s/%s\n", namespace, namespace)
 		err = d.Client.Create(context.TODO(), sc)
