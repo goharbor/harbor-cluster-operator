@@ -140,15 +140,15 @@ type Storage struct {
 
 type Oss struct {
 	// +kubebuilder:validation:Required
-	Accesskeyid string `json:"accesskeyid,omitempty"`
+	Accesskeyid string `json:"accesskeyid"`
 	// +kubebuilder:validation:Required
-	Accesskeysecret string `json:"accesskeysecret,omitempty"`
+	Accesskeysecret string `json:"accesskeysecret"`
 	// +kubebuilder:validation:Required
-	Region string `json:"region,omitempty"`
+	Region string `json:"region"`
 	// +kubebuilder:validation:Required
-	Bucket string `json:"bucket,omitempty"`
+	Bucket string `json:"bucket"`
 	// +kubebuilder:validation:Required
-	Endpoint      string `json:"endpoint,omitempty"`
+	Endpoint      string `json:"endpoint"`
 	Internal      string `json:"internal,omitempty"`
 	Encrypt       string `json:"encrypt,omitempty"`
 	Secure        string `json:"secure,omitempty"`
@@ -158,17 +158,17 @@ type Oss struct {
 
 type Swift struct {
 	// +kubebuilder:validation:Required
-	Authurl string `json:"authurl,omitempty"`
+	Authurl string `json:"authurl"`
 	// +kubebuilder:validation:Required
-	Username string `json:"username,omitempty"`
+	Username string `json:"username"`
 	// +kubebuilder:validation:Required
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 	// +kubebuilder:validation:Required
-	Container string `json:"container,omitempty"`
+	Container string `json:"container"`
 	// +kubebuilder:validation:Required
-	Region string `json:"region,omitempty"`
+	Region string `json:"region"`
 	// +kubebuilder:validation:Required
-	Tenant              string   `json:"tenant,omitempty"`
+	Tenant              string   `json:"tenant"`
 	Tenantid            string   `json:"tenantid,omitempty"`
 	Domain              string   `json:"domain,omitempty"`
 	Domainid            string   `json:"domainid,omitempty"`
@@ -185,13 +185,15 @@ type Swift struct {
 
 type S3 struct {
 	// +kubebuilder:validation:Required
-	Region string `json:"region,omitempty"`
+	Region string `json:"region"`
 	// +kubebuilder:validation:Required
-	Bucket    string `json:"bucket,omitempty"`
-	Accesskey string `json:"accesskey,omitempty"`
-	Secretkey string `json:"secretkey,omitempty"`
+	Bucket string `json:"bucket"`
 	// +kubebuilder:validation:Required
-	Regionendpoint string `json:"regionendpoint,omitempty"`
+	Accesskey string `json:"accesskey"`
+	// +kubebuilder:validation:Required
+	Secretkey string `json:"secretkey"`
+	// +kubebuilder:validation:Required
+	Regionendpoint string `json:"regionendpoint"`
 	Encrypt        bool   `json:"encrypt,omitempty"`
 	Keyid          string `json:"keyid,omitempty"`
 	Secure         bool   `json:"secure,omitempty"`
@@ -203,21 +205,21 @@ type S3 struct {
 
 type Gcs struct {
 	// +kubebuilder:validation:Required
-	Bucket string `json:"bucket,omitempty"`
+	Bucket string `json:"bucket"`
 	// The base64 encoded json file which contains the key
-	Encodedkey string `json:"encodedkey,omitempty"`
+	Encodedkey string `json:"encodedkey"`
 	// +kubebuilder:validation:Required
-	Rootdirectory string `json:"rootdirectory,omitempty"`
+	Rootdirectory string `json:"rootdirectory"`
 	Chunksize     string `json:"chunksize,omitempty"`
 }
 
 type Azure struct {
 	// +kubebuilder:validation:Required
-	Accountname string `json:"accountname,omitempty"`
+	Accountname string `json:"accountname"`
 	// +kubebuilder:validation:Required
-	Accountkey string `json:"accountkey,omitempty"`
+	Accountkey string `json:"accountkey"`
 	// +kubebuilder:validation:Required
-	Container string `json:"container,omitempty"`
+	Container string `json:"container"`
 	Realm     string `json:"realm,omitempty"`
 }
 
@@ -271,8 +273,8 @@ type Redis struct {
 	// +kubebuilder:validation:Enum=inCluster;external
 	Kind string `json:"kind"`
 
-	// inCluster params following.
-	Spec *RedisSpec `json:"spec,omitempty"`
+	// +kubebuilder:validation:Required
+	Spec *RedisSpec `json:"spec"`
 }
 
 type RedisSpec struct {
