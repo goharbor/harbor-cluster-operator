@@ -19,13 +19,13 @@ import (
 	"flag"
 	"os"
 
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	goharborv1 "src/github.com/goharbor/harbor-cluster-operator/api/v1"
-	"src/github.com/goharbor/harbor-cluster-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
