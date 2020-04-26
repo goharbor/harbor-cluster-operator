@@ -15,22 +15,22 @@ func (postgresql *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (postgresql *PostgreSQLReconciler) provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgresql *PostgreSQLReconciler) delete() (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgresql *PostgreSQLReconciler) scaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgresql *PostgreSQLReconciler) scaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgresql *PostgreSQLReconciler) update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }

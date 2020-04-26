@@ -15,22 +15,22 @@ func (minio *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (minio *MinIOReconciler) provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (minio *MinIOReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) delete() (*lcm.CRStatus, error) {
+func (minio *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) scaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (minio *MinIOReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) scaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (minio *MinIOReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (minio *MinIOReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }

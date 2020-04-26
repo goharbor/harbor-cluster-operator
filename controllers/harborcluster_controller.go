@@ -47,10 +47,15 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	ctx := context.Background()
 	log := r.Log.WithValues("harborcluster", req.NamespacedName)
 
-	var harborCluster goharborv1.HarborCluster
-	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
+	var harborCluster *goharborv1.HarborCluster
+	if err := r.Get(ctx, req.NamespacedName, harborCluster); err != nil {
 		log.Error(err, "unable to fetch HarborCluster")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if harborCluster == nil {
+		log.Info("can not get HarborCluster")
+		return ctrl.Result{}, nil
 	}
 
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
@@ -58,19 +63,19 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	cacheStatus, err := r.Cache(&harborCluster).Reconcile()
+	cacheStatus, err := r.Cache(harborCluster).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile cache service.")
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(&harborCluster).Reconcile()
+	dbStatus, err := r.Database(harborCluster).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database service.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(&harborCluster).Reconcile()
+	storageStatus, err := r.Storage(harborCluster).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage service.")
 		return ctrl.Result{}, err
@@ -85,13 +90,13 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		}, nil
 	}
 
-	harborStatus, err := r.Harbor(&harborCluster).Reconcile()
+	harborStatus, err := r.Harbor(harborCluster).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err
 	}
 
-	err = r.UpdateHarborClusterStatus(ctx, &harborCluster, cacheStatus, dbStatus, storageStatus, harborStatus)
+	err = r.UpdateHarborClusterStatus(ctx, harborCluster, cacheStatus, dbStatus, storageStatus, harborStatus)
 	if err != nil {
 		log.Error(err, "error when update harbor cluster status.")
 		return ctrl.Result{}, err

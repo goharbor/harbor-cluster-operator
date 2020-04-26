@@ -16,22 +16,22 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (redis *RedisReconciler) provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (redis *RedisReconciler) delete() (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (redis *RedisReconciler) scaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (redis *RedisReconciler) scaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (redis *RedisReconciler) update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }

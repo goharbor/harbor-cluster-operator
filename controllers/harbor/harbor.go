@@ -15,22 +15,22 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (harbor *HarborReconciler) provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (harbor *HarborReconciler) delete() (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (harbor *HarborReconciler) scaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (harbor *HarborReconciler) scaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (harbor *HarborReconciler) update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
