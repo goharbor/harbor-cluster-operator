@@ -57,7 +57,7 @@ type HarborClusterSpec struct {
 
 	// Secret reference for the TLS certs
 	// +optional
-	TLSSecret string `json:"tlsSecret"`
+	TLSSecret string `json:"tlsSecret,omitempty"`
 
 	// The issuer for Harbor certificates.
 	// If the 'kind' field is not set, or set to 'Issuer', an Issuer resource
@@ -65,7 +65,7 @@ type HarborClusterSpec struct {
 	// If the 'kind' field is set to 'ClusterIssuer', a ClusterIssuer with the
 	// provided name will be used.
 	// The 'name' field in this stanza is required at all times.
-	CertificateIssuerRef cmmeta.ObjectReference `json:"certificateIssuerRef"`
+	CertificateIssuerRef cmmeta.ObjectReference `json:"certificateIssuerRef,omitempty"`
 
 	// Indicates that the harbor is paused.
 	// +optional
@@ -77,7 +77,7 @@ type HarborClusterSpec struct {
 
 	// Pod instance number
 	// +kubebuilder:validation:Required
-	Replicas int `json:"replicas,omitempty"`
+	Replicas int `json:"replicas"`
 
 	// Source registry of images, the default is dockerhub
 	// +kubebuilder:default=&ImageSource{registry: "docker.io";}
@@ -117,7 +117,7 @@ type Storage struct {
 	// set the kind of which storage service to be used. Set the kind as "azure", "gcs", "s3", "oss", "swift" or "inCluster", and fill the information.
 	// in the options section. inCluster indicates the local storage service of harbor-cluster. We use minIO as a default built-in object storage service.
 	// +kubebuilder:validation:Enum=inCLuster;azure;gcs;s3;oss;swift
-	Kind string `json:"kind,omitempty"`
+	Kind string `json:"kind"`
 
 	// inCLuster options.
 	InCluster *InCluster `json:"options,omitempty"`
@@ -235,7 +235,7 @@ type MinIOSpec struct {
 	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
-	Replicas int `json:"replicas,omitempty"`
+	Replicas int `json:"replicas"`
 	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version,omitempty"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
@@ -263,7 +263,7 @@ type PostgresSQL struct {
 type Database struct {
 	// Set the kind of which redis service to be used, inCluster or external.
 	// +kubebuilder:validation:Enum=inCluster;external
-	Kind string `json:"kind,omitempty"`
+	Kind string `json:"kind"`
 
 	PostgresSQL *PostgresSQL `json:"spec,omitempty"`
 }
