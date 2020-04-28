@@ -24,8 +24,8 @@ type Controller interface {
 }
 
 type CRStatus struct {
-	Phase      Phase       `json:"phase"`
-	Properties []*Property `json:"properties"`
+	Phase      Phase      `json:"phase"`
+	Properties Properties `json:"properties"`
 }
 
 //Phase is the current state of component
