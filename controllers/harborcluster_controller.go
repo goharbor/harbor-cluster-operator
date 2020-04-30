@@ -17,10 +17,6 @@ package controllers
 
 import (
 	"context"
-	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
-	"github.com/goharbor/harbor-cluster-operator/controllers/database"
-	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"
-	"github.com/goharbor/harbor-cluster-operator/controllers/storage"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,31 +164,6 @@ func (r *HarborClusterReconciler) getHarborClusterCondition(
 		Type:   goharborv1.HarborClusterConditionType(conditionType),
 		Status: corev1.ConditionUnknown,
 	}, true
-}
-
-func (r *HarborClusterReconciler) Cache(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &cache.RedisReconciler{
-		HarborCluster: harborCluster,
-	}
-}
-
-func (r *HarborClusterReconciler) Database(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &database.PostgreSQLReconciler{
-		HarborCluster: harborCluster,
-	}
-}
-
-func (r *HarborClusterReconciler) Storage(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &storage.MinIOReconciler{
-		HarborCluster: harborCluster,
-	}
-}
-
-func (r *HarborClusterReconciler) Harbor(harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus) Reconciler {
-	return &harbor.HarborReconciler{
-		HarborCluster:       harborCluster,
-		ComponentToCRStatus: componentToCRStatus,
-	}
 }
 
 func (r *HarborClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -68,10 +68,11 @@ func main() {
 	}
 
 	if err = (&controllers.HarborClusterReconciler{
-		Client:       mgr.GetClient(),
-		Log:          ctrl.Log.WithName("controllers").WithName("HarborCluster"),
-		Scheme:       mgr.GetScheme(),
-		RequeueAfter: requeueAfter,
+		Client:        mgr.GetClient(),
+		Log:           ctrl.Log.WithName("controllers").WithName("HarborCluster"),
+		Scheme:        mgr.GetScheme(),
+		RequeueAfter:  requeueAfter,
+		ServiceGetter: &controllers.ServiceGetterImpl{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
