@@ -1,8 +1,13 @@
 package cache
 
 import (
+	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 )
 
 // RedisReconciler implement the Reconciler interface and lcm.Controller interface.
@@ -35,6 +40,7 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	if err != nil {
 		return crStatus, err
 	}
+
 	return nil, nil
 }
 
@@ -66,3 +72,4 @@ func (redis *RedisReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, erro
 func (redis *RedisReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
+
