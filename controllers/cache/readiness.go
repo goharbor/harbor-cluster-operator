@@ -12,6 +12,7 @@ import (
 const (
 	RedisDownScaling = "RedisDownScaling"
 	RedisUpScaling   = "RedisUpScaling"
+	RedisRollingUpgrades = "RollingUpgrades"
 
 	MessageRedisCluster = "Redis  %s already created."
 
@@ -19,6 +20,7 @@ const (
 
 	MessageRedisDownScaling = "Redis downscale from %d to %d"
 	MessageRedisUpScaling   = "Redis upscale from %d to %d"
+	MessageRedisRollingUpgrades = "Redis resource from %s to %s"
 
 	RedisSentinelConnPort = "26379"
 )
