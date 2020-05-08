@@ -6,6 +6,7 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	minioClient "github.com/minio/minio-operator/pkg/client/clientset/versioned"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	apisv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -34,13 +35,14 @@ type MinIOReconciler struct {
 
 // Reconciler implements the reconcile logic of minIO service
 func (minio *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
-	minioinstance,err :=minio.minioClientSet.MiniooperatorV1beta1().MinIOInstances(minio.Namespace).Get(minio.ctx,minio.HarborCluster.Name,apisv1.GetOptions{})
+	_,err :=minio.minioClientSet.MiniooperatorV1beta1().MinIOInstances(minio.Namespace).Get(minio.ctx,minio.HarborCluster.Name,apisv1.GetOptions{})
+	if k8serror.IsNotFound(err) {
+		return minio.Provision(minio.HarborCluster)
+	} else if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
-}
-
-func (minio *MinIOReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
-
-	panic("implement me")
 }
 
 func (minio *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
