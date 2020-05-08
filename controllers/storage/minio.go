@@ -6,10 +6,8 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	minioClient "github.com/minio/minio-operator/pkg/client/clientset/versioned"
-	miniolisters "github.com/minio/minio-operator/pkg/client/listers/miniooperator.min.io/v1beta1"
 	apisv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 )
 
 type MinIOReconciler struct {
