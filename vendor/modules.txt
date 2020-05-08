@@ -55,6 +55,7 @@ github.com/json-iterator/go
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/minio/minio-operator v0.0.0-20200505050949-8fdab5f7bde2
 github.com/minio/minio-operator/pkg/client/clientset/versioned
+github.com/minio/minio-operator/pkg/client/listers/miniooperator.min.io/v1beta1
 github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniooperator.min.io/v1beta1
 github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1
 github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme
