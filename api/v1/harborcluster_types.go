@@ -30,7 +30,7 @@ type Component string
 // all Component used in harbor cluster full stack.
 const (
 	ComponentHarbor   Component = "harbor"
-	ComponentRedis    Component = "redis"
+	ComponentCache    Component = "cache"
 	ComponentStorage  Component = "storage"
 	ComponentDatabase Component = "database"
 )
@@ -344,17 +344,24 @@ type HarborClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Conditions []HarborClusterCondition `json:"conditions,omitempty"`
-
-	ComponentsStatus map[Component]*ComponentsStatus `json:"ComponentsStatus,omitempty"`
-}
-
-type ComponentsStatus struct {
-	Replicas      int `json:"replicas,omitempty"`
-	ReadyReplicas int `json:"readyReplicas,omitempty"`
 }
 
 // HarborClusterConditionType is a valid value for HarborClusterConditionType.Type
 type HarborClusterConditionType string
+
+// These are valid conditions of a HarborCluster.
+const (
+	// Ready means the HarborCluster is ready.
+	Ready HarborClusterConditionType = "Ready"
+	// CacheReady means the Cache is ready.
+	CacheReady HarborClusterConditionType = "CacheReady"
+	// DatabaseReady means the Database is ready.
+	DatabaseReady HarborClusterConditionType = "DatabaseReady"
+	// StorageReady means the Storage is ready.
+	StorageReady HarborClusterConditionType = "StorageReady"
+	// ServiceReady means the Service of Harbor is ready.
+	ServiceReady HarborClusterConditionType = "ServiceReady"
+)
 
 // HarborClusterCondition contains details for the current condition of this pod.
 type HarborClusterCondition struct {
