@@ -6,7 +6,8 @@ import (
 )
 
 type HarborReconciler struct {
-	HarborCluster *goharborv1.HarborCluster
+	HarborCluster       *goharborv1.HarborCluster
+	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
 }
 
 // Reconciler implements the reconcile logic of minIO service

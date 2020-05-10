@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
@@ -44,9 +45,11 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
+	var requeueAfter time.Duration
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.DurationVar(&requeueAfter, "requeue-after", 5, "The delay time(second) of Requeue.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
@@ -65,9 +68,11 @@ func main() {
 	}
 
 	if err = (&controllers.HarborClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("HarborCluster"),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Log:           ctrl.Log.WithName("controllers").WithName("HarborCluster"),
+		Scheme:        mgr.GetScheme(),
+		RequeueAfter:  requeueAfter,
+		ServiceGetter: &controllers.ServiceGetterImpl{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
