@@ -30,14 +30,14 @@ type MinIOReconciler struct {
 	Log logr.Logger
 
 	Namespace string
-
 }
 
 // Reconciler implements the reconcile logic of minIO service
-func (minio *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
-	_,err :=minio.minioClientSet.MiniooperatorV1beta1().MinIOInstances(minio.Namespace).Get(minio.ctx,minio.HarborCluster.Name,apisv1.GetOptions{})
+func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
+	// TODO external storage service
+	_, err := m.minioClientSet.MiniooperatorV1beta1().MinIOInstances(m.Namespace).Get(m.ctx, m.HarborCluster.Name, apisv1.GetOptions{})
 	if k8serror.IsNotFound(err) {
-		return minio.Provision(minio.HarborCluster)
+		return m.Provision()
 	} else if err != nil {
 		return nil, err
 	}
@@ -45,19 +45,19 @@ func (minio *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (minio *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (minio *MinIOReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
