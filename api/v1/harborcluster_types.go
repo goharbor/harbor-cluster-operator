@@ -39,7 +39,7 @@ type Component string
 // all Component used in harbor cluster full stack.
 const (
 	ComponentHarbor   Component = "harbor"
-	ComponentRedis    Component = "redis"
+	ComponentCache    Component = "cache"
 	ComponentStorage  Component = "storage"
 	ComponentDatabase Component = "database"
 )
@@ -353,13 +353,6 @@ type HarborClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Conditions []HarborClusterCondition `json:"conditions,omitempty"`
-
-	ComponentsStatus map[Component]*ComponentsStatus `json:"ComponentsStatus,omitempty"`
-}
-
-type ComponentsStatus struct {
-	Replicas      int `json:"replicas,omitempty"`
-	ReadyReplicas int `json:"readyReplicas,omitempty"`
 }
 
 // HarborClusterConditionType is a valid value for HarborClusterConditionType.Type

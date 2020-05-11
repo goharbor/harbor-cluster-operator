@@ -27,23 +27,3 @@ type CRStatus struct {
 	Condition  v1.HarborClusterCondition `json:"condition"`
 	Properties Properties                `json:"properties"`
 }
-
-//Phase is the current state of component
-type Phase string
-
-const (
-	//PendingPhase represents pending state of component.
-	//The reconcile has created CR, but the CR has not been scheduled yet.
-	PendingPhase Phase = "Pending"
-	//CreatingPhase represents creating state of component.
-	//The reconcile is creating CR, but the service is not available.
-	CreatingPhase Phase = "Creating"
-	//ReadyPhase represents ready state of component.
-	//The CR has been deployed, the number of nodes is as expected, and the service is available.
-	ReadyPhase Phase = "Ready"
-	//UpgradingPhase represents upgrade state of component.
-	//The CR is processing upscale、downscale、rolling update.
-	UpgradingPhase Phase = "Upgrading"
-	//DestroyingPhase represents delete state of component.
-	DestroyingPhase Phase = "Destroying"
-)

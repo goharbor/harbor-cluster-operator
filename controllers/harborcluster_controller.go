@@ -17,11 +17,9 @@ package controllers
 
 import (
 	"context"
-	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
-	"github.com/goharbor/harbor-cluster-operator/controllers/database"
-	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"
-	"github.com/goharbor/harbor-cluster-operator/controllers/storage"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -36,8 +34,9 @@ import (
 type HarborClusterReconciler struct {
 	client.Client
 	ServiceGetter
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log          logr.Logger
+	Scheme       *runtime.Scheme
+	RequeueAfter time.Duration
 }
 
 // +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
@@ -47,15 +46,10 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	ctx := context.Background()
 	log := r.Log.WithValues("harborcluster", req.NamespacedName)
 
-	var harborCluster *goharborv1.HarborCluster
-	if err := r.Get(ctx, req.NamespacedName, harborCluster); err != nil {
+	var harborCluster goharborv1.HarborCluster
+	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
 		log.Error(err, "unable to fetch HarborCluster")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if harborCluster == nil {
-		log.Info("can not get HarborCluster")
-		return ctrl.Result{}, nil
 	}
 
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
@@ -63,40 +57,45 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	cacheStatus, err := r.Cache(harborCluster).Reconcile()
+	cacheStatus, err := r.Cache(&harborCluster).Reconcile()
 	if err != nil {
-		log.Error(err, "error when reconcile cache service.")
+		log.Error(err, "error when reconcile cache component.")
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(harborCluster).Reconcile()
+	dbStatus, err := r.Database(&harborCluster).Reconcile()
 	if err != nil {
-		log.Error(err, "error when reconcile database service.")
+		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(harborCluster).Reconcile()
+	storageStatus, err := r.Storage(&harborCluster).Reconcile()
 	if err != nil {
-		log.Error(err, "error when reconcile storage service.")
+		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err
 	}
 
-	// if components is not all ready, reenqueue the HarborCluster
-	if !r.ServicesAreAllReady(cacheStatus, dbStatus, storageStatus) {
+	componentToStatus := make(map[goharborv1.Component]*lcm.CRStatus)
+	componentToStatus[goharborv1.ComponentCache] = cacheStatus
+	componentToStatus[goharborv1.ComponentDatabase] = dbStatus
+	componentToStatus[goharborv1.ComponentStorage] = storageStatus
+	// if components is not all ready, requeue the HarborCluster
+	if !r.ComponentsAreAllReady(componentToStatus) {
+		err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
 		return ctrl.Result{
-			Requeue: true,
-			// TODO: config requeue time when operator started.
-			RequeueAfter: time.Second * 1,
-		}, nil
+			Requeue:      true,
+			RequeueAfter: time.Second * r.RequeueAfter,
+		}, err
 	}
 
-	harborStatus, err := r.Harbor(harborCluster).Reconcile()
+	harborStatus, err := r.Harbor(&harborCluster, componentToStatus).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err
 	}
+	componentToStatus[goharborv1.ComponentHarbor] = harborStatus
 
-	err = r.UpdateHarborClusterStatus(ctx, harborCluster, cacheStatus, dbStatus, storageStatus, harborStatus)
+	err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
 	if err != nil {
 		log.Error(err, "error when update harbor cluster status.")
 		return ctrl.Result{}, err
@@ -105,40 +104,67 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	return ctrl.Result{}, nil
 }
 
-// check whether these services(includes cache, db, storage) are all ready.
-func (r *HarborClusterReconciler) ServicesAreAllReady(statuses ...*lcm.CRStatus) bool {
-	// TODO
-	return false
+// ServicesAreAllReady check whether these components(includes cache, db, storage) are all ready.
+func (r *HarborClusterReconciler) ComponentsAreAllReady(serviceToMap map[goharborv1.Component]*lcm.CRStatus) bool {
+	for _, status := range serviceToMap {
+		if status == nil {
+			return false
+		}
+		if status.Condition.Status != corev1.ConditionTrue {
+			return false
+		}
+	}
+	return true
 }
 
-// Update HarborCluster CR status, according the services reconcile result.
-func (r *HarborClusterReconciler) UpdateHarborClusterStatus(ctx context.Context, harborCluster *goharborv1.HarborCluster, statuses ...*lcm.CRStatus) error {
-	// TODO
-	return nil
+// UpdateHarborClusterStatus will Update HarborCluster CR status, according the services reconcile result.
+func (r *HarborClusterReconciler) UpdateHarborClusterStatus(
+	ctx context.Context,
+	harborCluster *goharborv1.HarborCluster,
+	componentToCRStatus map[goharborv1.Component]*lcm.CRStatus) error {
+	for service, status := range componentToCRStatus {
+		if status == nil {
+			continue
+		}
+		harborClusterCondition, defaulted := r.getHarborClusterCondition(harborCluster, string(service))
+		r.updateHarborClusterCondition(harborClusterCondition, status)
+		if defaulted {
+			harborCluster.Status.Conditions = append(harborCluster.Status.Conditions, *harborClusterCondition)
+		}
+	}
+	return r.Update(ctx, harborCluster)
 }
 
-func (r *HarborClusterReconciler) Cache(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &cache.RedisReconciler{
-		HarborCluster: harborCluster,
+// updateHarborClusterCondition update condition according to status.
+func (r *HarborClusterReconciler) updateHarborClusterCondition(condition *goharborv1.HarborClusterCondition, crStatus *lcm.CRStatus) {
+	if condition.Type != crStatus.Condition.Type {
+		return
+	}
+
+	if condition.Status != crStatus.Condition.Status ||
+		condition.Message != crStatus.Condition.Message ||
+		condition.Reason != crStatus.Condition.Reason {
+		condition.Status = crStatus.Condition.Status
+		condition.Message = crStatus.Condition.Message
+		condition.Reason = crStatus.Condition.Reason
+		condition.LastTransitionTime = metav1.Now()
 	}
 }
 
-func (r *HarborClusterReconciler) Database(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &database.PostgreSQLReconciler{
-		HarborCluster: harborCluster,
+// getHarborClusterCondition will get HarborClusterCondition by conditionType
+func (r *HarborClusterReconciler) getHarborClusterCondition(
+	harborCluster *goharborv1.HarborCluster,
+	conditionType string) (condition *goharborv1.HarborClusterCondition, defaulted bool) {
+	for i := range harborCluster.Status.Conditions {
+		condition = &harborCluster.Status.Conditions[i]
+		if string(condition.Type) == conditionType {
+			return condition, false
+		}
 	}
-}
-
-func (r *HarborClusterReconciler) Storage(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &storage.MinIOReconciler{
-		HarborCluster: harborCluster,
-	}
-}
-
-func (r *HarborClusterReconciler) Harbor(harborCluster *goharborv1.HarborCluster) Reconciler {
-	return &harbor.HarborReconciler{
-		HarborCluster: harborCluster,
-	}
+	return &goharborv1.HarborClusterCondition{
+		Type:   goharborv1.HarborClusterConditionType(conditionType),
+		Status: corev1.ConditionUnknown,
+	}, true
 }
 
 func (r *HarborClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {

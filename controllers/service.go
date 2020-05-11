@@ -2,6 +2,10 @@ package controllers
 
 import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
+	"github.com/goharbor/harbor-cluster-operator/controllers/database"
+	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"
+	"github.com/goharbor/harbor-cluster-operator/controllers/storage"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 )
 
@@ -21,5 +25,33 @@ type ServiceGetter interface {
 	Storage(harborCluster *goharborv1.HarborCluster) Reconciler
 
 	// For harbor itself
-	Harbor(harborCluster *goharborv1.HarborCluster) Reconciler
+	Harbor(harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus) Reconciler
+}
+
+type ServiceGetterImpl struct {
+}
+
+func (impl *ServiceGetterImpl) Cache(harborCluster *goharborv1.HarborCluster) Reconciler {
+	return &cache.RedisReconciler{
+		HarborCluster: harborCluster,
+	}
+}
+
+func (impl *ServiceGetterImpl) Database(harborCluster *goharborv1.HarborCluster) Reconciler {
+	return &database.PostgreSQLReconciler{
+		HarborCluster: harborCluster,
+	}
+}
+
+func (impl *ServiceGetterImpl) Storage(harborCluster *goharborv1.HarborCluster) Reconciler {
+	return &storage.MinIOReconciler{
+		HarborCluster: harborCluster,
+	}
+}
+
+func (impl *ServiceGetterImpl) Harbor(harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus) Reconciler {
+	return &harbor.HarborReconciler{
+		HarborCluster:       harborCluster,
+		ComponentToCRStatus: componentToCRStatus,
+	}
 }
