@@ -6,6 +6,7 @@ import (
 	minio "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -73,10 +74,32 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 				},
 			},
 			Resources: *m.getResourceRequirements(),//m.HarborCluster.Spec.Stroage.InCluster.Spec.Resources,
-			// TODO
-			//Liveness: ,
-			//Readiness: ,
+			Liveness: &corev1.Probe{
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/minio/health/live",
+						Port: intstr.IntOrString{
+							IntVal: 9000,
+						},
 
+					},
+				},
+				InitialDelaySeconds: 120,
+				PeriodSeconds: 60,
+			},
+			Readiness: &corev1.Probe{
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/minio/health/ready",
+						Port: intstr.IntOrString{
+							IntVal: 9000,
+						},
+
+					},
+				},
+				InitialDelaySeconds: 120,
+				PeriodSeconds: 60,
+			},
 		},
 	}
 }
