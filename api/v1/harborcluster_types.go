@@ -19,10 +19,19 @@ import (
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+var (
+	HarborClusterGVK = schema.GroupVersionKind{
+		Group:   GroupVersion.Group,
+		Version: GroupVersion.Version,
+		Kind:    "HarborCluster",
+	}
+)
 
 // the name of component used harbor cluster.
 type Component string
@@ -355,6 +364,20 @@ type ComponentsStatus struct {
 
 // HarborClusterConditionType is a valid value for HarborClusterConditionType.Type
 type HarborClusterConditionType string
+
+// These are valid conditions of a HarborCluster.
+const (
+	// Ready means the HarborCluster is ready.
+	Ready HarborClusterConditionType = "Ready"
+	// CacheReady means the Cache is ready.
+	CacheReady HarborClusterConditionType = "CacheReady"
+	// DatabaseReady means the Database is ready.
+	DatabaseReady HarborClusterConditionType = "DatabaseReady"
+	// StorageReady means the Storage is ready.
+	StorageReady HarborClusterConditionType = "StorageReady"
+	// ServiceReady means the Service of Harbor is ready.
+	ServiceReady HarborClusterConditionType = "ServiceReady"
+)
 
 // HarborClusterCondition contains details for the current condition of this pod.
 type HarborClusterCondition struct {
