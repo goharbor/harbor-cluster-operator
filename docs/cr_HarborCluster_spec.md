@@ -20,8 +20,7 @@ adminPasswordSecret: adminSecret
 tlsSecret: tlsSecret
 
 # certificate issuers
-certificateIssuerRef: 
-  name: cert_issuer
+certificateIssuerRef: cert_issuer
 
 paused: false
 
