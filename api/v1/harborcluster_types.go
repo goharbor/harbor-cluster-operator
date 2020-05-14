@@ -112,11 +112,10 @@ type HarborClusterSpec struct {
 	Stroage *Storage `json:"storage"`
 }
 
-// +kubebuilder:validation:Enum=Lion;Wolf;Dragon
 type Storage struct {
 	// set the kind of which storage service to be used. Set the kind as "azure", "gcs", "s3", "oss", "swift" or "inCluster", and fill the information.
 	// in the options section. inCluster indicates the local storage service of harbor-cluster. We use minIO as a default built-in object storage service.
-	// +kubebuilder:validation:Enum=inCLuster;azure;gcs;s3;oss;swift
+	// +kubebuilder:validation:Enum=inCluster;azure;gcs;s3;oss;swift
 	Kind string `json:"kind"`
 
 	// inCLuster options.
