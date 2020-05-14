@@ -332,7 +332,7 @@ type Clair struct {
 
 type JobService struct {
 	// +kubebuilder:validation:Required
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 
 	// +optional
 	WorkerCount int32 `json:"workerCount"`
