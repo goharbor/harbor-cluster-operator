@@ -80,7 +80,6 @@ type HarborClusterSpec struct {
 	Replicas int `json:"replicas"`
 
 	// Source registry of images, the default is dockerhub
-	// +kubebuilder:default=&ImageSource{registry: "docker.io";}
 	ImageSource *ImageSource `json:"imageSource,omitempty"`
 
 	// Extra configuration options for jobservices
@@ -109,7 +108,7 @@ type HarborClusterSpec struct {
 
 	// Storage service configurations. Might be external cloud storage services or inCluster storage (minIO)
 	// +kubebuilder:validation:Required
-	Stroage *Storage `json:"storage"`
+	Storage *Storage `json:"storage"`
 }
 
 type Storage struct {
