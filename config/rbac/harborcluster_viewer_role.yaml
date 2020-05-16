@@ -5,7 +5,7 @@ metadata:
   name: harborcluster-viewer-role
 rules:
 - apiGroups:
-  - goharbor.goharbor.io
+  - cluster.goharbor.io
   resources:
   - harborclusters
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - goharbor.goharbor.io
+  - cluster.goharbor.io
   resources:
   - harborclusters/status
   verbs:
