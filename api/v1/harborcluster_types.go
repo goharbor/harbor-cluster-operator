@@ -19,10 +19,19 @@ import (
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+var (
+	HarborClusterGVK = schema.GroupVersionKind{
+		Group:   GroupVersion.Group,
+		Version: GroupVersion.Version,
+		Kind:    "HarborCluster",
+	}
+)
 
 // the name of component used harbor cluster.
 type Component string
@@ -233,7 +242,7 @@ type MinIOSpec struct {
 	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
-	Replicas int `json:"replicas"`
+	Replicas int32 `json:"replicas"`
 	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version,omitempty"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
