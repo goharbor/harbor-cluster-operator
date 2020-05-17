@@ -48,23 +48,35 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 			return minioNotReadyStatus(ErrorReason0, err.Error()), err
 		}
 	case azureStorage:
-		minioStatus, err := m.ProvisionAzure()
-		return minioStatus, err
-	case gcsStorage:
-		minioStatus, err := m.ProvisionGcs()
-		return minioStatus, err
-	case s3Storage:
-		err := m.ProvisionS3()
+		properties,err := m.ProvisionAzure()
 		if err != nil {
 			minioNotReadyStatus(ErrorReason1, err.Error())
 		}
-		return minioReadyStatus(), err
+		return minioReadyStatus(properties), nil
+	case gcsStorage:
+		properties,err := m.ProvisionGcs()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	case s3Storage:
+		properties,err := m.ProvisionS3()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
 	case swiftStorage:
-		minioStatus, err := m.ProvisionSwift()
-		return minioStatus, err
+		properties,err := m.ProvisionSwift()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
 	case ossStorage:
-		minioStatus, err := m.ProvisionOss()
-		return minioStatus, err
+		properties, err := m.ProvisionOss()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
 	default:
 		// TODO
 		return nil, nil
@@ -105,7 +117,7 @@ func minioUnknownStatus() *lcm.CRStatus {
 	}
 }
 
-func minioReadyStatus() *lcm.CRStatus {
+func minioReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
 	return &lcm.CRStatus{
 		Condition: goharborv1.HarborClusterCondition{
 			Type:               goharborv1.StorageReady,
@@ -114,7 +126,7 @@ func minioReadyStatus() *lcm.CRStatus {
 			Reason:             "",
 			Message:            "",
 		},
-		Properties: nil,
+		Properties: *properties,
 	}
 }
 

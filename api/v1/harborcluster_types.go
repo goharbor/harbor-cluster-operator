@@ -187,7 +187,7 @@ type Swift struct {
 	Authversion         int      `json:"authversion,omitempty"`
 	Endpointtype        string   `json:"endpointtype,omitempty"`
 	Tempurlcontainerkey bool     `json:"tempurlcontainerkey,omitempty"`
-	Tempurlmethods      []string `json:"tempurlmethods,omitempty"`
+	Tempurlmethods      string `json:"tempurlmethods,omitempty"`
 }
 
 type S3 struct {
