@@ -280,7 +280,7 @@ type RedisSpec struct {
 	Sentinel *Sentinel    `json:"sentinel,omitempty"`
 
 	// External params following.
-	// The secret must contains "address:port","usernane" and "password".
+	// The secret must contains "password".
 	SecretName string `json:"secretName,omitempty"`
 	// Maximum number of socket connections.
 	// Default is 10 connections per every CPU as reported by runtime.NumCPU.
@@ -292,6 +292,7 @@ type RedisSpec struct {
 	// +kubebuilder:validation:Enum=sentinel;redis
 	Schema string  `json:"schema,omitempty"`
 	Hosts  []Hosts `json:"hosts,omitempty"`
+	Port   string  `json:"port,omitempty"`
 }
 
 type Hosts struct {
