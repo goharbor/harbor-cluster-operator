@@ -29,11 +29,22 @@ type ServiceGetter interface {
 }
 
 type ServiceGetterImpl struct {
+	HarborCluster *goharborv1.HarborCluster
+	Client        k8s.Client
+	Recorder      record.EventRecorder
+	Log           logr.Logger
+	DClient       k8s.DClient
+	Scheme        *runtime.Scheme
 }
 
 func (impl *ServiceGetterImpl) Cache(harborCluster *goharborv1.HarborCluster) Reconciler {
 	return &cache.RedisReconciler{
 		HarborCluster: harborCluster,
+		Client:        impl.Client,
+		Recorder:      impl.Recorder,
+		Log:           impl.Log,
+		DClient:       impl.DClient,
+		Scheme:        impl.Scheme,
 	}
 }
 
