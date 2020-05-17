@@ -55,7 +55,7 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 	}
 
 	if redis.HarborCluster.Spec.Redis.Spec.Server.Storage != "" {
-		conf.Spec.Redis.Storage.PersistentVolumeClaim = generateRedisStorage(storageSize, redis.Name, redis.Labels)
+		conf.Spec.Redis.Storage.PersistentVolumeClaim = generateRedisStorage(storageSize, redis.Name)
 	}
 
 	mapResult, err := runtime.DefaultUnstructuredConverter.ToUnstructured(conf)
@@ -85,12 +85,12 @@ func (redis *RedisReconciler) generateRedisSecret(labels map[string]string) *cor
 	}
 }
 
-func generateRedisStorage(size, name string, labels map[string]string) *corev1.PersistentVolumeClaim {
+func (redis *RedisReconciler) generateRedisStorage(size, name string) *corev1.PersistentVolumeClaim {
 	storage, _ := resource.ParseQuantity(size)
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: v1.ObjectMeta{
 			Name:   name,
-			Labels: labels,
+			Labels: redis.Labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
