@@ -292,7 +292,6 @@ type RedisSpec struct {
 	// +kubebuilder:validation:Enum=sentinel;redis
 	Schema string  `json:"schema,omitempty"`
 	Hosts  []Hosts `json:"hosts,omitempty"`
-	Port   string  `json:"port,omitempty"`
 }
 
 type Hosts struct {
