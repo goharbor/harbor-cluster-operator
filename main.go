@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"os"
 	"time"
 
@@ -66,13 +67,24 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+	dClient, err := k8s.NewDynamicClient()
+	if err != nil {
+		setupLog.Error(err, "unable to create dynamic client")
+		os.Exit(1)
+	}
 
 	if err = (&controllers.HarborClusterReconciler{
 		Client:        mgr.GetClient(),
 		Log:           ctrl.Log.WithName("controllers").WithName("HarborCluster"),
 		Scheme:        mgr.GetScheme(),
 		RequeueAfter:  requeueAfter,
-		ServiceGetter: &controllers.ServiceGetterImpl{},
+		ServiceGetter: &controllers.ServiceGetterImpl{
+			Client:   k8s.WrapClient(mgr.GetClient()),
+			Recorder: mgr.GetEventRecorderFor("HarborCluster-Controller"),
+			Log:      ctrl.Log.WithName("controllers").WithName("HarborCluster"),
+			DClient:  k8s.WrapDClient(dClient),
+			Scheme:   mgr.GetScheme(),
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
