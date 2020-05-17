@@ -80,7 +80,6 @@ type HarborClusterSpec struct {
 	Replicas int `json:"replicas"`
 
 	// Source registry of images, the default is dockerhub
-	// +kubebuilder:default=&ImageSource{registry: "docker.io";}
 	ImageSource *ImageSource `json:"imageSource,omitempty"`
 
 	// Extra configuration options for jobservices
@@ -109,14 +108,13 @@ type HarborClusterSpec struct {
 
 	// Storage service configurations. Might be external cloud storage services or inCluster storage (minIO)
 	// +kubebuilder:validation:Required
-	Stroage *Storage `json:"storage"`
+	Storage *Storage `json:"storage"`
 }
 
-// +kubebuilder:validation:Enum=Lion;Wolf;Dragon
 type Storage struct {
 	// set the kind of which storage service to be used. Set the kind as "azure", "gcs", "s3", "oss", "swift" or "inCluster", and fill the information.
 	// in the options section. inCluster indicates the local storage service of harbor-cluster. We use minIO as a default built-in object storage service.
-	// +kubebuilder:validation:Enum=inCLuster;azure;gcs;s3;oss;swift
+	// +kubebuilder:validation:Enum=inCluster;azure;gcs;s3;oss;swift
 	Kind string `json:"kind"`
 
 	// inCLuster options.
@@ -333,7 +331,7 @@ type Clair struct {
 
 type JobService struct {
 	// +kubebuilder:validation:Required
-	Replicas string `json:"replicas"`
+	Replicas int `json:"replicas"`
 
 	// +optional
 	WorkerCount int32 `json:"workerCount"`

@@ -39,8 +39,8 @@ type HarborClusterReconciler struct {
 	RequeueAfter time.Duration
 }
 
-// +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=goharbor.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
