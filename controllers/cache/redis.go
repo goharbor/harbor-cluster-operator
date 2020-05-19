@@ -23,33 +23,16 @@ type RedisReconciler struct {
 	Labels        map[string]string
 	Name          string
 	Namespace     string
+	CRStatus      *lcm.CRStatus
 }
 
 // Reconciler implements the reconcile logic of redis service
 func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
-	//redis.Labels = redis.NewLabels()
-	//redis.Name = redis.GetHarborClusterName()
-	//redis.Namespace = redis.GetHarborClusterNamespace()
-
-	crStatus, err := redis.Provision()
-	if err != nil {
-		return crStatus, err
-	}
 	return nil, nil
 }
 
 func (redis *RedisReconciler) Provision() (*lcm.CRStatus, error) {
-	// TODO
-	//crStatus, err := redis.Deploy(crStatus)
-	//if err != nil {
-	//	return crStatus, err
-	//}
-	//
-	//crStatus, err = redis.Readiness(crStatus)
-	//if err != nil {
-	//	return crStatus, err
-	//}
-	return nil, nil
+	panic("implement me")
 }
 
 func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
