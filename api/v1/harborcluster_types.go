@@ -184,10 +184,10 @@ type Swift struct {
 	Chunksize           string   `json:"chunksize,omitempty"`
 	Prefix              string   `json:"prefix,omitempty"`
 	Secretkey           string   `json:"secretkey,omitempty"`
-	Authversion         int      `json:"authversion,omitempty"`
-	Endpointtype        string   `json:"endpointtype,omitempty"`
-	Tempurlcontainerkey bool     `json:"tempurlcontainerkey,omitempty"`
-	Tempurlmethods      string `json:"tempurlmethods,omitempty"`
+	AuthVersion         int      `json:"authversion,omitempty"`
+	EndpointType        string   `json:"endpointtype,omitempty"`
+	TempurlContainerkey bool     `json:"tempurlcontainerkey,omitempty"`
+	TempurlMethods      string `json:"tempurlmethods,omitempty"`
 }
 
 type S3 struct {

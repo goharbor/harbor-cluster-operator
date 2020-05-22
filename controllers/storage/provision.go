@@ -21,11 +21,11 @@ const (
 	GcsSecret                   = "gcsSecret"
 	SwiftSecret                 = "swiftSecret"
 	OssSecret                   = "ossSecret"
-	//DefaultCredsSecret          = "minio-creds-secret"
-	//DefaultMcsSecret            = "minio-mcs-secret"
-	//CredsAccesskey              = "bWluaW8="
-	//CredsSecretkey              = "bWluaW8xMjM="
-	//DefaultZone                 = "zone-harbor"
+	DefaultCredsSecret          = "minio-creds-secret"
+	DefaultMcsSecret            = "minio-mcs-secret"
+	CredsAccesskey              = "bWluaW8="
+	CredsSecretkey              = "bWluaW8xMjM="
+	DefaultZone                 = "zone-harbor"
 )
 
 func (m *MinIOReconciler) ProvisionS3() (*lcm.Properties, error) {
@@ -208,10 +208,10 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Insecureskipverify)),
 			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
 			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.Secretkey),
-			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.Authversion)),
-			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.Endpointtype),
-			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Tempurlcontainerkey)),
-			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.Tempurlmethods),
+			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.AuthVersion)),
+			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.EndpointType),
+			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey)),
+			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.TempurlMethods),
 			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.Chunksize)},
 	}
 }
