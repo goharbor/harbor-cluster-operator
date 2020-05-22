@@ -15,7 +15,7 @@ func (postgresql *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (postgresql *PostgreSQLReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (postgresql *PostgreSQLReconciler) Provision() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 

@@ -208,7 +208,7 @@ storage:
         requests:
           memory: 512Mi
           cpu: 250m
-        limit:
+        limits:
           memory: 512Mi
           cpu: 250m
 ```
