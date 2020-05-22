@@ -20,6 +20,7 @@ const (
 	AzureSecret                 = "azureSecret"
 	GcsSecret                   = "gcsSecret"
 	SwiftSecret                 = "swiftSecret"
+	OssSecret                   = "ossSecret"
 	//DefaultCredsSecret          = "minio-creds-secret"
 	//DefaultMcsSecret            = "minio-mcs-secret"
 	//CredsAccesskey              = "bWluaW8="
@@ -170,11 +171,11 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 }
 
 func (m *MinIOReconciler) ProvisionOss() (*lcm.Properties, error) {
-	OssSecret := m.generateOssSecret()
-	err := m.KubeClient.Create(m.Ctx, OssSecret)
+	ossSecret := m.generateOssSecret()
+	err := m.KubeClient.Create(m.Ctx, ossSecret)
 	p := &lcm.Property{
-		Name:  SwiftSecret,
-		Value: OssSecret.Name,
+		Name:  OssSecret,
+		Value: ossSecret.Name,
 	}
 	properties := &lcm.Properties{p}
 	return properties, err
