@@ -6,7 +6,7 @@ import v1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 
 type Controller interface {
 	// Provision the new dependent service by the related section of cluster spec.
-	Provision(spec *v1.HarborCluster) (*CRStatus, error)
+	Provision() (*CRStatus, error)
 
 	// Delete the service
 	Delete() (*CRStatus, error)

@@ -31,7 +31,7 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (redis *RedisReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (redis *RedisReconciler) Provision() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
