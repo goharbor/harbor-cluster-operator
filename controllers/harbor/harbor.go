@@ -26,13 +26,12 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	err := harbor.Get(harbor.Ctx, harbor.getHarborCRNamespacedName(), &harborCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return harbor.Provision(harbor.HarborCluster)
+			return harbor.Provision()
 		} else {
 			// TODO given clear reason and message.
 			return harborCRNotReadyStatus("", ""), err
 		}
 	}
-
 	return nil, nil
 }
 

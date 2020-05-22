@@ -20,7 +20,8 @@ adminPasswordSecret: adminSecret
 tlsSecret: tlsSecret
 
 # certificate issuers
-certificateIssuerRef: cert_issuer
+certificateIssuerRef: 
+  name: cert_issuer
 
 paused: false
 
@@ -207,7 +208,7 @@ storage:
         requests:
           memory: 512Mi
           cpu: 250m
-        limit:
+        limits:
           memory: 512Mi
           cpu: 250m
 ```

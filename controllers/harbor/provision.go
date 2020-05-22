@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (harbor *HarborReconciler) Provision(harborCluster *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
 	harborCR := harbor.newHarborCR()
 	err := harbor.Client.Create(harbor.Ctx, harborCR)
 	if err != nil {
