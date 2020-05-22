@@ -16,7 +16,7 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return nil, nil
 }
 
-func (harbor *HarborReconciler) Provision(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
