@@ -24,6 +24,8 @@ type RedisReconciler struct {
 	Name          string
 	Namespace     string
 	CRStatus      *lcm.CRStatus
+	RedisConnect  *RedisConnect
+	Properties    *lcm.Properties
 }
 
 // Reconciler implements the reconcile logic of redis service
