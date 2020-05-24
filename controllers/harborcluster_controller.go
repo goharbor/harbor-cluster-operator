@@ -59,19 +59,19 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	cacheStatus, err := r.Cache(&harborCluster).Reconcile()
+	cacheStatus, err := r.Cache(ctx, &harborCluster, nil).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile cache component.")
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(&harborCluster).Reconcile()
+	dbStatus, err := r.Database(ctx, &harborCluster, nil).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(&harborCluster).Reconcile()
+	storageStatus, err := r.Storage(ctx, &harborCluster, nil).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err
@@ -90,7 +90,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		}, err
 	}
 
-	harborStatus, err := r.Harbor(&harborCluster, componentToStatus).Reconcile()
+	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, nil).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err

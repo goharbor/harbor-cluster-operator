@@ -245,10 +245,10 @@ type MinIOSpec struct {
 }
 
 type PostgresSQL struct {
-	Storage          string              `json:"storage,omitempty"`
-	Replicas         int                 `json:"replicas,omitempty"`
-	Version          string              `json:"version,omitempty"`
-	StorageClassName string              `json:"storageClassName,omitempty"`
+	Storage          string                      `json:"storage,omitempty"`
+	Replicas         int                         `json:"replicas,omitempty"`
+	Version          string                      `json:"version,omitempty"`
+	StorageClassName string                      `json:"storageClassName,omitempty"`
 	Resources        corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// External params following.
@@ -304,9 +304,9 @@ type Sentinel struct {
 }
 
 type RedisServer struct {
-	Replicas         int                 `json:"replicas,omitempty"`
+	Replicas         int                         `json:"replicas,omitempty"`
 	Resources        corev1.ResourceRequirements `json:"resources,omitempty"`
-	StorageClassName string              `json:"storageClassName,omitempty"`
+	StorageClassName string                      `json:"storageClassName,omitempty"`
 	// the size of storage used in redis.
 	Storage string `json:"storage,omitempty"`
 }
