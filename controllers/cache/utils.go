@@ -178,8 +178,8 @@ func (redis *RedisReconciler) GetHarborClusterNamespace() string {
 // GetRedisResource returns redis resource
 func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 	resources := corev1.ResourceList{}
-	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Cpu()
-	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Memory()
+	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
+	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
 	if cpu != nil {
 		resources[corev1.ResourceCPU] = *cpu
 	}
