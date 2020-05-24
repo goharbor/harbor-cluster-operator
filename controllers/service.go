@@ -52,6 +52,7 @@ func (impl *ServiceGetterImpl) Cache(ctx context.Context, harborCluster *goharbo
 		Log:           options.Log,
 		DClient:       options.DClient,
 		Scheme:        options.Scheme,
+		Properties:    &lcm.Properties{},
 	}
 }
 
