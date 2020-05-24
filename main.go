@@ -78,13 +78,8 @@ func main() {
 		Log:           ctrl.Log.WithName("controllers").WithName("HarborCluster"),
 		Scheme:        mgr.GetScheme(),
 		RequeueAfter:  requeueAfter,
-		ServiceGetter: &controllers.ServiceGetterImpl{
-			Client:   k8s.WrapClient(mgr.GetClient()),
-			Recorder: mgr.GetEventRecorderFor("HarborCluster-Controller"),
-			Log:      ctrl.Log.WithName("controllers").WithName("HarborCluster"),
-			DClient:  k8s.WrapDClient(dClient),
-			Scheme:   mgr.GetScheme(),
-		},
+		ServiceGetter: &controllers.ServiceGetterImpl{},
+		Recorder:      mgr.GetEventRecorderFor("HarborCluster-Controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
