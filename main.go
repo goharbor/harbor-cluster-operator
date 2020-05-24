@@ -67,11 +67,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	dClient, err := k8s.NewDynamicClient()
-	if err != nil {
-		setupLog.Error(err, "unable to create dynamic client")
-		os.Exit(1)
-	}
 
 	if err = (&controllers.HarborClusterReconciler{
 		Client:        mgr.GetClient(),
