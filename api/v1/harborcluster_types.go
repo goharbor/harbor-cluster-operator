@@ -98,6 +98,10 @@ type HarborClusterSpec struct {
 	// +kubebuilder:validation:Optional
 	ChartMuseum *ChartMuseum `json:"chartMuseum,omitempty"`
 
+	// Extra configuration options for notary
+	// +kubebuilder:validation:Optional
+	Notary *Notary `json:"notary,omitempty"`
+
 	// Cache service(Redis) configurations might be external redis services or inCluster redis services
 	// +kubebuilder:validation:Required
 	Redis *Redis `json:"redis"`
@@ -327,6 +331,12 @@ type ImageSource struct {
 type Clair struct {
 	UpdateInterval       int      `json:"updateInterval,omitempty"`
 	VulnerabilitySources []string `json:"vulnerabilitySources,omitempty"`
+}
+
+type Notary struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern="^https?://.*$"
+	PublicURL string `json:"publicUrl"`
 }
 
 type JobService struct {
