@@ -141,8 +141,33 @@ func (harbor *HarborReconciler) newClairComponentIfNecessary() *v1alpha1.ClairCo
 }
 
 // newNotaryComponentIfNecessary will return a NotaryComponent in harbor CRD.
-// TODO our HarborCluster CRD not define Notary spec.
 func (harbor *HarborReconciler) newNotaryComponentIfNecessary() *v1alpha1.NotaryComponent {
+	if harbor.HarborCluster.Spec.Notary != nil {
+		return &v1alpha1.NotaryComponent{
+			PublicURL: harbor.HarborCluster.Spec.Notary.PublicURL,
+			DBMigrator: v1alpha1.NotaryDBMigrator{
+				Image: harbor.ImageGetter.NotaryDBMigratorImage(),
+			},
+			Signer: v1alpha1.NotarySignerComponent{
+				HarborDeployment: v1alpha1.HarborDeployment{
+					Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
+					Image:            harbor.ImageGetter.NotarySingerImage(),
+					NodeSelector:     nil,
+					ImagePullSecrets: harbor.getImagePullSecrets(),
+				},
+				DatabaseSecret: harbor.getNotarySignerDatabaseSecret(),
+			},
+			Server: v1alpha1.NotaryServerComponent{
+				HarborDeployment: v1alpha1.HarborDeployment{
+					Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
+					Image:            harbor.ImageGetter.NotaryServerImage(),
+					NodeSelector:     nil,
+					ImagePullSecrets: harbor.getImagePullSecrets(),
+				},
+				DatabaseSecret: harbor.getNotaryServerDatabaseSecret(),
+			},
+		}
+	}
 	return nil
 }
 
