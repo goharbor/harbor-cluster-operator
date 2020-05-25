@@ -1,7 +1,6 @@
 package harbor
 
 import (
-	"fmt"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
@@ -55,11 +54,10 @@ func (harbor *HarborReconciler) newCoreComponentIfNecessary() *v1alpha1.CoreComp
 	return &v1alpha1.CoreComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.getCoreComponentImage(),
+			Image:            harbor.ImageGetter.CoreImage(),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
-		DatabaseSecret: harbor.getCoreDatabaseSecret(),
 	}
 }
 
@@ -67,7 +65,7 @@ func (harbor *HarborReconciler) newPortalComponentIfNecessary() *v1alpha1.Portal
 	return &v1alpha1.PortalComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.getCoreComponentImage(),
+			Image:            harbor.ImageGetter.PortalImage(),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
@@ -78,12 +76,12 @@ func (harbor *HarborReconciler) newRegistryComponentIfNecessary() *v1alpha1.Regi
 	return &v1alpha1.RegistryComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.getRegistryComponentImage(),
+			Image:            harbor.ImageGetter.RegistryImage(),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 		Controller: v1alpha1.RegistryControllerComponent{
-			Image: harbor.getRegistryControllerComponentImage(),
+			Image: harbor.ImageGetter.RegistryControllerImage(),
 		},
 		StorageSecret: harbor.getRegistryStorageSecret(),
 		CacheSecret:   harbor.getRegistryCacheSecret(),
@@ -95,7 +93,7 @@ func (harbor *HarborReconciler) newJobServiceComponentIfNecessary() *v1alpha1.Jo
 		return &v1alpha1.JobServiceComponent{
 			HarborDeployment: v1alpha1.HarborDeployment{
 				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.getJobServiceComponentImage(),
+				Image:            harbor.ImageGetter.JobServiceImage(),
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
@@ -111,7 +109,7 @@ func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.C
 		return &v1alpha1.ChartMuseumComponent{
 			HarborDeployment: v1alpha1.HarborDeployment{
 				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.getChartMuseumComponentImage(),
+				Image:            harbor.ImageGetter.ChartMuseumImage(),
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
@@ -127,14 +125,14 @@ func (harbor *HarborReconciler) newClairComponentIfNecessary() *v1alpha1.ClairCo
 		return &v1alpha1.ClairComponent{
 			HarborDeployment: v1alpha1.HarborDeployment{
 				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.getClairComponentImage(),
+				Image:            harbor.ImageGetter.ClairImage(),
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
 			DatabaseSecret:       harbor.getClairDatabaseSecret(),
 			VulnerabilitySources: harbor.HarborCluster.Spec.Clair.VulnerabilitySources,
 			Adapter: v1alpha1.ClairAdapterComponent{
-				Image:       harbor.getClairAdapterComponentImage(),
+				Image:       harbor.ImageGetter.ClairAdapterImage(),
 				RedisSecret: harbor.getClairCacheSecret(),
 			},
 		}
@@ -267,48 +265,6 @@ func (harbor *HarborReconciler) getProperty(component goharborv1.Component, name
 		return nil
 	}
 	return crStatus.Properties.Get(name)
-}
-
-func (harbor *HarborReconciler) getCoreComponentImage() *string {
-	return harbor.getComponentImage("goharbor/harbor-core")
-}
-
-func (harbor *HarborReconciler) getPortalComponentImage() *string {
-	return harbor.getComponentImage("goharbor/harbor-portal")
-}
-
-func (harbor *HarborReconciler) getRegistryComponentImage() *string {
-	return harbor.getComponentImage("goharbor/registry-photon")
-}
-
-func (harbor *HarborReconciler) getRegistryControllerComponentImage() *string {
-	return harbor.getComponentImage("goharbor/harbor-registry")
-}
-
-func (harbor *HarborReconciler) getJobServiceComponentImage() *string {
-	return harbor.getComponentImage("goharbor/harbor-jobservice")
-}
-
-func (harbor *HarborReconciler) getChartMuseumComponentImage() *string {
-	return harbor.getComponentImage("goharbor/chartmuseum-photon")
-}
-
-func (harbor *HarborReconciler) getClairComponentImage() *string {
-	return harbor.getComponentImage("holyhope/clair-adapter-with-config")
-}
-
-func (harbor *HarborReconciler) getClairAdapterComponentImage() *string {
-	return harbor.getComponentImage("goharbor/clair-photon")
-}
-
-func (harbor *HarborReconciler) getComponentImage(imageRepo string) *string {
-	var image string
-	if harbor.HarborCluster.Spec.ImageSource == nil && harbor.HarborCluster.Spec.ImageSource.Registry == "" {
-		image = fmt.Sprintf("%s:%s", imageRepo, harbor.HarborCluster.Spec.Version)
-	} else {
-		image = fmt.Sprintf("%s/%s:%s", harbor.HarborCluster.Spec.ImageSource.Registry, imageRepo, harbor.HarborCluster.Spec.Version)
-	}
-	return &image
 }
 
 func (harbor *HarborReconciler) getImagePullSecrets() []corev1.LocalObjectReference {
