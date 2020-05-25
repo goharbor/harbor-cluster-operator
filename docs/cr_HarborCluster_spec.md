@@ -57,6 +57,7 @@ trivy:
 chartMuseum:
   absoluteURL: true
 
+# extra configuration options for notary
 notary:
   publicURL: "http://.."  
   
