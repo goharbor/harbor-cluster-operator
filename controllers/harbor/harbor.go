@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type HarborReconciler struct {
-	client.Client
+	k8s.Client
 	Ctx                 context.Context
 	HarborCluster       *goharborv1.HarborCluster
 	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
@@ -23,7 +23,7 @@ type HarborReconciler struct {
 // Reconciler implements the reconcile logic of services
 func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	var harborCR v1alpha1.Harbor
-	err := harbor.Get(harbor.Ctx, harbor.getHarborCRNamespacedName(), &harborCR)
+	err := harbor.Get(harbor.getHarborCRNamespacedName(), &harborCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return harbor.Provision()

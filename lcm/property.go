@@ -45,6 +45,16 @@ func (ps Properties) Update(Name string, Value interface{}) {
 	}
 }
 
+//Get retrieves properties according to the given name
+func (ps Properties) Get(Name string) *Property {
+	for _, p := range ps {
+		if p.Name == Name {
+			return p
+		}
+	}
+	return nil
+}
+
 //ToInt parse properties value to int type
 func (p *Property) ToInt() int {
 	if p.Value != nil {
