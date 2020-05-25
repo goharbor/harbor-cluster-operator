@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
@@ -17,6 +18,7 @@ type HarborReconciler struct {
 	k8s.Client
 	Ctx                 context.Context
 	HarborCluster       *goharborv1.HarborCluster
+	ImageGetter         image.ImageGetter
 	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
 }
 
