@@ -67,6 +67,8 @@ func (redis *RedisReconciler) Readiness() error {
 			return err
 		}
 	}
+
+	redis.CRStatus = cacheReadyStatus(redis.Properties)
 	return nil
 }
 
@@ -89,11 +91,12 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 		if err != nil {
 			return err
 		}
-
-		redis.Properties.New(component, secretName)
+		redis.Properties = redis.Properties.New(component, secretName)
 	} else if err != nil {
 		return err
 	}
+
+	redis.Properties = redis.Properties.New(component, secretName)
 
 	return nil
 }
@@ -191,6 +194,7 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	if err != nil {
 		return nil, err
 	}
+	redis.Log.Info("Redis password.", "password", password)
 
 	_, sentinelPodList, err := redis.GetDeploymentPods()
 	if err != nil {
@@ -250,7 +254,7 @@ func cacheReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
 	return &lcm.CRStatus{
 		Condition: goharborv1.HarborClusterCondition{
 			Type:               goharborv1.CacheReady,
-			Status:             corev1.ConditionFalse,
+			Status:             corev1.ConditionTrue,
 			LastTransitionTime: metav1.Now(),
 			Reason:             "reason",
 			Message:            "cache already ready",
