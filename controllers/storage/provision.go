@@ -50,6 +50,9 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -90,6 +93,9 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -122,6 +128,9 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -154,6 +163,9 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -192,6 +204,9 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -217,8 +232,16 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
-	//mcsSecret := m.generateMcsSecret()
-	//credsSecret := m.generateCredsSecret()
+	mcsSecret := m.generateMcsSecret()
+	err := m.KubeClient.Create(m.Ctx,mcsSecret)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason2, err.Error()), err
+	}
+	credsSecret := m.generateCredsSecret()
+	err = m.KubeClient.Create(m.Ctx,credsSecret)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason2, err.Error()), err
+	}
 
 	panic("implement me")
 }
@@ -270,7 +293,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 					Value: "on",
 				},
 			},
-			Resources: *m.getResourceRequirements(), //m.HarborCluster.Spec.Stroage.InCluster.Spec.Resources,
+			Resources: *m.getResourceRequirements(), //m.HarborCluster.Spec.Storage.InCluster.Spec.Resources,
 			Liveness: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
@@ -301,7 +324,13 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 
 func (m *MinIOReconciler) getResourceRequirements() *corev1.ResourceRequirements {
 	// TODO
-	return nil
+	if m.HarborCluster.Spec.Storage.InCluster.Spec.Resources != nil {
+		return &m.HarborCluster.Spec.Storage.InCluster.Spec.Resources
+	}
+	return &corev1.ResourceRequirements{
+		Limits: nil,
+		Requests: nil,
+	}
 }
 
 func (m *MinIOReconciler) getVolumeClaimTemplate() *corev1.PersistentVolumeClaim {
@@ -336,6 +365,9 @@ func (m *MinIOReconciler) generateMcsSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		// TODO
@@ -358,6 +390,9 @@ func (m *MinIOReconciler) generateCredsSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
