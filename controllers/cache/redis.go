@@ -30,11 +30,29 @@ type RedisReconciler struct {
 
 // Reconciler implements the reconcile logic of redis service
 func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
-	return nil, nil
+	redis.Labels = redis.NewLabels()
+	redis.Name = redis.GetHarborClusterName()
+	redis.Namespace = redis.GetHarborClusterNamespace()
+	redis.Client.WithContext(redis.CXT)
+	redis.DClient.WithContext(redis.CXT)
+
+	crStatus, err := redis.Provision()
+	if err != nil {
+		return crStatus, err
+	}
+
+	return crStatus, nil
 }
 
 func (redis *RedisReconciler) Provision() (*lcm.CRStatus, error) {
-	panic("implement me")
+	if err := redis.Deploy(); err != nil {
+		return redis.CRStatus, err
+	}
+
+	if err := redis.Readiness(); err != nil {
+		return redis.CRStatus, err
+	}
+	return redis.CRStatus, nil
 }
 
 func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
