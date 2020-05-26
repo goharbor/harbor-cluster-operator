@@ -28,6 +28,44 @@ const (
 	DefaultZone                 = "zone-harbor"
 )
 
+func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
+	switch m.HarborCluster.Spec.Storage.Kind {
+	case azureStorage:
+		properties,err := m.ProvisionAzure()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	case gcsStorage:
+		properties,err := m.ProvisionGcs()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	case s3Storage:
+		properties,err := m.ProvisionS3()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	case swiftStorage:
+		properties,err := m.ProvisionSwift()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	case ossStorage:
+		properties, err := m.ProvisionOss()
+		if err != nil {
+			minioNotReadyStatus(ErrorReason1, err.Error())
+		}
+		return minioReadyStatus(properties), nil
+	default:
+		return minioNotReadyStatus(ErrorReason3, ErrorReason3),nil
+	}
+}
+
+
 func (m *MinIOReconciler) ProvisionS3() (*lcm.Properties, error) {
 	s3Secret := m.generateS3Secret()
 	err := m.KubeClient.Create(m.Ctx, s3Secret)
@@ -233,12 +271,12 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	mcsSecret := m.generateMcsSecret()
-	err := m.KubeClient.Create(m.Ctx,mcsSecret)
+	err := m.KubeClient.Create(m.Ctx, mcsSecret)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	}
 	credsSecret := m.generateCredsSecret()
-	err = m.KubeClient.Create(m.Ctx,credsSecret)
+	err = m.KubeClient.Create(m.Ctx, credsSecret)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	}
@@ -324,11 +362,11 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 
 func (m *MinIOReconciler) getResourceRequirements() *corev1.ResourceRequirements {
 	// TODO
-	if m.HarborCluster.Spec.Storage.InCluster.Spec.Resources != nil {
-		return &m.HarborCluster.Spec.Storage.InCluster.Spec.Resources
-	}
+	//if m.HarborCluster.Spec.Storage.InCluster.Spec.Resources != nil {
+	//	return &m.HarborCluster.Spec.Storage.InCluster.Spec.Resources
+	//}
 	return &corev1.ResourceRequirements{
-		Limits: nil,
+		Limits:   nil,
 		Requests: nil,
 	}
 }
@@ -340,8 +378,7 @@ func (m *MinIOReconciler) getVolumeClaimTemplate() *corev1.PersistentVolumeClaim
 
 // TODO
 func (m *MinIOReconciler) getLabels() map[string]string {
-	// TODO
-	return nil
+	return map[string]string{"app": "harbor-cluster", "type": "storage"}
 }
 
 func (m *MinIOReconciler) generateAnnotations() map[string]string {

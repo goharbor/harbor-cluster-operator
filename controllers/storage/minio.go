@@ -35,52 +35,20 @@ type MinIOReconciler struct {
 
 // Reconciler implements the reconcile logic of minIO service
 func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
-	// TODO
 	var minioCR minio.MinIOInstance
 
-	switch m.HarborCluster.Spec.Storage.Kind {
-	case inClusterStorage:
-		// TODO external storage service
-		err := m.KubeClient.Get(m.Ctx, m.getminIONamespacedName(), &minioCR)
-		if k8serror.IsNotFound(err) {
-			return m.Provision()
-		} else if err != nil {
-			return minioNotReadyStatus(ErrorReason0, err.Error()), err
-		}
-	case azureStorage:
-		properties,err := m.ProvisionAzure()
-		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case gcsStorage:
-		properties,err := m.ProvisionGcs()
-		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case s3Storage:
-		properties,err := m.ProvisionS3()
-		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case swiftStorage:
-		properties,err := m.ProvisionSwift()
-		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case ossStorage:
-		properties, err := m.ProvisionOss()
-		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	default:
-		// TODO
-		return nil, nil
+	if m.HarborCluster.Spec.Storage.Kind != inClusterStorage {
+		return m.ProvisionExternalStorage()
 	}
+
+	err := m.KubeClient.Get(m.Ctx, m.getminIONamespacedName(), &minioCR)
+	if k8serror.IsNotFound(err) {
+		return m.Provision()
+	} else if err != nil {
+		return minioNotReadyStatus(ErrorReason0, err.Error()), err
+	}
+
+
 	return nil, nil
 }
 

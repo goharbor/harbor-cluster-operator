@@ -6,5 +6,5 @@ const (
 	ErrorReason0 = "Get minIO error"
 	ErrorReason1 = "Create storage secret error"
 	ErrorReason2 = "Create secret error"
-	ErrorReason3 = ""
+	ErrorReason3 = "The type of storage are not supported"
 )
