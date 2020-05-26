@@ -113,7 +113,6 @@ func (redis *RedisReconciler) generateHarborCacheSecret(component, secretName, u
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: redis.Namespace,
-			Labels:    redis.Labels,
 		},
 		StringData: map[string]string{
 			"url":       url,
