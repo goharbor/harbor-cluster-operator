@@ -4,6 +4,8 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"reflect"
 	"strconv"
 
 	//minio "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
@@ -31,25 +33,25 @@ const (
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 	switch m.HarborCluster.Spec.Storage.Kind {
 	case azureStorage:
-		properties,err := m.ProvisionAzure()
+		properties, err := m.ProvisionAzure()
 		if err != nil {
 			minioNotReadyStatus(ErrorReason1, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case gcsStorage:
-		properties,err := m.ProvisionGcs()
+		properties, err := m.ProvisionGcs()
 		if err != nil {
 			minioNotReadyStatus(ErrorReason1, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case s3Storage:
-		properties,err := m.ProvisionS3()
+		properties, err := m.ProvisionS3()
 		if err != nil {
 			minioNotReadyStatus(ErrorReason1, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case swiftStorage:
-		properties,err := m.ProvisionSwift()
+		properties, err := m.ProvisionSwift()
 		if err != nil {
 			minioNotReadyStatus(ErrorReason1, err.Error())
 		}
@@ -61,10 +63,9 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 		}
 		return minioReadyStatus(properties), nil
 	default:
-		return minioNotReadyStatus(ErrorReason3, ErrorReason3),nil
+		return minioNotReadyStatus(ErrorReason3, ErrorReason3), nil
 	}
 }
-
 
 func (m *MinIOReconciler) ProvisionS3() (*lcm.Properties, error) {
 	s3Secret := m.generateS3Secret()
@@ -281,6 +282,8 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	}
 
+	//service := m.generateService()
+
 	panic("implement me")
 }
 
@@ -361,22 +364,43 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 }
 
 func (m *MinIOReconciler) getResourceRequirements() *corev1.ResourceRequirements {
-	// TODO
-	//if m.HarborCluster.Spec.Storage.InCluster.Spec.Resources != nil {
-	//	return &m.HarborCluster.Spec.Storage.InCluster.Spec.Resources
-	//}
+	isEmpty := reflect.DeepEqual(m.HarborCluster.Spec.Storage.InCluster.Spec.Resources, corev1.ResourceRequirements{})
+	if !isEmpty {
+		return &m.HarborCluster.Spec.Storage.InCluster.Spec.Resources
+	}
+	limits := map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    resource.MustParse("250m"),
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+	}
+	requests := map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    resource.MustParse("250m"),
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+	}
 	return &corev1.ResourceRequirements{
-		Limits:   nil,
-		Requests: nil,
+		Limits:   limits,
+		Requests: requests,
 	}
 }
 
 func (m *MinIOReconciler) getVolumeClaimTemplate() *corev1.PersistentVolumeClaim {
-	// TODO
-	return nil
+	isEmpty := reflect.DeepEqual(m.HarborCluster.Spec.Storage.InCluster.Spec.VolumeClaimTemplate, corev1.PersistentVolumeClaim{})
+	if !isEmpty {
+		return &m.HarborCluster.Spec.Storage.InCluster.Spec.VolumeClaimTemplate
+	}
+	defaultStorageClass := "default"
+	return &corev1.PersistentVolumeClaim{
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: &defaultStorageClass,
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.ResourceRequirements{
+				Requests: map[corev1.ResourceName]resource.Quantity{
+					corev1.ResourceStorage: resource.MustParse("10Gi"),
+				},
+			},
+		},
+	}
 }
 
-// TODO
 func (m *MinIOReconciler) getLabels() map[string]string {
 	return map[string]string{"app": "harbor-cluster", "type": "storage"}
 }
@@ -407,7 +431,6 @@ func (m *MinIOReconciler) generateMcsSecret() *corev1.Secret {
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
-		// TODO
 		Data: map[string][]byte{
 			"mcshmacjwt":         []byte("WU9VUkpXVFNJR05JTkdTRUNSRVQ="),
 			"mcspbkdfpassphrase": []byte("U0VDUkVU"),
