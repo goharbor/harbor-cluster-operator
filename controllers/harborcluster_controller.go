@@ -89,13 +89,17 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		}, err
 	}
 
-	var imageGetter *image.ImageGetter
-	if harborCluster.Spec.ImageSource != nil {
-		imageGetter = image.NewImageGetter(&harborCluster.Spec.ImageSource.Registry, harborCluster.Spec.Version)
-	} else {
-		imageGetter = image.NewImageGetter(nil, harborCluster.Spec.Version)
+	getRegistry := func() *string {
+		if harborCluster.Spec.ImageSource != nil && harborCluster.Spec.ImageSource.Registry != "" {
+			return &harborCluster.Spec.ImageSource.Registry
+		}
+		return nil
 	}
-
+	var imageGetter image.ImageGetter
+	if imageGetter, err = image.NewImageGetterImpl(getRegistry(), harborCluster.Spec.Version); err != nil {
+		log.Error(err, "error when create ImageGetter.")
+		return ctrl.Result{}, err
+	}
 	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, &GetOptions{
 		ImageGetter: imageGetter,
 	}).Reconcile()
