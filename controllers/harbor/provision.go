@@ -293,10 +293,10 @@ func (harbor *HarborReconciler) getProperty(component goharborv1.Component, name
 }
 
 func (harbor *HarborReconciler) getImagePullSecrets() []corev1.LocalObjectReference {
-	if harbor.HarborCluster.Spec.ImageSource != nil {
-		return []corev1.LocalObjectReference{{
-			harbor.HarborCluster.Spec.ImageSource.ImagePullSecret,
-		}}
+	if harbor.HarborCluster.Spec.ImageSource != nil && harbor.HarborCluster.Spec.ImageSource.ImagePullSecret != "" {
+		return []corev1.LocalObjectReference{
+			{Name: harbor.HarborCluster.Spec.ImageSource.ImagePullSecret},
+		}
 	}
 	return nil
 }
