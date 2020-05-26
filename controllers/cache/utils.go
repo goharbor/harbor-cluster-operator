@@ -5,7 +5,6 @@ import (
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	labels1 "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -83,25 +82,11 @@ func (redis *RedisReconciler) GetRedisPassword() (string, error) {
 // GetRedisSecret returns the Redis Password Secret
 func (redis *RedisReconciler) GetRedisSecret() (map[string][]byte, error) {
 	secret := &corev1.Secret{}
-
 	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
 	if err != nil {
 		return nil, err
 	}
-	opts := &client.ListOptions{}
-	set := labels.SelectorFromSet(secret.Labels)
-	opts.LabelSelector = set
-
-	sc := &corev1.SecretList{}
-	err = redis.Client.List(opts, sc)
-	if err != nil {
-		return nil, err
-	}
-	var redisPw map[string][]byte
-	for _, rp := range sc.Items {
-		redisPw = rp.Data
-	}
-
+	redisPw := secret.Data
 	return redisPw, nil
 }
 
@@ -178,6 +163,7 @@ func (redis *RedisReconciler) GetHarborClusterNamespace() string {
 // GetRedisResource returns redis resource
 func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 	resources := corev1.ResourceList{}
+
 	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
 	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
 	if cpu != nil {
