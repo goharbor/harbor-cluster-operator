@@ -28,6 +28,7 @@ const (
 	CredsAccesskey              = "bWluaW8="
 	CredsSecretkey              = "bWluaW8xMjM="
 	DefaultZone                 = "zone-harbor"
+	DefaultMinIOService         = "minio-service"
 )
 
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
@@ -271,18 +272,30 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
-	mcsSecret := m.generateMcsSecret()
-	err := m.KubeClient.Create(m.Ctx, mcsSecret)
+	// TODO remove mcs secret ref https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml
+	//mcsSecret := m.generateMcsSecret()
+	//err := m.KubeClient.Create(m.Ctx, mcsSecret)
+	//if err != nil {
+	//	return minioNotReadyStatus(ErrorReason2, err.Error()), err
+	//}
+	credsSecret := m.generateCredsSecret()
+	err := m.KubeClient.Create(m.Ctx, credsSecret)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	}
-	credsSecret := m.generateCredsSecret()
-	err = m.KubeClient.Create(m.Ctx, credsSecret)
+	service := m.generateService()
+	err = m.KubeClient.Create(m.Ctx, service)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason2, err.Error()), err
+		return minioNotReadyStatus(ErrorReason4, err.Error()), err
 	}
 
-	//service := m.generateService()
+	minio := m.generateMinIOCR()
+	err = m.KubeClient.Create(m.Ctx, minio)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+	}
+
+	return minioUnknownStatus(), nil
 
 	panic("implement me")
 }
@@ -294,8 +307,10 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 			APIVersion: ApiVersion,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.HarborCluster.Name,
-			Namespace: m.HarborCluster.Namespace,
+			Name:        m.HarborCluster.Name,
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      m.getLabels(),
+			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
 			},
@@ -402,7 +417,7 @@ func (m *MinIOReconciler) getVolumeClaimTemplate() *corev1.PersistentVolumeClaim
 }
 
 func (m *MinIOReconciler) getLabels() map[string]string {
-	return map[string]string{"app": "harbor-cluster", "type": "storage"}
+	return map[string]string{"type": "harbor-cluster-minio", "app": "minio"}
 }
 
 func (m *MinIOReconciler) generateAnnotations() map[string]string {
@@ -410,9 +425,33 @@ func (m *MinIOReconciler) generateAnnotations() map[string]string {
 	return nil
 }
 
-func (m *MinIOReconciler) generateService() *minio.MinIOInstance {
-	// TODO
-	return nil
+func (m *MinIOReconciler) generateService() *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        m.HarborCluster.Name + "-" + DefaultMinIOService,
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      m.getLabels(),
+			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     corev1.ServiceTypeClusterIP,
+			Selector: m.getLabels(),
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Port:       9000,
+					TargetPort: intstr.FromInt(9000),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
 }
 
 func (m *MinIOReconciler) generateMcsSecret() *corev1.Secret {

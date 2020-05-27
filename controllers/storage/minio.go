@@ -43,11 +43,11 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	err := m.KubeClient.Get(m.Ctx, m.getminIONamespacedName(), &minioCR)
 	if k8serror.IsNotFound(err) {
+		// TODO need test
 		return m.Provision()
 	} else if err != nil {
 		return minioNotReadyStatus(ErrorReason0, err.Error()), err
 	}
-
 
 	return nil, nil
 }
