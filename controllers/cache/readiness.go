@@ -194,7 +194,6 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	if err != nil {
 		return nil, err
 	}
-	redis.Log.Info("Redis password.", "password", password)
 
 	_, sentinelPodList, err := redis.GetDeploymentPods()
 	if err != nil {
