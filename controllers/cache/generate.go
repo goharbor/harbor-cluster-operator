@@ -54,9 +54,9 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 		},
 	}
 
-	if redis.HarborCluster.Spec.Redis.Spec.Server.Storage != "" {
-		conf.Spec.Redis.Storage.PersistentVolumeClaim = redis.generateRedisStorage(storageSize, redis.Name)
-	}
+	
+	conf.Spec.Redis.Storage.PersistentVolumeClaim = redis.generateRedisStorage(storageSize, redis.Name)
+	
 
 	mapResult, err := runtime.DefaultUnstructuredConverter.ToUnstructured(conf)
 	if err != nil {
