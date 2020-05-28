@@ -5,10 +5,10 @@ import (
 	"fmt"
 	rediscli "github.com/go-redis/redis"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
@@ -68,7 +68,11 @@ func (redis *RedisReconciler) Readiness() error {
 		}
 	}
 
-	redis.CRStatus = cacheReadyStatus(redis.Properties)
+	redis.CRStatus = lcm.New().WithType(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionTrue).
+		WithReason("redis already ready").
+		WithMessage("harbor component redis secrets are already create.").
+		WithProperties(*redis.Properties)
 	return nil
 }
 
@@ -76,6 +80,7 @@ func (redis *RedisReconciler) Readiness() error {
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace string) error {
 	secret := &corev1.Secret{}
 	secretName := fmt.Sprintf("%s-redis", component)
+	propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
 	if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
@@ -91,12 +96,12 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 		if err != nil {
 			return err
 		}
-		redis.Properties = redis.Properties.New(component, secretName)
+		redis.Properties = redis.Properties.New(propertyName, secretName)
 	} else if err != nil {
 		return err
 	}
 
-	redis.Properties = redis.Properties.New(component, secretName)
+	redis.Properties = redis.Properties.New(propertyName, secretName)
 
 	return nil
 }
@@ -120,7 +125,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace)
+			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
@@ -129,6 +134,8 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 			Password:  pw,
 			GroupName: spec.GroupName,
 		}
+
+		fmt.Println(connect)
 
 		redis.RedisConnect = connect
 		client = connect.NewRedisPool()
@@ -139,7 +146,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace)
+			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
@@ -166,7 +173,7 @@ func GetExternalRedisHost(spec *goharborv1.RedisSpec) ([]string, string) {
 		port     string
 	)
 	for _, host := range spec.Hosts {
-		sp := host.Host + ":" + host.Port
+		sp := host.Host
 		endpoint = append(endpoint, sp)
 		port = host.Port
 	}
@@ -174,10 +181,11 @@ func GetExternalRedisHost(spec *goharborv1.RedisSpec) ([]string, string) {
 }
 
 // GetExternalRedisPassword returns external redis password
-func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string) (string, error) {
+func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, client k8s.Client) (string, error) {
 	external := &RedisReconciler{
 		Name:      spec.SecretName,
 		Namespace: namespace,
+		Client:    client,
 	}
 
 	pw, err := external.GetRedisPassword()
@@ -234,30 +242,4 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	client := connect.NewRedisPool()
 
 	return client, nil
-}
-
-func cacheNotReadyStatus(reason, message string) *lcm.CRStatus {
-	return &lcm.CRStatus{
-		Condition: goharborv1.HarborClusterCondition{
-			Type:               goharborv1.CacheReady,
-			Status:             corev1.ConditionFalse,
-			LastTransitionTime: metav1.Now(),
-			Reason:             reason,
-			Message:            message,
-		},
-		Properties: nil,
-	}
-}
-
-func cacheReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
-	return &lcm.CRStatus{
-		Condition: goharborv1.HarborClusterCondition{
-			Type:               goharborv1.CacheReady,
-			Status:             corev1.ConditionTrue,
-			LastTransitionTime: metav1.Now(),
-			Reason:             "reason",
-			Message:            "cache already ready",
-		},
-		Properties: *properties,
-	}
 }
