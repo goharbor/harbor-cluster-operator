@@ -177,12 +177,26 @@ func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 
 // GetRedisServerReplica returns redis server replicas
 func (redis *RedisReconciler) GetRedisServerReplica() int32 {
+	if redis.HarborCluster.Spec.Redis.Spec.Server.Replicas == 0 {
+		return 3
+	}
 	return int32(redis.HarborCluster.Spec.Redis.Spec.Server.Replicas)
 }
 
 // GetRedisSentinelReplica returns redis sentinel replicas
 func (redis *RedisReconciler) GetRedisSentinelReplica() int32 {
+	if redis.HarborCluster.Spec.Redis.Spec.Sentinel.Replicas == 0 {
+		return 3
+	}
 	return int32(redis.HarborCluster.Spec.Redis.Spec.Sentinel.Replicas)
+}
+
+// GetRedisStorageSize returns redis server storage size
+func (redis *RedisReconciler) GetRedisStorageSize() string {
+	if redis.HarborCluster.Spec.Redis.Spec.Server.Storage == "" {
+		return "5Gi"
+	}
+	return redis.HarborCluster.Spec.Redis.Spec.Server.Storage
 }
 
 // GetPodsStatus returns deleting  and current pod list
