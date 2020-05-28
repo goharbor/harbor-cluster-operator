@@ -162,8 +162,12 @@ func (redis *RedisReconciler) GetHarborClusterNamespace() string {
 
 // GetRedisResource returns redis resource
 func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
+	
+	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
+		return GenerateResourceList("1", "2Gi")
+	}
+	
 	resources := corev1.ResourceList{}
-
 	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
 	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
 	if cpu != nil {
@@ -175,8 +179,23 @@ func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 	return resources
 }
 
+// GenerateResourceList returns resource list
+func GenerateResourceList(cpu string, memory string) corev1.ResourceList {
+	resources := corev1.ResourceList{}
+	if cpu != "" {
+		resources[corev1.ResourceCPU], _ = resource.ParseQuantity(cpu)
+	}
+	if memory != "" {
+		resources[corev1.ResourceMemory], _ = resource.ParseQuantity(memory)
+	}
+	return resources
+}
+
 // GetRedisServerReplica returns redis server replicas
 func (redis *RedisReconciler) GetRedisServerReplica() int32 {
+	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
+		return 3
+	}
 	if redis.HarborCluster.Spec.Redis.Spec.Server.Replicas == 0 {
 		return 3
 	}
@@ -185,6 +204,9 @@ func (redis *RedisReconciler) GetRedisServerReplica() int32 {
 
 // GetRedisSentinelReplica returns redis sentinel replicas
 func (redis *RedisReconciler) GetRedisSentinelReplica() int32 {
+	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
+		return 3
+	}
 	if redis.HarborCluster.Spec.Redis.Spec.Sentinel.Replicas == 0 {
 		return 3
 	}
@@ -193,6 +215,9 @@ func (redis *RedisReconciler) GetRedisSentinelReplica() int32 {
 
 // GetRedisStorageSize returns redis server storage size
 func (redis *RedisReconciler) GetRedisStorageSize() string {
+	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
+		return "5Gi"
+	}
 	if redis.HarborCluster.Spec.Redis.Spec.Server.Storage == "" {
 		return "5Gi"
 	}
