@@ -24,7 +24,7 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 	resource := redis.GetRedisResource()
 	redisRep := redis.GetRedisServerReplica()
 	sentinelRep := redis.GetRedisSentinelReplica()
-	storageSize := redis.HarborCluster.Spec.Redis.Spec.Server.Storage
+	storageSize := redis.GetRedisStorageSize()
 
 	conf := &redisCli.RedisFailover{
 		TypeMeta: v1.TypeMeta{
