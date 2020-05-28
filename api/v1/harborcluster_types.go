@@ -19,10 +19,19 @@ import (
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+var (
+	HarborClusterGVK = schema.GroupVersionKind{
+		Group:   GroupVersion.Group,
+		Version: GroupVersion.Version,
+		Kind:    "HarborCluster",
+	}
+)
 
 // the name of component used harbor cluster.
 type Component string
@@ -97,6 +106,10 @@ type HarborClusterSpec struct {
 	// Extra configuration options for chartmeseum
 	// +kubebuilder:validation:Optional
 	ChartMuseum *ChartMuseum `json:"chartMuseum,omitempty"`
+
+	// Extra configuration options for notary
+	// +kubebuilder:validation:Optional
+	Notary *Notary `json:"notary,omitempty"`
 
 	// Cache service(Redis) configurations might be external redis services or inCluster redis services
 	// +kubebuilder:validation:Required
@@ -175,10 +188,10 @@ type Swift struct {
 	Chunksize           string   `json:"chunksize,omitempty"`
 	Prefix              string   `json:"prefix,omitempty"`
 	Secretkey           string   `json:"secretkey,omitempty"`
-	Authversion         int      `json:"authversion,omitempty"`
-	Endpointtype        string   `json:"endpointtype,omitempty"`
-	Tempurlcontainerkey bool     `json:"tempurlcontainerkey,omitempty"`
-	Tempurlmethods      []string `json:"tempurlmethods,omitempty"`
+	AuthVersion         int      `json:"authversion,omitempty"`
+	EndpointType        string   `json:"endpointtype,omitempty"`
+	TempurlContainerkey bool     `json:"tempurlcontainerkey,omitempty"`
+	TempurlMethods      string `json:"tempurlmethods,omitempty"`
 }
 
 type S3 struct {
@@ -233,7 +246,7 @@ type MinIOSpec struct {
 	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
-	Replicas int `json:"replicas"`
+	Replicas int32 `json:"replicas"`
 	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version,omitempty"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
@@ -327,6 +340,12 @@ type ImageSource struct {
 type Clair struct {
 	UpdateInterval       int      `json:"updateInterval,omitempty"`
 	VulnerabilitySources []string `json:"vulnerabilitySources,omitempty"`
+}
+
+type Notary struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern="^https?://.*$"
+	PublicURL string `json:"publicUrl"`
 }
 
 type JobService struct {

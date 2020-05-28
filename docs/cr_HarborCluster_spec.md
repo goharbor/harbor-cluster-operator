@@ -56,6 +56,10 @@ trivy:
 # extra configuration options for chartmeseum
 chartMuseum:
   absoluteURL: true
+
+# extra configuration options for notary
+notary:
+  publicURL: "http://.."  
   
 # cache service(Redis) configurations
 # might be external redis services or inCluster redis services
