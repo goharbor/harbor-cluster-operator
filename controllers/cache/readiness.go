@@ -209,7 +209,7 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 
 	if len(sentinelPodList.Items) == 0 || len(redisPodList.Items) == 0 {
 		redis.Log.Info("pod list is empty，pls wait.")
-		return nil, nil
+		return nil, errors.New("pod list is empty，pls wait")
 	}
 
 	sentinelPodArray := sentinelPodList.Items
