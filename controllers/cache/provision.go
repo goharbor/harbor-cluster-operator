@@ -52,12 +52,15 @@ func (redis *RedisReconciler) Deploy() error {
 		}
 
 		redis.Log.Info("Redis create complete.", "namespace", redis.Namespace, "name", redis.Name)
-	} else if err != nil {
-		return err
-	} else {
-		redis.ExpectCR = expectCR
-		redis.ActualCR = actualCR
+		return nil
 	}
+	
+	if err != nil {
+		return err
+	}
+	
+	redis.ExpectCR = expectCR
+	redis.ActualCR = actualCR
 
 	return nil
 }
