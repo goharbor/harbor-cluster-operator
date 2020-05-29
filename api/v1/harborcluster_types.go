@@ -188,10 +188,10 @@ type Swift struct {
 	Chunksize           string   `json:"chunksize,omitempty"`
 	Prefix              string   `json:"prefix,omitempty"`
 	Secretkey           string   `json:"secretkey,omitempty"`
-	Authversion         int      `json:"authversion,omitempty"`
-	Endpointtype        string   `json:"endpointtype,omitempty"`
-	Tempurlcontainerkey bool     `json:"tempurlcontainerkey,omitempty"`
-	Tempurlmethods      []string `json:"tempurlmethods,omitempty"`
+	AuthVersion         int      `json:"authversion,omitempty"`
+	EndpointType        string   `json:"endpointtype,omitempty"`
+	TempurlContainerkey bool     `json:"tempurlcontainerkey,omitempty"`
+	TempurlMethods      string `json:"tempurlmethods,omitempty"`
 }
 
 type S3 struct {
@@ -246,7 +246,7 @@ type MinIOSpec struct {
 	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
-	Replicas int `json:"replicas"`
+	Replicas int32 `json:"replicas"`
 	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version,omitempty"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
