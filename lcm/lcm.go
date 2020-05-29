@@ -33,18 +33,13 @@ type CRStatus struct {
 }
 
 // New returns new CRStatus
-func New() *CRStatus {
+func New(conditionType v1.HarborClusterConditionType) *CRStatus {
 	return &CRStatus{
 		Condition: v1.HarborClusterCondition{
 			LastTransitionTime: metav1.Now(),
+			Type:               conditionType,
 		},
 	}
-}
-
-// WithType returns CRStatus with Condition type
-func (cs *CRStatus) WithType(conditionType v1.HarborClusterConditionType) *CRStatus {
-	cs.Condition.Type = conditionType
-	return cs
 }
 
 // WithStatus returns CRStatus with Condition status
