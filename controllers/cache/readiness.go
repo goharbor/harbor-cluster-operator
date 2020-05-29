@@ -68,7 +68,7 @@ func (redis *RedisReconciler) Readiness() error {
 		}
 	}
 
-	redis.CRStatus = lcm.New().WithType(goharborv1.CacheReady).
+	redis.CRStatus = lcm.New(goharborv1.CacheReady).
 		WithStatus(corev1.ConditionTrue).
 		WithReason("redis already ready").
 		WithMessage("harbor component redis secrets are already create.").
