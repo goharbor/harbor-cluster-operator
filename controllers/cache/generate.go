@@ -34,6 +34,7 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 		ObjectMeta: v1.ObjectMeta{
 			Name:      redis.Name,
 			Namespace: redis.Namespace,
+			Labels:    redis.Labels,
 		},
 		Spec: redisCli.RedisFailoverSpec{
 			Redis: redisCli.RedisSettings{
