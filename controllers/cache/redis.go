@@ -1,6 +1,9 @@
 package cache
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -13,6 +16,7 @@ import (
 // RedisReconciler implement the Reconciler interface and lcm.Controller interface.
 type RedisReconciler struct {
 	HarborCluster *goharborv1.HarborCluster
+	CXT           context.Context
 	Client        k8s.Client
 	Recorder      record.EventRecorder
 	Log           logr.Logger
@@ -31,8 +35,6 @@ type RedisReconciler struct {
 // Reconciler implements the reconcile logic of redis service
 func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	redis.Labels = redis.NewLabels()
-	redis.Name = redis.GetHarborClusterName()
-	redis.Namespace = redis.GetHarborClusterNamespace()
 	redis.Client.WithContext(redis.CXT)
 	redis.DClient.WithContext(redis.CXT)
 
@@ -40,6 +42,9 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	if err != nil {
 		return crStatus, err
 	}
+
+	c, _ := json.Marshal(crStatus)
+	fmt.Println(string(c))
 
 	return crStatus, nil
 }
