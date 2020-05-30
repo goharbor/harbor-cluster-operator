@@ -17,7 +17,6 @@ package main
 
 import (
 	"flag"
-	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"os"
 	"time"
 
