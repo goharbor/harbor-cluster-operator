@@ -156,7 +156,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  fmt.Sprintf("%s:%s", endpoint, port),
+			Endpoint:  strings.Join(endpoint[:], ","),
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,

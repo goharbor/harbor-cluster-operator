@@ -77,28 +77,28 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		Scheme:   r.Scheme,
 	}
 
-	cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
-	if err != nil {
-		log.Error(err, "error when reconcile cache component.")
-		return ctrl.Result{}, err
-	}
+	//cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
+	//if err != nil {
+	//	log.Error(err, "error when reconcile cache component.")
+	//	return ctrl.Result{}, err
+	//}
 
-	dbStatus, err := r.Database(ctx, &harborCluster, nil).Reconcile()
+	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
-	if err != nil {
-		log.Error(err, "error when reconcile storage component.")
-		return ctrl.Result{}, err
-	}
+	//storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
+	//if err != nil {
+	//	log.Error(err, "error when reconcile storage component.")
+	//	return ctrl.Result{}, err
+	//}
 
 	componentToStatus := make(map[goharborv1.Component]*lcm.CRStatus)
-	componentToStatus[goharborv1.ComponentCache] = cacheStatus
+	//componentToStatus[goharborv1.ComponentCache] = cacheStatus
 	componentToStatus[goharborv1.ComponentDatabase] = dbStatus
-	componentToStatus[goharborv1.ComponentStorage] = storageStatus
+	//componentToStatus[goharborv1.ComponentStorage] = storageStatus
 	// if components is not all ready, requeue the HarborCluster
 	if !r.ComponentsAreAllReady(componentToStatus) {
 		err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
