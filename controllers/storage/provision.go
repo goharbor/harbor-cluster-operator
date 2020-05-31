@@ -6,6 +6,7 @@ import (
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strconv"
 
 	//minio "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
@@ -290,10 +291,19 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(ErrorReason4, err.Error()), err
 	}
 
-	minio := m.generateMinIOCR()
-	err = m.KubeClient.Create(minio)
+	minioCreate := m.generateMinIOCR()
+	err = m.KubeClient.Create(minioCreate)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+	}
+	var minioCR minio.MinIOInstance
+	err = m.KubeClient.Get(m.getminIONamespacedName(),&minioCR)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+	}
+
+	if err := controllerutil.SetControllerReference(minioCreate, service, minio.SchemeGroupVersion); err != nil {
+		return err
 	}
 
 	return minioUnknownStatus(), nil
@@ -437,9 +447,6 @@ func (m *MinIOReconciler) generateService() *corev1.Service {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
-			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
@@ -490,9 +497,6 @@ func (m *MinIOReconciler) generateCredsSecret() *corev1.Secret {
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
-			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{

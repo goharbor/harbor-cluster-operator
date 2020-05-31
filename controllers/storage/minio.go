@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 )
@@ -25,20 +25,13 @@ const (
 	ossStorage       = "oss"
 )
 
-var (
-	HarborClusterStorageGVK = schema.GroupVersionKind{
-		Group:   MinIOGroup,
-		Version: MinIOVersion,
-		Kind:    "HarborCluster",
-	}
-)
-
 type MinIOReconciler struct {
 	HarborCluster *goharborv1.HarborCluster
-	KubeClient k8s.Client
-	Ctx context.Context
-	Log      logr.Logger
-	Recorder record.EventRecorder
+	KubeClient    k8s.Client
+	Ctx           context.Context
+	Log           logr.Logger
+	Scheme        *runtime.Scheme
+	Recorder      record.EventRecorder
 }
 
 // Reconciler implements the reconcile logic of minIO service
