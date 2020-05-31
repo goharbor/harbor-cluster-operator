@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -23,14 +25,20 @@ const (
 	ossStorage       = "oss"
 )
 
+var (
+	HarborClusterStorageGVK = schema.GroupVersionKind{
+		Group:   MinIOGroup,
+		Version: MinIOVersion,
+		Kind:    "HarborCluster",
+	}
+)
+
 type MinIOReconciler struct {
 	HarborCluster *goharborv1.HarborCluster
-
-	KubeClient client.Client
-
+	KubeClient k8s.Client
 	Ctx context.Context
-
-	Log logr.Logger
+	Log      logr.Logger
+	Recorder record.EventRecorder
 }
 
 // Reconciler implements the reconcile logic of minIO service
@@ -41,7 +49,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return m.ProvisionExternalStorage()
 	}
 
-	err := m.KubeClient.Get(m.Ctx, m.getminIONamespacedName(), &minioCR)
+	err := m.KubeClient.Get(m.getminIONamespacedName(), &minioCR)
 	if k8serror.IsNotFound(err) {
 		// TODO need test
 		return m.Provision()

@@ -16,7 +16,8 @@ import (
 
 const (
 	Kind                        = "MinIOInstance"
-	ApiVersion                  = "miniooperator.min.io/v1beta1"
+	MinIOGroup                  = "miniooperator.min.io"
+	MinIOVersion                = "v1beta1"
 	DefaultExternalSecretSuffix = "harbor-cluster-storage"
 	S3Secret                    = "s3Secret"
 	AzureSecret                 = "azureSecret"
@@ -70,7 +71,7 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 
 func (m *MinIOReconciler) ProvisionS3() (*lcm.Properties, error) {
 	s3Secret := m.generateS3Secret()
-	err := m.KubeClient.Create(m.Ctx, s3Secret)
+	err := m.KubeClient.Create(s3Secret)
 	p := &lcm.Property{
 		Name:  S3Secret,
 		Value: s3Secret.Name,
@@ -113,7 +114,7 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 
 func (m *MinIOReconciler) ProvisionAzure() (*lcm.Properties, error) {
 	azureSecret := m.generateAzureSecret()
-	err := m.KubeClient.Create(m.Ctx, azureSecret)
+	err := m.KubeClient.Create(azureSecret)
 	p := &lcm.Property{
 		Name:  AzureSecret,
 		Value: azureSecret.Name,
@@ -148,7 +149,7 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 
 func (m *MinIOReconciler) ProvisionGcs() (*lcm.Properties, error) {
 	gcsSecret := m.generateGcsSecret()
-	err := m.KubeClient.Create(m.Ctx, gcsSecret)
+	err := m.KubeClient.Create(gcsSecret)
 	p := &lcm.Property{
 		Name:  GcsSecret,
 		Value: gcsSecret.Name,
@@ -183,7 +184,7 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 
 func (m *MinIOReconciler) ProvisionSwift() (*lcm.Properties, error) {
 	swiftSecret := m.generateSwiftSecret()
-	err := m.KubeClient.Create(m.Ctx, swiftSecret)
+	err := m.KubeClient.Create(swiftSecret)
 	p := &lcm.Property{
 		Name:  SwiftSecret,
 		Value: swiftSecret.Name,
@@ -224,7 +225,7 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 
 func (m *MinIOReconciler) ProvisionOss() (*lcm.Properties, error) {
 	ossSecret := m.generateOssSecret()
-	err := m.KubeClient.Create(m.Ctx, ossSecret)
+	err := m.KubeClient.Create(ossSecret)
 	p := &lcm.Property{
 		Name:  OssSecret,
 		Value: ossSecret.Name,
@@ -274,23 +275,23 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	// TODO remove mcs secret ref https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml
 	//mcsSecret := m.generateMcsSecret()
-	//err := m.KubeClient.Create(m.Ctx, mcsSecret)
+	//err := m.KubeClient.Create(mcsSecret)
 	//if err != nil {
 	//	return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	//}
 	credsSecret := m.generateCredsSecret()
-	err := m.KubeClient.Create(m.Ctx, credsSecret)
+	err := m.KubeClient.Create(credsSecret)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason2, err.Error()), err
 	}
 	service := m.generateService()
-	err = m.KubeClient.Create(m.Ctx, service)
+	err = m.KubeClient.Create(service)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason4, err.Error()), err
 	}
 
 	minio := m.generateMinIOCR()
-	err = m.KubeClient.Create(m.Ctx, minio)
+	err = m.KubeClient.Create(minio)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
 	}
@@ -304,7 +305,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 	return &minio.MinIOInstance{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       Kind,
-			APIVersion: ApiVersion,
+			APIVersion: MinIOGroup+"/"+MinIOVersion,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.HarborCluster.Name,

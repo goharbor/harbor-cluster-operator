@@ -59,6 +59,10 @@ func (impl *ServiceGetterImpl) Database(ctx context.Context, harborCluster *goha
 func (impl *ServiceGetterImpl) Storage(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &storage.MinIOReconciler{
 		HarborCluster: harborCluster,
+		KubeClient: options.Client,
+		Ctx: ctx,
+		Log: options.Log,
+		Recorder: options.Recorder,
 	}
 }
 
