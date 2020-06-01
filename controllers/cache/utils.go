@@ -3,8 +3,10 @@ package cache
 import (
 	"bytes"
 	"fmt"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	labels1 "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -162,12 +164,12 @@ func (redis *RedisReconciler) GetHarborClusterNamespace() string {
 
 // GetRedisResource returns redis resource
 func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
-	
+	resources := corev1.ResourceList{}
+
 	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
 		return GenerateResourceList("1", "2Gi")
 	}
-	
-	resources := corev1.ResourceList{}
+
 	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
 	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
 	if cpu != nil {
@@ -196,6 +198,7 @@ func (redis *RedisReconciler) GetRedisServerReplica() int32 {
 	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
 		return 3
 	}
+
 	if redis.HarborCluster.Spec.Redis.Spec.Server.Replicas == 0 {
 		return 3
 	}
@@ -204,9 +207,11 @@ func (redis *RedisReconciler) GetRedisServerReplica() int32 {
 
 // GetRedisSentinelReplica returns redis sentinel replicas
 func (redis *RedisReconciler) GetRedisSentinelReplica() int32 {
-	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
+
+	if redis.HarborCluster.Spec.Redis.Spec.Sentinel == nil {
 		return 3
 	}
+
 	if redis.HarborCluster.Spec.Redis.Spec.Sentinel.Replicas == 0 {
 		return 3
 	}
@@ -216,10 +221,11 @@ func (redis *RedisReconciler) GetRedisSentinelReplica() int32 {
 // GetRedisStorageSize returns redis server storage size
 func (redis *RedisReconciler) GetRedisStorageSize() string {
 	if redis.HarborCluster.Spec.Redis.Spec.Server == nil {
-		return "5Gi"
+		return "1Gi"
 	}
+
 	if redis.HarborCluster.Spec.Redis.Spec.Server.Storage == "" {
-		return "5Gi"
+		return "1Gi"
 	}
 	return redis.HarborCluster.Spec.Redis.Spec.Server.Storage
 }
@@ -250,4 +256,15 @@ func (redis *RedisReconciler) GetPodsStatus(podArray []corev1.Pod) ([]corev1.Pod
 // GenRedisConnURL returns harbor component redis secret
 func (c *RedisConnect) GenRedisConnURL() string {
 	return fmt.Sprintf("redis://%s:%s/0", c.Endpoint, c.Port)
+}
+
+// GetRedisFailover returns RedisFailover object
+func (redis *RedisReconciler) GetRedisFailover() (*redisCli.RedisFailover, error) {
+	rf := &redisCli.RedisFailover{}
+	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, rf)
+	if err != nil {
+		return nil, err
+	}
+
+	return rf, nil
 }
