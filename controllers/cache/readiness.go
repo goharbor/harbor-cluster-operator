@@ -49,6 +49,7 @@ func (redis *RedisReconciler) Readiness() error {
 	}
 
 	if err != nil {
+		redis.Log.Error(err, "Fail to create redis client.", "namespace", redis.Namespace, "name", redis.Name)
 		return err
 	}
 
@@ -83,13 +84,19 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 	propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
-	rf, err := redis.GetRedisFailover()
-	if err != nil {
-		return err
-	}
-
-	if err := controllerutil.SetControllerReference(rf, sc, redis.Scheme); err != nil {
-		return err
+	switch redis.HarborCluster.Spec.Redis.Kind {
+	case "external":
+		if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
+			return err
+		}
+	case "inCluster":
+		rf, err := redis.GetRedisFailover()
+		if err != nil {
+			return err
+		}
+		if err := controllerutil.SetControllerReference(rf, sc, redis.Scheme); err != nil {
+			return err
+		}
 	}
 
 	if err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret); err != nil && kerr.IsNotFound(err) {
