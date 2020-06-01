@@ -1,6 +1,8 @@
 package lcm
 
-import v1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+import (
+	v1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+)
 
 // This package container interface of harbor cluster service lifecycle manage.
 

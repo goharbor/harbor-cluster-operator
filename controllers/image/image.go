@@ -2,10 +2,6 @@ package image
 
 import "fmt"
 
-var harborVersionToImageLocator = map[string]ImageLocator{
-	"v1.10.0": harborV1_10_0_ImageLocator{},
-}
-
 // ImageGetter will proxy the ImageLocator
 type ImageGetter interface {
 	ImageLocator
@@ -19,9 +15,15 @@ type ImageGetterImpl struct {
 	harborVersion string
 }
 
-func NewImageGetterImpl(registry *string, harborVersion string) (ImageGetter, error) {
-	locator, existed := harborVersionToImageLocator[harborVersion]
-	if !existed {
+func NewImageGetter(registry *string, harborVersion string) (ImageGetter, error) {
+	// The version should be validated at the spec level to make sure it's in the supported list
+	// or keep the current returns
+	var locator ImageGetter
+	switch harborVersion {
+	case "v1.10.0":
+		locator = &harborV1_10_0_ImageLocator{}
+	}
+	if locator == nil {
 		return nil, fmt.Errorf("failed to relate images with this harbor version %s ", harborVersion)
 	}
 	return &ImageGetterImpl{
@@ -31,75 +33,75 @@ func NewImageGetterImpl(registry *string, harborVersion string) (ImageGetter, er
 	}, nil
 }
 
-func (i *ImageGetterImpl) CoreImage() *string {
+func (i *ImageGetterImpl) CoreImage() string {
 	return GetImage(i.registry, i.locator.CoreImage())
 }
 
-func (i *ImageGetterImpl) ChartMuseumImage() *string {
+func (i *ImageGetterImpl) ChartMuseumImage() string {
 	return GetImage(i.registry, i.locator.ChartMuseumImage())
 }
 
-func (i *ImageGetterImpl) ClairImage() *string {
+func (i *ImageGetterImpl) ClairImage() string {
 	return GetImage(i.registry, i.locator.ClairImage())
 }
 
-func (i *ImageGetterImpl) ClairAdapterImage() *string {
+func (i *ImageGetterImpl) ClairAdapterImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) JobServiceImage() *string {
+func (i *ImageGetterImpl) JobServiceImage() string {
+	return GetImage(i.registry, i.locator.JobServiceImage())
+}
+
+func (i *ImageGetterImpl) NotaryServerImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) NotaryServerImage() *string {
+func (i *ImageGetterImpl) NotarySingerImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) NotarySingerImage() *string {
+func (i *ImageGetterImpl) NotaryDBMigratorImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) NotaryDBMigratorImage() *string {
+func (i *ImageGetterImpl) PortalImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) PortalImage() *string {
+func (i *ImageGetterImpl) RegistryImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) RegistryImage() *string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
-}
-
-func (i *ImageGetterImpl) RegistryControllerImage() *string {
+func (i *ImageGetterImpl) RegistryControllerImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
 // ImageLocator provider method to get harbor component image.
 type ImageLocator interface {
-	CoreImage() *string
-	ChartMuseumImage() *string
-	ClairImage() *string
-	ClairAdapterImage() *string
-	JobServiceImage() *string
-	NotaryServerImage() *string
-	NotarySingerImage() *string
-	NotaryDBMigratorImage() *string
-	PortalImage() *string
-	RegistryImage() *string
-	RegistryControllerImage() *string
+	CoreImage() string
+	ChartMuseumImage() string
+	ClairImage() string
+	ClairAdapterImage() string
+	JobServiceImage() string
+	NotaryServerImage() string
+	NotarySingerImage() string
+	NotaryDBMigratorImage() string
+	PortalImage() string
+	RegistryImage() string
+	RegistryControllerImage() string
 }
 
-func GetImage(registry *string, image *string) *string {
+func GetImage(registry *string, image string) string {
 	var imageAddr string
 	if registry == nil {
-		imageAddr = fmt.Sprintf("%s", *image)
+		imageAddr = fmt.Sprintf("%s", image)
 	} else {
-		imageAddr = fmt.Sprintf("%s/%s", *registry, *image)
+		imageAddr = fmt.Sprintf("%s/%s", *registry, image)
 	}
-	return &imageAddr
+	return imageAddr
 }
 
-func StringToStringPtr(value string) *string {
+func String(value string) *string {
 	return &value
 }

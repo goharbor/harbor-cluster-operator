@@ -13,6 +13,28 @@ const (
 	ProperNodes = "AvailableNodes"
 )
 
+const (
+	RegisterSecretForCache    string = "registrySecret"
+	ClairSecretForCache       string = "clairSecret"
+	ChartMuseumSecretForCache string = "chartMuseumSecret"
+	JobServiceSecretForCache  string = "jobServiceSecret"
+)
+
+const (
+	CoreSecretForDatabase         string = "coreSecret"
+	ClairSecretForDatabase        string = "clairSecret"
+	NotaryServerSecretForDatabase string = "notaryServerSecret"
+	NotarySignerSecretForDatabase string = "notarySignerSecret"
+)
+
+const (
+	AzureSecretForStorage string = "azureSecret"
+	GcsSecretForStorage   string = "gcsSecret"
+	SwiftSecretForStorage string = "swiftSecret"
+	S3SecretForStorage    string = "s3Secret"
+	OssSecretForStorage   string = "ossSecret"
+)
+
 //Property is the current property of component.
 type Property struct {
 	//Property name, e.p: Connection,Port.

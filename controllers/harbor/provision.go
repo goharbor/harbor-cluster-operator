@@ -2,6 +2,7 @@ package harbor
 
 import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,10 +36,10 @@ func (harbor *HarborReconciler) newHarborCR() *v1alpha1.Harbor {
 			PublicURL:     harbor.HarborCluster.Spec.PublicURL,
 			TLSSecretName: harbor.HarborCluster.Spec.TLSSecret,
 			Components: v1alpha1.HarborComponents{
-				Core:        harbor.newCoreComponentIfNecessary(),
-				Portal:      harbor.newPortalComponentIfNecessary(),
-				Registry:    harbor.newRegistryComponentIfNecessary(),
-				JobService:  harbor.newJobServiceComponentIfNecessary(),
+				Core:        harbor.newCoreComponent(),
+				Portal:      harbor.newPortalComponent(),
+				Registry:    harbor.newRegistryComponent(),
+				JobService:  harbor.newJobServiceComponent(),
 				ChartMuseum: harbor.newChartMuseumComponentIfNecessary(),
 				Clair:       harbor.newClairComponentIfNecessary(),
 				Notary:      harbor.newNotaryComponentIfNecessary(),
@@ -50,58 +51,55 @@ func (harbor *HarborReconciler) newHarborCR() *v1alpha1.Harbor {
 	}
 }
 
-func (harbor *HarborReconciler) newCoreComponentIfNecessary() *v1alpha1.CoreComponent {
+func (harbor *HarborReconciler) newCoreComponent() *v1alpha1.CoreComponent {
 	return &v1alpha1.CoreComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.ImageGetter.CoreImage(),
+			Image:            image.String(harbor.ImageGetter.CoreImage()),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 	}
 }
 
-func (harbor *HarborReconciler) newPortalComponentIfNecessary() *v1alpha1.PortalComponent {
+func (harbor *HarborReconciler) newPortalComponent() *v1alpha1.PortalComponent {
 	return &v1alpha1.PortalComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.ImageGetter.PortalImage(),
+			Image:            image.String(harbor.ImageGetter.PortalImage()),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 	}
 }
 
-func (harbor *HarborReconciler) newRegistryComponentIfNecessary() *v1alpha1.RegistryComponent {
+func (harbor *HarborReconciler) newRegistryComponent() *v1alpha1.RegistryComponent {
 	return &v1alpha1.RegistryComponent{
 		HarborDeployment: v1alpha1.HarborDeployment{
 			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-			Image:            harbor.ImageGetter.RegistryImage(),
+			Image:            image.String(harbor.ImageGetter.RegistryImage()),
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 		Controller: v1alpha1.RegistryControllerComponent{
-			Image: harbor.ImageGetter.RegistryControllerImage(),
+			Image: image.String(harbor.ImageGetter.RegistryControllerImage()),
 		},
-		StorageSecret: harbor.getRegistryStorageSecret(),
-		CacheSecret:   harbor.getRegistryCacheSecret(),
+		StorageSecret: harbor.getStorageSecret(),
+		CacheSecret:   harbor.getCacheSecret(lcm.RegisterSecretForCache),
 	}
 }
 
-func (harbor *HarborReconciler) newJobServiceComponentIfNecessary() *v1alpha1.JobServiceComponent {
-	if harbor.HarborCluster.Spec.JobService != nil {
-		return &v1alpha1.JobServiceComponent{
-			HarborDeployment: v1alpha1.HarborDeployment{
-				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.ImageGetter.JobServiceImage(),
-				NodeSelector:     nil,
-				ImagePullSecrets: harbor.getImagePullSecrets(),
-			},
-			RedisSecret: harbor.getJobServiceCacheSecret(),
-			WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
-		}
+func (harbor *HarborReconciler) newJobServiceComponent() *v1alpha1.JobServiceComponent {
+	return &v1alpha1.JobServiceComponent{
+		HarborDeployment: v1alpha1.HarborDeployment{
+			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.JobService.Replicas),
+			Image:            image.String(harbor.ImageGetter.JobServiceImage()),
+			NodeSelector:     nil,
+			ImagePullSecrets: harbor.getImagePullSecrets(),
+		},
+		RedisSecret: harbor.getCacheSecret(lcm.JobServiceSecretForCache),
+		WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
 	}
-	return nil
 }
 
 func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.ChartMuseumComponent {
@@ -109,12 +107,12 @@ func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.C
 		return &v1alpha1.ChartMuseumComponent{
 			HarborDeployment: v1alpha1.HarborDeployment{
 				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.ImageGetter.ChartMuseumImage(),
+				Image:            image.String(harbor.ImageGetter.ChartMuseumImage()),
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
 			StorageSecret: harbor.getStorageSecret(),
-			CacheSecret:   harbor.getChartMuseumCacheSecret(),
+			CacheSecret:   harbor.getCacheSecret(lcm.ChartMuseumSecretForCache),
 		}
 	}
 	return nil
@@ -125,15 +123,15 @@ func (harbor *HarborReconciler) newClairComponentIfNecessary() *v1alpha1.ClairCo
 		return &v1alpha1.ClairComponent{
 			HarborDeployment: v1alpha1.HarborDeployment{
 				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-				Image:            harbor.ImageGetter.ClairImage(),
+				Image:            image.String(harbor.ImageGetter.ClairImage()),
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
-			DatabaseSecret:       harbor.getClairDatabaseSecret(),
+			DatabaseSecret:       harbor.getDatabaseSecret(lcm.ClairSecretForDatabase),
 			VulnerabilitySources: harbor.HarborCluster.Spec.Clair.VulnerabilitySources,
 			Adapter: v1alpha1.ClairAdapterComponent{
-				Image:       harbor.ImageGetter.ClairAdapterImage(),
-				RedisSecret: harbor.getClairCacheSecret(),
+				Image:       image.String(harbor.ImageGetter.ClairAdapterImage()),
+				RedisSecret: harbor.getCacheSecret(lcm.ClairSecretForCache),
 			},
 		}
 	}
@@ -146,139 +144,71 @@ func (harbor *HarborReconciler) newNotaryComponentIfNecessary() *v1alpha1.Notary
 		return &v1alpha1.NotaryComponent{
 			PublicURL: harbor.HarborCluster.Spec.Notary.PublicURL,
 			DBMigrator: v1alpha1.NotaryDBMigrator{
-				Image: harbor.ImageGetter.NotaryDBMigratorImage(),
+				Image: image.String(harbor.ImageGetter.NotaryDBMigratorImage()),
 			},
 			Signer: v1alpha1.NotarySignerComponent{
 				HarborDeployment: v1alpha1.HarborDeployment{
 					Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-					Image:            harbor.ImageGetter.NotarySingerImage(),
+					Image:            image.String(harbor.ImageGetter.NotarySingerImage()),
 					NodeSelector:     nil,
 					ImagePullSecrets: harbor.getImagePullSecrets(),
 				},
-				DatabaseSecret: harbor.getNotarySignerDatabaseSecret(),
+				DatabaseSecret: harbor.getDatabaseSecret(lcm.NotarySignerSecretForDatabase),
 			},
 			Server: v1alpha1.NotaryServerComponent{
 				HarborDeployment: v1alpha1.HarborDeployment{
 					Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.Replicas),
-					Image:            harbor.ImageGetter.NotaryServerImage(),
+					Image:            image.String(harbor.ImageGetter.NotaryServerImage()),
 					NodeSelector:     nil,
 					ImagePullSecrets: harbor.getImagePullSecrets(),
 				},
-				DatabaseSecret: harbor.getNotaryServerDatabaseSecret(),
+				DatabaseSecret: harbor.getDatabaseSecret(lcm.NotarySignerSecretForDatabase),
 			},
 		}
 	}
 	return nil
 }
 
-// getRegistryCacheSecret will get a name of k8s secret which stores cache info
-func (harbor *HarborReconciler) getRegistryCacheSecret() string {
-	p := harbor.getStorageProperty("registrySecret")
-	if p == nil {
-		return ""
+// getCacheSecret will get a name of k8s secret which stores cache info
+func (harbor *HarborReconciler) getCacheSecret(name string) string {
+	p := harbor.getProperty(goharborv1.ComponentCache, name)
+	if p != nil {
+		return p.ToString()
 	}
-	return p.ToString()
+	return ""
 }
 
-// getJobServiceCacheSecret will get a name of k8s secret which stores cache info
-func (harbor *HarborReconciler) getJobServiceCacheSecret() string {
-	p := harbor.getStorageProperty("jobServiceSecret")
-	if p == nil {
-		return ""
+// getDatabaseSecret will get a name of k8s secret which stores database info
+func (harbor *HarborReconciler) getDatabaseSecret(name string) string {
+	p := harbor.getProperty(goharborv1.ComponentDatabase, name)
+	if p != nil {
+		return p.ToString()
 	}
-	return p.ToString()
-}
-
-// getClairCacheSecret will get a name of k8s secret which stores cache info
-func (harbor *HarborReconciler) getClairCacheSecret() string {
-	p := harbor.getStorageProperty("clairSecret")
-	if p == nil {
-		return ""
-	}
-	return p.ToString()
-}
-
-// getChartMuseumCacheSecret will get a name of k8s secret which stores cache info
-func (harbor *HarborReconciler) getChartMuseumCacheSecret() string {
-	p := harbor.getStorageProperty("chartMuseumSecret")
-	if p == nil {
-		return ""
-	}
-	return p.ToString()
+	return ""
 }
 
 // getStorageSecret will get a name of k8s secret which stores storage info
 func (harbor *HarborReconciler) getStorageSecret() string {
+	var name string
 	switch harbor.HarborCluster.Spec.Storage.Kind {
 	case "azure":
-		return "azureSecret"
+		name = lcm.AzureSecretForStorage
 	case "gcs":
-		return "gcsSecret"
+		name = lcm.GcsSecretForStorage
 	case "swift":
-		return "swiftSecret"
+		name = lcm.SwiftSecretForStorage
 	case "s3":
-		return "s3Secret"
+		name = lcm.S3SecretForStorage
 	case "oss":
-		return "ossSecret"
+		name = lcm.OssSecretForStorage
+	default:
+		name = ""
+	}
+	p := harbor.getProperty(goharborv1.ComponentStorage, name)
+	if p != nil {
+		return p.ToString()
 	}
 	return ""
-}
-
-// getStorageSecret will get a name of k8s secret which stores storage info
-func (harbor *HarborReconciler) getRegistryStorageSecret() string {
-	p := harbor.getStorageProperty("registrySecret")
-	if p == nil {
-		return ""
-	}
-	return p.ToString()
-}
-
-// getCoreDatabaseSecret will get a name of k8s secret which stores core-database info
-func (harbor *HarborReconciler) getCoreDatabaseSecret() string {
-	p := harbor.getDatabaseProperty("coreSecret")
-	if p == nil {
-		return ""
-	}
-	return ""
-}
-
-// getClairDatabaseSecret will get a name of k8s secret which stores clair-database info
-func (harbor *HarborReconciler) getClairDatabaseSecret() string {
-	p := harbor.getDatabaseProperty("clairSecret")
-	if p == nil {
-		return ""
-	}
-	return ""
-}
-
-// getNotaryServerDatabaseSecret will get a name of k8s secret which stores notary-server-database info
-func (harbor *HarborReconciler) getNotaryServerDatabaseSecret() string {
-	p := harbor.getDatabaseProperty("notaryServerSecret")
-	if p == nil {
-		return ""
-	}
-	return p.ToString()
-}
-
-// getClairDatabaseSecret will get a name of k8s secret which stores clair-database info
-func (harbor *HarborReconciler) getNotarySignerDatabaseSecret() string {
-	p := harbor.getDatabaseProperty("notarySignerSecret")
-	if p == nil {
-		return ""
-	}
-	return p.ToString()
-}
-
-func (harbor *HarborReconciler) getStorageProperty(name string) *lcm.Property {
-	return harbor.getProperty(goharborv1.ComponentStorage, name)
-}
-
-func (harbor *HarborReconciler) getDatabaseProperty(name string) *lcm.Property {
-	return harbor.getProperty(goharborv1.ComponentDatabase, name)
-}
-
-func (harbor *HarborReconciler) getCacheProperty(name string) *lcm.Property {
-	return harbor.getProperty(goharborv1.ComponentCache, name)
 }
 
 func (harbor *HarborReconciler) getProperty(component goharborv1.Component, name string) *lcm.Property {

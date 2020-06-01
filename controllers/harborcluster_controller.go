@@ -96,7 +96,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return nil
 	}
 	var imageGetter image.ImageGetter
-	if imageGetter, err = image.NewImageGetterImpl(getRegistry(), harborCluster.Spec.Version); err != nil {
+	if imageGetter, err = image.NewImageGetter(getRegistry(), harborCluster.Spec.Version); err != nil {
 		log.Error(err, "error when create ImageGetter.")
 		return ctrl.Result{}, err
 	}
