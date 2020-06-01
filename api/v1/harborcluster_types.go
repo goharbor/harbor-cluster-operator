@@ -265,7 +265,12 @@ type PostgresSQL struct {
 	Resources        corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// External params following.
-	// The secret must contains "address:port","usernane" and "password".
+	// The secret must contains "host","port","database","usernane" and "password".
+	// host: 192.168.1.1
+	// port: 5432
+	// username: root
+	// password: password
+	// database: database
 	SecretName     string `json:"secretName,omitempty"`
 	SslConfig      string `json:"sslConfig,omitempty"`
 	ConnectTimeout int    `json:"connectTimeout,omitempty"`
@@ -276,7 +281,8 @@ type Database struct {
 	// +kubebuilder:validation:Enum=inCluster;external
 	Kind string `json:"kind"`
 
-	PostgresSQL *PostgresSQL `json:"spec,omitempty"`
+	// +kubebuilder:validation:Required
+	Spec *PostgresSQL `json:"spec"`
 }
 
 type Redis struct {
