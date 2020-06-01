@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"os"
 	"time"
 
