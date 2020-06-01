@@ -66,7 +66,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	if minioStatefulSet.Status.ReadyReplicas == m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas {
 		// TODO create default bucket
-		return m.ProvisionInClusterSecret()
+		return m.ProvisionInClusterSecret(&minioCR)
 	}
 	return nil, nil
 }

@@ -31,8 +31,8 @@ const (
 	DefaultBucket               = "harbor"
 )
 
-func (m *MinIOReconciler) ProvisionInClusterSecret() (*lcm.CRStatus, error) {
-	inClusterSecret := m.generateInClusterSecret()
+func (m *MinIOReconciler) ProvisionInClusterSecret(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
+	inClusterSecret := m.generateInClusterSecret(minioInstamnce)
 	err := m.KubeClient.Create(inClusterSecret)
 
 	p := &lcm.Property{
@@ -43,7 +43,7 @@ func (m *MinIOReconciler) ProvisionInClusterSecret() (*lcm.CRStatus, error) {
 	return minioReadyStatus(properties), err
 }
 
-func (m *MinIOReconciler) generateInClusterSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -55,7 +55,7 @@ func (m *MinIOReconciler) generateInClusterSecret() *corev1.Secret {
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+				*metav1.NewControllerRef(minioInstamnce, HarborClusterMinIOGVK),
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
