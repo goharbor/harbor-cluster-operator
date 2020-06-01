@@ -83,11 +83,16 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 	propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
-	if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
+	rf, err := redis.GetRedisFailover()
+	if err != nil {
 		return err
 	}
-	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret)
-	if err != nil && kerr.IsNotFound(err) {
+
+	if err := controllerutil.SetControllerReference(rf, sc, redis.Scheme); err != nil {
+		return err
+	}
+
+	if err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret); err != nil && kerr.IsNotFound(err) {
 		redis.Log.Info("Creating Harbor Component Secret",
 			"namespace", redis.Namespace,
 			"name", secretName,
