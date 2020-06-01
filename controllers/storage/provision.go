@@ -1,37 +1,74 @@
 package storage
 
 import (
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
-	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strconv"
 
-	//minio "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
-	Kind                        = "MinIOInstance"
-	MinIOGroup                  = "miniooperator.min.io"
-	MinIOVersion                = "v1beta1"
 	DefaultExternalSecretSuffix = "harbor-cluster-storage"
 	S3Secret                    = "s3Secret"
 	AzureSecret                 = "azureSecret"
 	GcsSecret                   = "gcsSecret"
 	SwiftSecret                 = "swiftSecret"
 	OssSecret                   = "ossSecret"
+	InClusterSecret             = "inClusterSecret"
 	DefaultCredsSecret          = "minio-creds-secret"
 	DefaultMcsSecret            = "minio-mcs-secret"
 	CredsAccesskey              = "bWluaW8="
 	CredsSecretkey              = "bWluaW8xMjM="
 	DefaultZone                 = "zone-harbor"
-	DefaultMinIOService         = "minio-service"
+	DefaultMinIO                = "minio"
+	DefaultRegion               = "us-east-1"
+	DefaultBucket               = "harbor"
 )
+
+func (m *MinIOReconciler) ProvisionInClusterSecret() (*lcm.CRStatus, error) {
+	inClusterSecret := m.generateInClusterSecret()
+	err := m.KubeClient.Create(inClusterSecret)
+
+	p := &lcm.Property{
+		Name:  InClusterSecret,
+		Value: inClusterSecret.Name,
+	}
+	properties := &lcm.Properties{p}
+	return minioReadyStatus(properties), err
+}
+
+func (m *MinIOReconciler) generateInClusterSecret() *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        m.getServiceName(),
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      m.getLabels(),
+			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			// TODO
+			"accesskeyid":     []byte("minio"),
+			"accesskeysecret": []byte("minio123"),
+			"region":          []byte(DefaultRegion),
+			"bucket":          []byte(DefaultBucket),
+			"endpoint":        []byte(m.getServiceName() + "." + m.HarborCluster.Namespace),
+		},
+	}
+}
 
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 	switch m.HarborCluster.Spec.Storage.Kind {
@@ -141,10 +178,11 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"accountname": []byte(m.HarborCluster.Spec.Storage.Azure.Accountname),
-			"accountkey":  []byte(m.HarborCluster.Spec.Storage.Azure.Accountkey),
-			"container":   []byte(m.HarborCluster.Spec.Storage.Azure.Container),
-			"realm":       []byte(m.HarborCluster.Spec.Storage.Azure.Realm)},
+			"authurl":   []byte(m.HarborCluster.Spec.Storage.Swift.Authurl),
+			"username":  []byte(m.HarborCluster.Spec.Storage.Swift.Username),
+			"password":  []byte(m.HarborCluster.Spec.Storage.Swift.Password),
+			"container": []byte(m.HarborCluster.Spec.Storage.Azure.Container),
+		},
 	}
 }
 
@@ -211,16 +249,24 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"accesskeyid":     []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeyid),
-			"accesskeysecret": []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeysecret),
-			"region":          []byte(m.HarborCluster.Spec.Storage.Oss.Region),
-			"bucket":          []byte(m.HarborCluster.Spec.Storage.Oss.Bucket),
-			"endpoint":        []byte(m.HarborCluster.Spec.Storage.Oss.Endpoint),
-			"internal":        []byte(m.HarborCluster.Spec.Storage.Oss.Internal),
-			"encrypt":         []byte(m.HarborCluster.Spec.Storage.Oss.Encrypt),
-			"secure":          []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
-			"rootdirectory":   []byte(m.HarborCluster.Spec.Storage.Oss.Rootdirectory),
-			"chunksize":       []byte(m.HarborCluster.Spec.Storage.Oss.Chunksize)},
+			"authurl":             []byte(m.HarborCluster.Spec.Storage.Swift.Authurl),
+			"username":            []byte(m.HarborCluster.Spec.Storage.Swift.Username),
+			"password":            []byte(m.HarborCluster.Spec.Storage.Swift.Password),
+			"container":           []byte(m.HarborCluster.Spec.Storage.Swift.Container),
+			"region":              []byte(m.HarborCluster.Spec.Storage.Swift.Region),
+			"tenant":              []byte(m.HarborCluster.Spec.Storage.Swift.Tenant),
+			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.Tenantid),
+			"domain":              []byte(m.HarborCluster.Spec.Storage.Swift.Domain),
+			"Domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.Domainid),
+			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.Trustid),
+			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Insecureskipverify)),
+			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
+			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.Secretkey),
+			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.AuthVersion)),
+			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.EndpointType),
+			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey)),
+			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.TempurlMethods),
+			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.Chunksize)},
 	}
 }
 
@@ -252,24 +298,17 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"authurl":             []byte(m.HarborCluster.Spec.Storage.Swift.Authurl),
-			"username":            []byte(m.HarborCluster.Spec.Storage.Swift.Username),
-			"password":            []byte(m.HarborCluster.Spec.Storage.Swift.Password),
-			"container":           []byte(m.HarborCluster.Spec.Storage.Swift.Container),
-			"region":              []byte(m.HarborCluster.Spec.Storage.Swift.Region),
-			"tenant":              []byte(m.HarborCluster.Spec.Storage.Swift.Tenant),
-			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.Tenantid),
-			"domain":              []byte(m.HarborCluster.Spec.Storage.Swift.Domain),
-			"Domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.Domainid),
-			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.Trustid),
-			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Insecureskipverify)),
-			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
-			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.Secretkey),
-			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.AuthVersion)),
-			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.EndpointType),
-			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey)),
-			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.TempurlMethods),
-			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.Chunksize)},
+			"accesskeyid":     []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeyid),
+			"accesskeysecret": []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeysecret),
+			"region":          []byte(m.HarborCluster.Spec.Storage.Oss.Region),
+			"bucket":          []byte(m.HarborCluster.Spec.Storage.Oss.Bucket),
+			"endpoint":        []byte(m.HarborCluster.Spec.Storage.Oss.Region),
+			"internal":        []byte(m.HarborCluster.Spec.Storage.Oss.Internal),
+			"encrypt":         []byte(m.HarborCluster.Spec.Storage.Oss.Encrypt),
+			"secure":          []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
+			"chunksize":       []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
+			"rootdirectory":   []byte(m.HarborCluster.Spec.Storage.Oss.RootDirectory),
+		},
 	}
 }
 
@@ -297,28 +336,38 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
 	}
 	var minioCR minio.MinIOInstance
-	err = m.KubeClient.Get(m.getminIONamespacedName(),&minioCR)
+	err = m.KubeClient.Get(m.getminIONamespacedName(), &minioCR)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
 	}
 
-	if err := controllerutil.SetControllerReference(minioCreate, service, minio.SchemeGroupVersion); err != nil {
-		return err
+	credsSecret.OwnerReferences = []metav1.OwnerReference{
+		*metav1.NewControllerRef(minioCreate, HarborClusterMinIOGVK),
+	}
+	err = m.KubeClient.Update(credsSecret)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+	}
+
+	service.OwnerReferences = []metav1.OwnerReference{
+		*metav1.NewControllerRef(minioCreate, HarborClusterMinIOGVK),
+	}
+	err = m.KubeClient.Update(service)
+	if err != nil {
+		return minioNotReadyStatus(ErrorReason4, err.Error()), err
 	}
 
 	return minioUnknownStatus(), nil
-
-	panic("implement me")
 }
 
 func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 	return &minio.MinIOInstance{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       Kind,
-			APIVersion: MinIOGroup+"/"+MinIOVersion,
+			Kind:       minio.MinIOCRDResourceKind,
+			APIVersion: minio.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name,
+			Name:        m.getServiceName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
@@ -334,7 +383,8 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 				Labels:      m.getLabels(),
 				Annotations: m.generateAnnotations(),
 			},
-			Image: "minio/minio:" + m.HarborCluster.Spec.Storage.InCluster.Spec.Version,
+			ServiceName: m.getServiceName(),
+			Image:       "minio/minio:" + m.HarborCluster.Spec.Storage.InCluster.Spec.Version,
 			Zones: []minio.Zone{
 				minio.Zone{
 					Name:    m.HarborCluster.Name + "-" + DefaultZone,
@@ -342,7 +392,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 				},
 			},
 			VolumesPerServer:    1,
-			Mountpath:           "/export",
+			Mountpath:           minio.MinIOVolumeMountPath,
 			VolumeClaimTemplate: m.getVolumeClaimTemplate(),
 			CredsSecret: &corev1.LocalObjectReference{
 				Name: m.HarborCluster.Name + "-" + DefaultCredsSecret,
@@ -361,32 +411,20 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 				},
 			},
 			Resources: *m.getResourceRequirements(), //m.HarborCluster.Spec.Storage.InCluster.Spec.Resources,
-			Liveness: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/minio/health/live",
-						Port: intstr.IntOrString{
-							IntVal: 9000,
-						},
-					},
-				},
+			Liveness: &minio.Liveness{
 				InitialDelaySeconds: 120,
 				PeriodSeconds:       60,
 			},
-			Readiness: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/minio/health/ready",
-						Port: intstr.IntOrString{
-							IntVal: 9000,
-						},
-					},
-				},
+			Readiness: &minio.Readiness{
 				InitialDelaySeconds: 120,
 				PeriodSeconds:       60,
 			},
 		},
 	}
+}
+
+func (m *MinIOReconciler) getServiceName() string {
+	return m.HarborCluster.Name + "-" + DefaultMinIO
 }
 
 func (m *MinIOReconciler) getResourceRequirements() *corev1.ResourceRequirements {
@@ -443,7 +481,7 @@ func (m *MinIOReconciler) generateService() *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultMinIOService,
+			Name:        m.getServiceName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),

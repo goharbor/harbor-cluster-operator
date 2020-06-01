@@ -17,9 +17,11 @@ package controllers
 
 import (
 	"context"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -37,6 +39,7 @@ type HarborClusterReconciler struct {
 	Log          logr.Logger
 	Scheme       *runtime.Scheme
 	RequeueAfter time.Duration
+	Recorder     record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
@@ -50,6 +53,13 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
 		log.Error(err, "unable to fetch HarborCluster")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	option := &GetOptions{
+		Client:   k8s.WrapClient(ctx, r.Client),
+		Recorder: r.Recorder,
+		Log:      r.Log,
+		Scheme:   r.Scheme,
 	}
 
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
@@ -69,7 +79,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(ctx, &harborCluster, nil).Reconcile()
+	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err

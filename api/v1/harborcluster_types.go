@@ -164,7 +164,7 @@ type Oss struct {
 	Encrypt       string `json:"encrypt,omitempty"`
 	Secure        string `json:"secure,omitempty"`
 	Chunksize     string `json:"chunksize,omitempty"`
-	Rootdirectory string `json:"rootdirectory,omitempty"`
+	RootDirectory string `json:"rootdirectory,omitempty"`
 }
 
 type Swift struct {
