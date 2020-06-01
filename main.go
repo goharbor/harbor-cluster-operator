@@ -39,6 +39,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = goharborv1.AddToScheme(scheme)
+	_ = redisCli.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
