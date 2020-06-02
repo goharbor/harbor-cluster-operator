@@ -2,6 +2,7 @@ package harbor
 
 import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/controllers"
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
@@ -27,6 +28,9 @@ func (harbor *HarborReconciler) newHarborCR() *v1alpha1.Harbor {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
 			Namespace: namespacedName.Namespace,
+			Labels: map[string]string{
+				controllers.HarborClusterNameLabel: harbor.HarborCluster.Name,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(harbor.HarborCluster, goharborv1.HarborClusterGVK),
 			},
