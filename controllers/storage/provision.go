@@ -20,7 +20,6 @@ const (
 	GcsSecret                   = "gcsSecret"
 	SwiftSecret                 = "swiftSecret"
 	OssSecret                   = "ossSecret"
-	InClusterSecret             = "inClusterSecret"
 	DefaultCredsSecret          = "minio-creds-secret"
 	DefaultMcsSecret            = "minio-mcs-secret"
 	CredsAccesskey              = "bWluaW8="
@@ -31,12 +30,12 @@ const (
 	DefaultBucket               = "harbor"
 )
 
-func (m *MinIOReconciler) ProvisionInClusterSecret(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) ProvisionInClusterSecretAsOss(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
 	inClusterSecret := m.generateInClusterSecret(minioInstamnce)
 	err := m.KubeClient.Create(inClusterSecret)
 
 	p := &lcm.Property{
-		Name:  InClusterSecret,
+		Name:  OssSecret,
 		Value: inClusterSecret.Name,
 	}
 	properties := &lcm.Properties{p}
@@ -60,7 +59,7 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			// TODO
+			// TODO how about using random passwords ??
 			"accesskeyid":     []byte("minio"),
 			"accesskeysecret": []byte("minio123"),
 			"region":          []byte(DefaultRegion),
@@ -257,7 +256,7 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 			"tenant":              []byte(m.HarborCluster.Spec.Storage.Swift.Tenant),
 			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.Tenantid),
 			"domain":              []byte(m.HarborCluster.Spec.Storage.Swift.Domain),
-			"Domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.Domainid),
+			"domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.Domainid),
 			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.Trustid),
 			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Insecureskipverify)),
 			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
@@ -336,7 +335,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
 	}
 	var minioCR minio.MinIOInstance
-	err = m.KubeClient.Get(m.getminIONamespacedName(), &minioCR)
+	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 	if err != nil {
 		return minioNotReadyStatus(ErrorReason5, err.Error()), err
 	}
