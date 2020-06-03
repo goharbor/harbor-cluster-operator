@@ -43,8 +43,6 @@ func (postgre *PostgreSQLReconciler) Readiness() error {
 	switch postgre.HarborCluster.Spec.Database.Kind {
 	case "external":
 		client, err = postgre.GetExternalDatabaseInfo()
-	case "inCluster":
-		//client, err = postgre.GetInClusterRedisInfo()
 	}
 
 	if err != nil {
@@ -84,22 +82,22 @@ func (postgre *PostgreSQLReconciler) DeployComponentSecret(component string) err
 		return err
 	}
 	err := postgre.Client.Get(types.NamespacedName{Name: secretName, Namespace: postgre.Namespace}, secret)
-	if err != nil && kerr.IsNotFound(err) {
-		postgre.Log.Info("Creating Harbor Component Secret",
-			"namespace", postgre.Namespace,
-			"name", secretName,
-			"component", component)
-		err = postgre.Client.Create(sc)
-		if err != nil {
-			return err
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			postgre.Log.Info("Creating Harbor Component Secret",
+				"namespace", postgre.Namespace,
+				"name", secretName,
+				"component", component)
+			err = postgre.Client.Create(sc)
+			if err != nil {
+				return err
+			}
+			postgre.Properties = postgre.Properties.New(propertyName, secretName)
+			return nil
 		}
-		postgre.Properties = postgre.Properties.New(propertyName, secretName)
-	} else if err != nil {
 		return err
 	}
-
 	postgre.Properties = postgre.Properties.New(propertyName, secretName)
-
 	return nil
 }
 
@@ -115,11 +113,8 @@ func (postgre *PostgreSQLReconciler) GetExternalDatabaseInfo() (*pgx.Conn, error
 		return nil, errors.New(".database.spec.secretName is invalid")
 	}
 
-	if spec.SecretName != "" {
-		connect, err = GetExternalDatabaseConn(spec, postgre.Namespace, postgre.Client)
-		if err != nil {
-			return nil, err
-		}
+	if connect, err = GetExternalDatabaseConn(spec, postgre.Namespace, postgre.Client); err != nil {
+		return nil, err
 	}
 
 	postgre.Connect = connect
