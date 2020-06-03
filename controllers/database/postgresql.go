@@ -42,9 +42,7 @@ func (postgre *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return crStatus, err
 	}
 
-	c, _ := json.Marshal(crStatus)
-	fmt.Println(string(c))
-	return nil, nil
+	return crStatus, nil
 }
 
 func (postgre *PostgreSQLReconciler) Provision() (*lcm.CRStatus, error) {
