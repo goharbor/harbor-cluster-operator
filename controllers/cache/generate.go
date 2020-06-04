@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	virtualServiceGVR = schema.GroupVersionResource{
+	redisFailoversGVR = schema.GroupVersionResource{
 		Group:    "databases.spotahome.com",
 		Version:  "v1",
 		Resource: "redisfailovers",
