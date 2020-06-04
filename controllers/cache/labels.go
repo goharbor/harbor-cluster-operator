@@ -10,8 +10,7 @@ func (redis *RedisReconciler) NewLabels() map[string]string {
 		AppLabel:                     redis.Name,
 		"app.kubernetes.io/name":     "cache",
 		"app.kubernetes.io/instance": redis.Namespace,
-		"service.owner":              "goharbor.io",
-		"owned.by":                   "harbor-cluster",
+		"goharbor.io/harbor-cluster": redis.Name,
 	}
 
 	return MergeLabels(redis.Labels, dynLabels, redis.HarborCluster.Labels)
