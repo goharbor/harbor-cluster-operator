@@ -27,7 +27,7 @@ func (redis *RedisReconciler) Deploy() error {
 	var actualCR *unstructured.Unstructured
 	var expectCR *unstructured.Unstructured
 
-	crdClient := redis.DClient.WithResource(virtualServiceGVR).WithNamespace(redis.Namespace)
+	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.Namespace)
 
 	expectCR, err := redis.generateRedisCR()
 	if err != nil {
