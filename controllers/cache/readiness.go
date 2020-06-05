@@ -64,7 +64,10 @@ func (redis *RedisReconciler) Readiness() error {
 
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
-		if err := redis.DeployComponentSecret(component, url, ""); err != nil {
+		secretName := fmt.Sprintf("%s-redis", component)
+		propertyName := fmt.Sprintf("%sSecret", component)
+		
+		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
 			return err
 		}
 	}
@@ -107,8 +110,8 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 			"component", component)
 		return redis.Client.Create(sc)
 	}
-	redis.Properties = redis.Properties.New(propertyName, secretName)
-	return nil
+
+	return err
 }
 
 func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
