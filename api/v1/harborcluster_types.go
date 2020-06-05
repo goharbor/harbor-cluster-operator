@@ -44,6 +44,11 @@ const (
 	ComponentDatabase Component = "database"
 )
 
+const (
+	ExternalComponent  string = "external"
+	InClusterComponent string = "inCluster"
+)
+
 // HarborClusterSpec defines the desired state of HarborCluster
 type HarborClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
