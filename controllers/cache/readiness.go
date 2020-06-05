@@ -99,22 +99,15 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace st
 		}
 	}
 
-	if err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret); err != nil && kerr.IsNotFound(err) {
+	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret)
+	if err != nil && kerr.IsNotFound(err) {
 		redis.Log.Info("Creating Harbor Component Secret",
 			"namespace", redis.Namespace,
 			"name", secretName,
 			"component", component)
-		err = redis.Client.Create(sc)
-		if err != nil {
-			return err
-		}
-		redis.Properties = redis.Properties.New(propertyName, secretName)
-	} else if err != nil {
-		return err
+		return redis.Client.Create(sc)
 	}
-
 	redis.Properties = redis.Properties.New(propertyName, secretName)
-
 	return nil
 }
 
@@ -146,8 +139,6 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 			Password:  pw,
 			GroupName: spec.GroupName,
 		}
-
-		fmt.Println(connect)
 
 		redis.RedisConnect = connect
 		client = connect.NewRedisPool()
