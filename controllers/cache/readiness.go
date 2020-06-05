@@ -42,9 +42,9 @@ func (redis *RedisReconciler) Readiness() error {
 	)
 
 	switch redis.HarborCluster.Spec.Redis.Kind {
-	case "external":
+	case goharborv1.ExternalComponent:
 		client, err = redis.GetExternalRedisInfo()
-	case "inCluster":
+	case goharborv1.InClusterComponent:
 		client, err = redis.GetInClusterRedisInfo()
 	}
 
@@ -88,11 +88,11 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, s
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
 	switch redis.HarborCluster.Spec.Redis.Kind {
-	case "external":
+	case goharborv1.ExternalComponent:
 		if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
 			return err
 		}
-	case "inCluster":
+	case goharborv1.InClusterComponent:
 		rf, err := redis.GetRedisFailover()
 		if err != nil {
 			return err
