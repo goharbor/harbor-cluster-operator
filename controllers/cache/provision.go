@@ -73,16 +73,12 @@ func (redis *RedisReconciler) DeploySecret() error {
 	if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
 		return err
 	}
+	
 	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.Namespace, "name", redis.Name)
-		err = redis.Client.Create(sc)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
+		return redis.Client.Create(sc)
 	}
 
-	return nil
+	return err
 }
