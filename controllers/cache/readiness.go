@@ -81,7 +81,7 @@ func (redis *RedisReconciler) Readiness() error {
 }
 
 // DeployComponentSecret deploy harbor component redis secret
-func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace string) error {
+func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
 	secretName := fmt.Sprintf("%s-redis", component)
 	propertyName := fmt.Sprintf("%sSecret", component)
