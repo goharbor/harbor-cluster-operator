@@ -12,11 +12,7 @@ import (
 )
 
 var (
-	redisFailoversGVR = schema.GroupVersionResource{
-		Group:    "databases.spotahome.com",
-		Version:  "v1",
-		Resource: "redisfailovers",
-	}
+	redisFailoversGVR = redisCli.SchemeGroupVersion.WithResource(redisCli.RFNamePlural)
 )
 
 // generateRedisCR returns RedisFailovers CRs
