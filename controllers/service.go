@@ -7,6 +7,7 @@ import (
 	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
 	"github.com/goharbor/harbor-cluster-operator/controllers/database"
 	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/controllers/storage"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -34,11 +35,12 @@ type ServiceGetter interface {
 }
 
 type GetOptions struct {
-	Client   k8s.Client
-	Recorder record.EventRecorder
-	Log      logr.Logger
-	DClient  k8s.DClient
-	Scheme   *runtime.Scheme
+	Client      k8s.Client
+	Recorder    record.EventRecorder
+	Log         logr.Logger
+	DClient     k8s.DClient
+	Scheme      *runtime.Scheme
+	ImageGetter image.ImageGetter
 }
 
 type ServiceGetterImpl struct {
