@@ -184,18 +184,18 @@ type Swift struct {
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
 	// +kubebuilder:validation:Required
-	Tenant              string   `json:"tenant"`
-	Tenantid            string   `json:"tenantid,omitempty"`
-	Domain              string   `json:"domain,omitempty"`
-	Domainid            string   `json:"domainid,omitempty"`
-	Trustid             string   `json:"trustid,omitempty"`
-	Insecureskipverify  bool     `json:"insecureskipverify,omitempty"`
-	Chunksize           string   `json:"chunksize,omitempty"`
-	Prefix              string   `json:"prefix,omitempty"`
-	Secretkey           string   `json:"secretkey,omitempty"`
-	AuthVersion         int      `json:"authversion,omitempty"`
-	EndpointType        string   `json:"endpointtype,omitempty"`
-	TempurlContainerkey bool     `json:"tempurlcontainerkey,omitempty"`
+	Tenant              string `json:"tenant"`
+	Tenantid            string `json:"tenantid,omitempty"`
+	Domain              string `json:"domain,omitempty"`
+	Domainid            string `json:"domainid,omitempty"`
+	Trustid             string `json:"trustid,omitempty"`
+	Insecureskipverify  bool   `json:"insecureskipverify,omitempty"`
+	Chunksize           string `json:"chunksize,omitempty"`
+	Prefix              string `json:"prefix,omitempty"`
+	Secretkey           string `json:"secretkey,omitempty"`
+	AuthVersion         int    `json:"authversion,omitempty"`
+	EndpointType        string `json:"endpointtype,omitempty"`
+	TempurlContainerkey bool   `json:"tempurlcontainerkey,omitempty"`
 	TempurlMethods      string `json:"tempurlmethods,omitempty"`
 }
 

@@ -18,6 +18,7 @@ package controllers
 import (
 	"context"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,7 +108,20 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		}, err
 	}
 
-	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, nil).Reconcile()
+	getRegistry := func() *string {
+		if harborCluster.Spec.ImageSource != nil && harborCluster.Spec.ImageSource.Registry != "" {
+			return &harborCluster.Spec.ImageSource.Registry
+		}
+		return nil
+	}
+	var imageGetter image.ImageGetter
+	if imageGetter, err = image.NewImageGetter(getRegistry(), harborCluster.Spec.Version); err != nil {
+		log.Error(err, "error when create ImageGetter.")
+		return ctrl.Result{}, err
+	}
+	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, &GetOptions{
+		ImageGetter: imageGetter,
+	}).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err

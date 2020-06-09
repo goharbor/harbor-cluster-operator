@@ -297,7 +297,6 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 
 	return minioUnknownStatus(), nil
 
-	panic("implement me")
 }
 
 func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
