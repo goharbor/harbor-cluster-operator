@@ -1,6 +1,9 @@
 package cache
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -13,6 +16,7 @@ import (
 // RedisReconciler implement the Reconciler interface and lcm.Controller interface.
 type RedisReconciler struct {
 	HarborCluster *goharborv1.HarborCluster
+	CXT           context.Context
 	Client        k8s.Client
 	Recorder      record.EventRecorder
 	Log           logr.Logger
@@ -24,15 +28,36 @@ type RedisReconciler struct {
 	Name          string
 	Namespace     string
 	CRStatus      *lcm.CRStatus
+	RedisConnect  *RedisConnect
+	Properties    *lcm.Properties
 }
 
 // Reconciler implements the reconcile logic of redis service
 func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
-	return nil, nil
+	redis.Labels = redis.NewLabels()
+	redis.Client.WithContext(redis.CXT)
+	redis.DClient.WithContext(redis.CXT)
+
+	crStatus, err := redis.Provision()
+	if err != nil {
+		return crStatus, err
+	}
+
+	c, _ := json.Marshal(crStatus)
+	fmt.Println(string(c))
+
+	return crStatus, nil
 }
 
 func (redis *RedisReconciler) Provision() (*lcm.CRStatus, error) {
-	panic("implement me")
+	if err := redis.Deploy(); err != nil {
+		return redis.CRStatus, err
+	}
+
+	if err := redis.Readiness(); err != nil {
+		return redis.CRStatus, err
+	}
+	return redis.CRStatus, nil
 }
 
 func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
