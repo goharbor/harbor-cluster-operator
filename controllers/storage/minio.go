@@ -55,13 +55,13 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	if k8serror.IsNotFound(err) {
 		return m.Provision()
 	} else if err != nil {
-		return minioNotReadyStatus(ErrorReason0, err.Error()), err
+		return minioNotReadyStatus(GetMinIOError, err.Error()), err
 	}
 
 	var minioStatefulSet appsv1.StatefulSet
 	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioStatefulSet)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason0, err.Error()), err
+		return minioNotReadyStatus(GetMinIOError, err.Error()), err
 	}
 
 	if minioStatefulSet.Status.ReadyReplicas == m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas {

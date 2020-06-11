@@ -74,35 +74,35 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 	case azureStorage:
 		properties, err := m.ProvisionAzure()
 		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
+			minioNotReadyStatus(CreateExternalSecretError, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case gcsStorage:
 		properties, err := m.ProvisionGcs()
 		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
+			minioNotReadyStatus(CreateExternalSecretError, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case s3Storage:
 		properties, err := m.ProvisionS3()
 		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
+			minioNotReadyStatus(CreateExternalSecretError, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case swiftStorage:
 		properties, err := m.ProvisionSwift()
 		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
+			minioNotReadyStatus(CreateExternalSecretError, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	case ossStorage:
 		properties, err := m.ProvisionOss()
 		if err != nil {
-			minioNotReadyStatus(ErrorReason1, err.Error())
+			minioNotReadyStatus(CreateExternalSecretError, err.Error())
 		}
 		return minioReadyStatus(properties), nil
 	default:
-		return minioNotReadyStatus(ErrorReason3, ErrorReason3), nil
+		return minioNotReadyStatus(NotSupportType, ErrorReason3), nil
 	}
 }
 
@@ -321,23 +321,23 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	credsSecret := m.generateCredsSecret()
 	err := m.KubeClient.Create(credsSecret)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason2, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOSecretError, err.Error()), err
 	}
 	service := m.generateService()
 	err = m.KubeClient.Create(service)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason4, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
 	minioCreate := m.generateMinIOCR()
 	err = m.KubeClient.Create(minioCreate)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
 	var minioCR minio.MinIOInstance
 	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
 
 	credsSecret.OwnerReferences = []metav1.OwnerReference{
@@ -345,7 +345,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	}
 	err = m.KubeClient.Update(credsSecret)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason5, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
 
 	service.OwnerReferences = []metav1.OwnerReference{
@@ -353,7 +353,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	}
 	err = m.KubeClient.Update(service)
 	if err != nil {
-		return minioNotReadyStatus(ErrorReason4, err.Error()), err
+		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
 	return minioUnknownStatus(), nil
