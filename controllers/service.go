@@ -55,6 +55,10 @@ func (impl *ServiceGetterImpl) Cache(ctx context.Context, harborCluster *goharbo
 		DClient:       options.DClient,
 		Scheme:        options.Scheme,
 		Properties:    &lcm.Properties{},
+		Name:          harborCluster.Name,
+		Namespace:     harborCluster.Namespace,
+		CXT:           ctx,
+		CRStatus:      &lcm.CRStatus{},
 	}
 }
 

@@ -6,14 +6,6 @@ spec:
   redis:
     kind: "inCluster"
     spec:
-      server:
-        replicas: 4
-        resources:
-          cpu: "1"
-          memory: "2Gi"
-        storage: "10Gi"
-      sentinel:
-        replicas: 3
       schema: "sentinel"
   adminPasswordSecret: "test"
   database:

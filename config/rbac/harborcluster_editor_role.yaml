@@ -4,23 +4,23 @@ kind: ClusterRole
 metadata:
   name: harborcluster-editor-role
 rules:
-- apiGroups:
-  - cluster.goharbor.io
-  resources:
-  - harborclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.goharbor.io
-  resources:
-  - harborclusters/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - cluster.goharbor.io
+    resources:
+      - harborclusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - cluster.goharbor.io
+    resources:
+      - harborclusters/status
+    verbs:
+      - get
+      - patch
+      - update

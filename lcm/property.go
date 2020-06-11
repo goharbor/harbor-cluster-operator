@@ -46,7 +46,7 @@ type Property struct {
 type Properties []*Property
 
 //New returns a new properties
-func (ps Properties) New(Name string, Value interface{}) *Property {
+func (ps Properties) New(Name string, Value interface{}) *Properties {
 	p := &Property{
 		Name:  Name,
 		Value: Value,
@@ -54,7 +54,7 @@ func (ps Properties) New(Name string, Value interface{}) *Property {
 
 	ps = append(ps, p)
 
-	return p
+	return &ps
 }
 
 //Update updates properties according to the given arguments

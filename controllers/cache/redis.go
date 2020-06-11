@@ -2,8 +2,6 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -40,11 +38,10 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	crStatus, err := redis.Provision()
 	if err != nil {
+		redis.Log.Error(err, "fail to provision redis",
+			"namespace", redis.Namespace, "name", redis.Name)
 		return crStatus, err
 	}
-
-	c, _ := json.Marshal(crStatus)
-	fmt.Println(string(c))
 
 	return crStatus, nil
 }

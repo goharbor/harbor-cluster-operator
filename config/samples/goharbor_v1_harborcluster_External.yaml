@@ -4,22 +4,19 @@ metadata:
   name: harborcluster-sample
 spec:
   redis:
-    kind: "inCluster"
+    kind: "external"
     spec:
-      server:
-        replicas: 4
-        resources:
-          cpu: "1"
-          memory: "2Gi"
-        storage: "10Gi"
-      sentinel:
-        replicas: 3
+      secretName: "redis-auth"
+      groupName: "calllog"
       schema: "sentinel"
+      hosts:
+      - host: "10.101.188.149"
+        port: "26379"
   adminPasswordSecret: "test"
   database:
-    kind: "inCluster"
+    kind: "external"
     spec:
-      replicas: 3
+      secretName: "database-external-secret"
   publicURL: "https://harbor.test.com"
   replicas: 1
   storage:
