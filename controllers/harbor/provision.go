@@ -2,8 +2,8 @@ package harbor
 
 import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
-	"github.com/goharbor/harbor-cluster-operator/controllers"
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +29,7 @@ func (harbor *HarborReconciler) newHarborCR() *v1alpha1.Harbor {
 			Name:      namespacedName.Name,
 			Namespace: namespacedName.Namespace,
 			Labels: map[string]string{
-				controllers.HarborClusterNameLabel: harbor.HarborCluster.Name,
+				k8s.HarborClusterNameLabel: harbor.HarborCluster.Name,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(harbor.HarborCluster, goharborv1.HarborClusterGVK),
