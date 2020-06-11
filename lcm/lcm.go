@@ -4,6 +4,11 @@ import (
 	v1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 )
 
+const (
+	ScaleUp   = "ScaleUp"
+	ScaleDown = "ScaleDown"
+)
+
 // This package container interface of harbor cluster service lifecycle manage.
 
 type Controller interface {
