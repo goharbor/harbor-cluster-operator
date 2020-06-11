@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"os"
 	"time"
 
@@ -39,6 +40,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = goharborv1.AddToScheme(scheme)
+	_ = redisCli.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -73,6 +75,7 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		RequeueAfter:  requeueAfter,
 		ServiceGetter: &controllers.ServiceGetterImpl{},
+		Recorder:      mgr.GetEventRecorderFor("HarborCluster-Controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
