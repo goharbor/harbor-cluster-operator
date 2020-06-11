@@ -18,6 +18,8 @@ package controllers
 import (
 	"context"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
+
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +46,8 @@ type HarborClusterReconciler struct {
 
 // +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -66,8 +70,22 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	if harborCluster.DeletionTimestamp != nil {
 		return ctrl.Result{}, nil
 	}
+	
+	dClient, err := k8s.NewDynamicClient()
+	if err != nil {
+		log.Error(err, "unable to create dynamic client")
+		return ctrl.Result{}, err
+	}
 
-	cacheStatus, err := r.Cache(ctx, &harborCluster, nil).Reconcile()
+	option := &GetOptions{
+		Client:   k8s.WrapClient(r.Client),
+		Recorder: r.Recorder,
+		Log:      r.Log,
+		DClient:  k8s.WrapDClient(dClient),
+		Scheme:   r.Scheme,
+	}
+
+	cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile cache component.")
 		return ctrl.Result{}, err
