@@ -38,8 +38,21 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	crStatus, err := redis.Provision()
 	if err != nil {
-		redis.Log.Error(err, "fail to provision redis",
-			"namespace", redis.Namespace, "name", redis.Name)
+		return crStatus, err
+	}
+
+	crStatus, err = redis.ScaleUp(0)
+	if err != nil {
+		return crStatus, err
+	}
+
+	crStatus, err = redis.ScaleDown(0)
+	if err != nil {
+		return crStatus, err
+	}
+
+	crStatus, err = redis.Update(nil)
+	if err != nil {
 		return crStatus, err
 	}
 
@@ -62,13 +75,22 @@ func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
 }
 
 func (redis *RedisReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
-	panic("implement me")
+	if err := redis.ScaleUpCache(); err != nil {
+		return redis.CRStatus, err
+	}
+	return redis.CRStatus, nil
 }
 
 func (redis *RedisReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
-	panic("implement me")
+	if err := redis.ScaleDownCache(); err != nil {
+		return redis.CRStatus, err
+	}
+	return redis.CRStatus, nil
 }
 
 func (redis *RedisReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
-	panic("implement me")
+	if err := redis.RollingUpgrades(); err != nil {
+		return redis.CRStatus, err
+	}
+	return redis.CRStatus, nil
 }
