@@ -102,7 +102,7 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 		}
 		return minioReadyStatus(properties), nil
 	default:
-		return minioNotReadyStatus(NotSupportType, ErrorReason3), nil
+		return minioNotReadyStatus(NotSupportType, NotSupportType), nil
 	}
 }
 
@@ -136,16 +136,16 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 		Data: map[string][]byte{
 			"region":         []byte(m.HarborCluster.Spec.Storage.S3.Region),
 			"bucket":         []byte(m.HarborCluster.Spec.Storage.S3.Bucket),
-			"accesskey":      []byte(m.HarborCluster.Spec.Storage.S3.Accesskey),
-			"secretkey":      []byte(m.HarborCluster.Spec.Storage.S3.Secretkey),
-			"regionendpoint": []byte(m.HarborCluster.Spec.Storage.S3.Regionendpoint),
+			"accesskey":      []byte(m.HarborCluster.Spec.Storage.S3.AccessKey),
+			"secretkey":      []byte(m.HarborCluster.Spec.Storage.S3.SecretKey),
+			"regionendpoint": []byte(m.HarborCluster.Spec.Storage.S3.RegionEndpoint),
 			"encrypt":        []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Encrypt)),
-			"keyid":          []byte(m.HarborCluster.Spec.Storage.S3.Keyid),
+			"keyid":          []byte(m.HarborCluster.Spec.Storage.S3.KeyId),
 			"secure":         []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Secure)),
-			"chunksize":      []byte(m.HarborCluster.Spec.Storage.S3.Chunksize),
-			"rootdirectory":  []byte(m.HarborCluster.Spec.Storage.S3.Rootdirectory),
-			"storageclass":   []byte(m.HarborCluster.Spec.Storage.S3.Storageclass),
-			"v4auth":         []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.V4auth))},
+			"chunksize":      []byte(m.HarborCluster.Spec.Storage.S3.ChunkSize),
+			"rootdirectory":  []byte(m.HarborCluster.Spec.Storage.S3.RootDirectory),
+			"storageclass":   []byte(m.HarborCluster.Spec.Storage.S3.StorageClass),
+			"v4auth":         []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.V4Auth))},
 	}
 }
 
@@ -177,10 +177,10 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"authurl":   []byte(m.HarborCluster.Spec.Storage.Swift.Authurl),
-			"username":  []byte(m.HarborCluster.Spec.Storage.Swift.Username),
-			"password":  []byte(m.HarborCluster.Spec.Storage.Swift.Password),
-			"container": []byte(m.HarborCluster.Spec.Storage.Azure.Container),
+			"realm":       []byte(m.HarborCluster.Spec.Storage.Azure.Realm),
+			"accountname": []byte(m.HarborCluster.Spec.Storage.Azure.AccountName),
+			"accountkey":  []byte(m.HarborCluster.Spec.Storage.Azure.AccountKey),
+			"container":   []byte(m.HarborCluster.Spec.Storage.Azure.Container),
 		},
 	}
 }
@@ -214,9 +214,9 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"bucket":        []byte(m.HarborCluster.Spec.Storage.Gcs.Bucket),
-			"encodedkey":    []byte(m.HarborCluster.Spec.Storage.Gcs.Encodedkey),
-			"rootdirectory": []byte(m.HarborCluster.Spec.Storage.Gcs.Rootdirectory),
-			"chunksize":     []byte(m.HarborCluster.Spec.Storage.Gcs.Chunksize)},
+			"encodedkey":    []byte(m.HarborCluster.Spec.Storage.Gcs.EncodedKey),
+			"rootdirectory": []byte(m.HarborCluster.Spec.Storage.Gcs.RootDirectory),
+			"chunksize":     []byte(m.HarborCluster.Spec.Storage.Gcs.ChunkSize)},
 	}
 }
 
@@ -254,18 +254,18 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 			"container":           []byte(m.HarborCluster.Spec.Storage.Swift.Container),
 			"region":              []byte(m.HarborCluster.Spec.Storage.Swift.Region),
 			"tenant":              []byte(m.HarborCluster.Spec.Storage.Swift.Tenant),
-			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.Tenantid),
+			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.TenantId),
 			"domain":              []byte(m.HarborCluster.Spec.Storage.Swift.Domain),
-			"domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.Domainid),
-			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.Trustid),
-			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.Insecureskipverify)),
+			"domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.DomainId),
+			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.TrustId),
+			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.InsecureSkipVerify)),
 			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
-			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.Secretkey),
+			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.SecretKey),
 			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.AuthVersion)),
 			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.EndpointType),
 			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey)),
 			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.TempurlMethods),
-			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.Chunksize)},
+			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.ChunkSize)},
 	}
 }
 
@@ -297,15 +297,15 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"accesskeyid":     []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeyid),
-			"accesskeysecret": []byte(m.HarborCluster.Spec.Storage.Oss.Accesskeysecret),
+			"accesskeyid":     []byte(m.HarborCluster.Spec.Storage.Oss.AccessKeyId),
+			"accesskeysecret": []byte(m.HarborCluster.Spec.Storage.Oss.AccessKeySecret),
 			"region":          []byte(m.HarborCluster.Spec.Storage.Oss.Region),
 			"bucket":          []byte(m.HarborCluster.Spec.Storage.Oss.Bucket),
 			"endpoint":        []byte(m.HarborCluster.Spec.Storage.Oss.Region),
 			"internal":        []byte(m.HarborCluster.Spec.Storage.Oss.Internal),
 			"encrypt":         []byte(m.HarborCluster.Spec.Storage.Oss.Encrypt),
 			"secure":          []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
-			"chunksize":       []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
+			"chunksize":       []byte(m.HarborCluster.Spec.Storage.Oss.ChunkSize),
 			"rootdirectory":   []byte(m.HarborCluster.Spec.Storage.Oss.RootDirectory),
 		},
 	}

@@ -123,7 +123,7 @@ func (m *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
 	if err != nil {
 		return minioUnknownStatus(), err
 	}
-	return nil,nil
+	return nil, nil
 }
 
 func (m *MinIOReconciler) Scale() (*lcm.CRStatus, error) {
