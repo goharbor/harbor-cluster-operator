@@ -12,6 +12,6 @@ type Connect struct {
 
 // GenDatabaseUrl returns database connection url
 func (c *Connect) GenDatabaseUrl() string {
-	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", c.Username, c.Password, c.Host, c.Port, "postgres")
+	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", c.Username, c.Password, c.Host, c.Port, c.Database)
 	return databaseURL
 }

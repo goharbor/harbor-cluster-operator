@@ -8,7 +8,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -51,9 +50,7 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 		},
 	}
 
-	
 	conf.Spec.Redis.Storage.PersistentVolumeClaim = redis.generateRedisStorage(storageSize, redis.Name)
-	
 
 	mapResult, err := runtime.DefaultUnstructuredConverter.ToUnstructured(conf)
 	if err != nil {

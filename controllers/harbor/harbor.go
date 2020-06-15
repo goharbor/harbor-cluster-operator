@@ -41,6 +41,10 @@ func (harbor *HarborReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
+func (harbor *HarborReconciler) Scale() (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
 func (harbor *HarborReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }

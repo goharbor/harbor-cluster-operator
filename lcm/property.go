@@ -52,9 +52,17 @@ func (ps Properties) New(Name string, Value interface{}) *Property {
 		Value: Value,
 	}
 
-	ps = append(ps, p)
-
 	return p
+}
+
+//Add append a new property to properties
+func (ps Properties) Add(Name string, Value interface{}) *Properties {
+	p := &Property{
+		Name:  Name,
+		Value: Value,
+	}
+	ps = append(ps, p)
+	return &ps
 }
 
 //Update updates properties according to the given arguments

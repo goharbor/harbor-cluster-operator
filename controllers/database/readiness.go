@@ -34,111 +34,113 @@ var (
 // - create postgre connection pool
 // - ping postgre server
 // - return postgre properties if postgre has available
-func (postgre *PostgreSQLReconciler) Readiness() error {
+func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 	var (
+		conn   *Connect
 		client *pgx.Conn
 		err    error
 	)
 
-	switch postgre.HarborCluster.Spec.Database.Kind {
+	switch postgres.HarborCluster.Spec.Database.Kind {
 	case "external":
-		client, err = postgre.GetExternalDatabaseInfo()
+		conn, client, err = postgres.GetExternalDatabaseInfo()
+	case "inCluster":
+
+	default:
+		return nil, errors.New("fail to check database kind")
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	defer client.Close(postgre.Ctx)
+	defer client.Close(postgres.Ctx)
 
-	if err := client.Ping(postgre.Ctx); err != nil {
-		postgre.Log.Error(err, "Fail to check Database.", "namespace", postgre.Namespace, "name", postgre.Name)
-		return err
+	if err := client.Ping(postgres.Ctx); err != nil {
+		postgres.Log.Error(err, "Fail to check Database.", "namespace", postgres.HarborCluster.Namespace, "name", postgres.HarborCluster.Name)
+		return nil, err
 	}
-	postgre.Log.Info("Database already ready.", "namespace", postgre.Namespace, "name", postgre.Name)
+	postgres.Log.Info("Database already ready.", "namespace", postgres.HarborCluster.Namespace, "name", postgres.HarborCluster.Name)
 
+	properties := &lcm.Properties{}
 	for _, component := range components {
-		if err := postgre.DeployComponentSecret(component); err != nil {
-			return err
+		secretName := fmt.Sprintf("%s-database", component)
+		propertyName := fmt.Sprintf("%sSecret", component)
+		if err := postgres.DeployComponentSecret(conn, component, secretName); err != nil {
+			return nil, err
 		}
+		properties = properties.Add(propertyName, secretName)
 	}
 
-	postgre.CRStatus = lcm.New(goharborv1.DatabaseReady).
+	crStatus := lcm.New(goharborv1.DatabaseReady).
 		WithStatus(corev1.ConditionTrue).
 		WithReason("database already ready").
 		WithMessage("harbor component database secrets are already create.").
-		WithProperties(*postgre.Properties)
-	return nil
+		WithProperties(*properties)
+	return crStatus, nil
 }
 
 // DeployComponentSecret deploy harbor component database secret
-func (postgre *PostgreSQLReconciler) DeployComponentSecret(component string) error {
+func (postgres *PostgreSQLReconciler) DeployComponentSecret(conn *Connect, component, secretName string) error {
 	secret := &corev1.Secret{}
-	secretName := fmt.Sprintf("%s-database", component)
-	propertyName := fmt.Sprintf("%sSecret", component)
-	sc := postgre.generateHarborDatabaseSecret(secretName)
+	sc := postgres.generateHarborDatabaseSecret(conn, secretName)
 
-	if err := controllerutil.SetControllerReference(postgre.HarborCluster, sc, postgre.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(postgres.HarborCluster, sc, postgres.Scheme); err != nil {
 		return err
 	}
-	err := postgre.Client.Get(types.NamespacedName{Name: secretName, Namespace: postgre.Namespace}, secret)
+	err := postgres.Client.Get(types.NamespacedName{Name: secretName, Namespace: postgres.HarborCluster.Namespace}, secret)
 	if err != nil {
 		if kerr.IsNotFound(err) {
-			postgre.Log.Info("Creating Harbor Component Secret",
-				"namespace", postgre.Namespace,
+			postgres.Log.Info("Creating Harbor Component Secret",
+				"namespace", postgres.HarborCluster.Namespace,
 				"name", secretName,
 				"component", component)
-			err = postgre.Client.Create(sc)
+			err = postgres.Client.Create(sc)
 			if err != nil {
 				return err
 			}
-			postgre.Properties = postgre.Properties.New(propertyName, secretName)
+
 			return nil
 		}
 		return err
 	}
-	postgre.Properties = postgre.Properties.New(propertyName, secretName)
 	return nil
 }
 
 // GetExternalDatabaseInfo returns external database connection client
-func (postgre *PostgreSQLReconciler) GetExternalDatabaseInfo() (*pgx.Conn, error) {
+func (postgres *PostgreSQLReconciler) GetExternalDatabaseInfo() (*Connect, *pgx.Conn, error) {
 	var (
 		connect *Connect
 		client  *pgx.Conn
 		err     error
 	)
-	spec := postgre.HarborCluster.Spec.Database.Spec
+	spec := postgres.HarborCluster.Spec.Database.Spec
 	if spec.SecretName == "" {
-		return nil, errors.New(".database.spec.secretName is invalid")
+		return connect, client, errors.New(".database.spec.secretName is invalid")
 	}
 
-	if connect, err = GetExternalDatabaseConn(spec, postgre.Namespace, postgre.Client); err != nil {
-		return nil, err
+	if connect, err = GetExternalDatabaseConn(spec.SecretName, postgres.Client); err != nil {
+		return connect, client, err
 	}
-
-	postgre.Connect = connect
 
 	url := connect.GenDatabaseUrl()
 
-	client, err = pgx.Connect(postgre.Ctx, url)
+	client, err = pgx.Connect(postgres.Ctx, url)
 	if err != nil {
-		postgre.Log.Error(err, "Unable to connect to database")
-		return nil, err
+		postgres.Log.Error(err, "Unable to connect to database")
+		return connect, client, err
 	}
 
-	return client, nil
+	return connect, client, nil
 }
 
 // GetExternalDatabaseConn returns external database connection info
-func GetExternalDatabaseConn(spec *goharborv1.PostgresSQL, namespace string, client k8s.Client) (*Connect, error) {
+func GetExternalDatabaseConn(secretName string, client k8s.Client) (*Connect, error) {
 	external := &PostgreSQLReconciler{
-		Name:      spec.SecretName,
-		Namespace: namespace,
-		Client:    client,
+		Client: client,
 	}
 
-	conn, err := external.GetDatabaseConn()
+	conn, err := external.GetDatabaseConn(secretName)
 	if err != nil {
 		return nil, err
 	}

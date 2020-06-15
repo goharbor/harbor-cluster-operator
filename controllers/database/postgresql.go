@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -24,20 +22,15 @@ type PostgreSQLReconciler struct {
 	ExpectCR      *unstructured.Unstructured
 	ActualCR      *unstructured.Unstructured
 	Labels        map[string]string
-	Name          string
-	Namespace     string
-	CRStatus      *lcm.CRStatus
-	Connect       *Connect
-	Properties    *lcm.Properties
 }
 
 // Reconciler implements the reconcile logic of postgreSQL service
-func (postgre *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
+func (postgres *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 
-	postgre.Client.WithContext(postgre.Ctx)
-	postgre.DClient.WithContext(postgre.Ctx)
+	postgres.Client.WithContext(postgres.Ctx)
+	postgres.DClient.WithContext(postgres.Ctx)
 
-	crStatus, err := postgre.Provision()
+	crStatus, err := postgres.Provision()
 	if err != nil {
 		return crStatus, err
 	}
@@ -45,29 +38,35 @@ func (postgre *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return crStatus, nil
 }
 
-func (postgre *PostgreSQLReconciler) Provision() (*lcm.CRStatus, error) {
-	if err := postgre.Deploy(); err != nil {
-		return postgre.CRStatus, err
+func (postgres *PostgreSQLReconciler) Provision() (*lcm.CRStatus, error) {
+	if err := postgres.Deploy(); err != nil {
+		return databaseNotReadyStatus(CreateDatabaseCrError, err.Error()), err
 	}
 
-	if err := postgre.Readiness(); err != nil {
-		return postgre.CRStatus, err
+	crStatus, err := postgres.Readiness()
+	if err != nil {
+		return databaseNotReadyStatus(CheckDatabaseHealthError, err.Error()), err
 	}
-	return postgre.CRStatus, nil
+
+	return crStatus, nil
 }
 
-func (postgre *PostgreSQLReconciler) Delete() (*lcm.CRStatus, error) {
+func (postgres *PostgreSQLReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgre *PostgreSQLReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
+func (postgres *PostgreSQLReconciler) Scale() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgre *PostgreSQLReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+func (postgres *PostgreSQLReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (postgre *PostgreSQLReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
+func (postgres *PostgreSQLReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
+func (postgres *PostgreSQLReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
