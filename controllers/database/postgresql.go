@@ -23,6 +23,10 @@ func (postgresql *PostgreSQLReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
+func (postgresql *PostgreSQLReconciler) Scale() (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
 func (postgresql *PostgreSQLReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
