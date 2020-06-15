@@ -49,9 +49,9 @@ func (postgre *PostgreSQLReconciler) Readiness() error {
 		return err
 	}
 
-	defer client.Close(postgre.CXT)
+	defer client.Close(postgre.Ctx)
 
-	if err := client.Ping(postgre.CXT); err != nil {
+	if err := client.Ping(postgre.Ctx); err != nil {
 		postgre.Log.Error(err, "Fail to check Database.", "namespace", postgre.Namespace, "name", postgre.Name)
 		return err
 	}
@@ -121,7 +121,7 @@ func (postgre *PostgreSQLReconciler) GetExternalDatabaseInfo() (*pgx.Conn, error
 
 	url := connect.GenDatabaseUrl()
 
-	client, err = pgx.Connect(postgre.CXT, url)
+	client, err = pgx.Connect(postgre.Ctx, url)
 	if err != nil {
 		postgre.Log.Error(err, "Unable to connect to database")
 		return nil, err
