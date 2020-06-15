@@ -15,7 +15,7 @@ import (
 
 type PostgreSQLReconciler struct {
 	HarborCluster *goharborv1.HarborCluster
-	CXT           context.Context
+	Ctx           context.Context
 	Client        k8s.Client
 	Recorder      record.EventRecorder
 	Log           logr.Logger
@@ -34,8 +34,8 @@ type PostgreSQLReconciler struct {
 // Reconciler implements the reconcile logic of postgreSQL service
 func (postgre *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 
-	postgre.Client.WithContext(postgre.CXT)
-	postgre.DClient.WithContext(postgre.CXT)
+	postgre.Client.WithContext(postgre.Ctx)
+	postgre.DClient.WithContext(postgre.Ctx)
 
 	crStatus, err := postgre.Provision()
 	if err != nil {
