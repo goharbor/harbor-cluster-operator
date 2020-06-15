@@ -57,7 +57,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		log.Error(err, "unable to fetch HarborCluster")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	
+
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
 	if harborCluster.DeletionTimestamp != nil {
 		return ctrl.Result{}, nil
