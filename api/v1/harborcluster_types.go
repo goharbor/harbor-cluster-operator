@@ -44,6 +44,11 @@ const (
 	ComponentDatabase Component = "database"
 )
 
+const (
+	ExternalComponent  string = "external"
+	InClusterComponent string = "inCluster"
+)
+
 // HarborClusterSpec defines the desired state of HarborCluster
 type HarborClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -299,7 +304,7 @@ type RedisSpec struct {
 	Sentinel *Sentinel    `json:"sentinel,omitempty"`
 
 	// External params following.
-	// The secret must contains "address:port","usernane" and "password".
+	// The secret must contains "password".
 	SecretName string `json:"secretName,omitempty"`
 	// Maximum number of socket connections.
 	// Default is 10 connections per every CPU as reported by runtime.NumCPU.
