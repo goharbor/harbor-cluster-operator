@@ -58,17 +58,35 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(GetMinIOError, err.Error()), err
 	}
 
-	var minioStatefulSet appsv1.StatefulSet
-	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioStatefulSet)
+	isReady, err := m.checkMinIOReady()
 	if err != nil {
 		return minioNotReadyStatus(GetMinIOError, err.Error()), err
 	}
 
-	if minioStatefulSet.Status.ReadyReplicas == m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas {
-		// TODO create default bucket
+	if isReady {
+		err := createDefaultBucket()
+		if err != nil {
+			return minioNotReadyStatus(CreateDefaultBucketeError, err.Error()), err
+		}
 		return m.ProvisionInClusterSecretAsOss(&minioCR)
 	}
+
 	return nil, nil
+}
+
+func createDefaultBucket() error {
+	panic("implement me")
+}
+
+func (m *MinIOReconciler) checkMinIOReady() (bool, error) {
+	var minioStatefulSet appsv1.StatefulSet
+	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioStatefulSet)
+
+	if minioStatefulSet.Status.ReadyReplicas == m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas {
+		return true, err
+	}
+
+	return false, err
 }
 
 func (m *MinIOReconciler) getMinIONamespacedName() types.NamespacedName {

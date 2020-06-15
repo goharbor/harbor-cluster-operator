@@ -8,4 +8,5 @@ const (
 	CreateMinIOError          = "Create minIO CR error"
 	CreateExternalSecretError = "Create external storage secret error"
 	NotSupportType            = "The type of storage are not supported"
+	CreateDefaultBucketeError = "Create default buckete in minIO Error"
 )

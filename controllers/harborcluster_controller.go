@@ -57,14 +57,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		log.Error(err, "unable to fetch HarborCluster")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	option := &GetOptions{
-		Client:   k8s.WrapClient(ctx, r.Client),
-		Recorder: r.Recorder,
-		Log:      r.Log,
-		Scheme:   r.Scheme,
-	}
-
+	
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
 	if harborCluster.DeletionTimestamp != nil {
 		return ctrl.Result{}, nil
@@ -77,7 +70,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	}
 
 	option := &GetOptions{
-		Client:   k8s.WrapClient(r.Client),
+		Client:   k8s.WrapClient(ctx, r.Client),
 		Recorder: r.Recorder,
 		Log:      r.Log,
 		DClient:  k8s.WrapDClient(dClient),
