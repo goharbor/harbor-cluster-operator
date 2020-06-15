@@ -126,6 +126,10 @@ func (m *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
 	return nil,nil
 }
 
+func (m *MinIOReconciler) Scale() (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
 func (m *MinIOReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }

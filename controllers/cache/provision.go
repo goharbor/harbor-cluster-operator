@@ -54,11 +54,11 @@ func (redis *RedisReconciler) Deploy() error {
 		redis.Log.Info("Redis create complete.", "namespace", redis.Namespace, "name", redis.Name)
 		return nil
 	}
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	redis.ExpectCR = expectCR
 	redis.ActualCR = actualCR
 
@@ -73,7 +73,7 @@ func (redis *RedisReconciler) DeploySecret() error {
 	if err := controllerutil.SetControllerReference(redis.HarborCluster, sc, redis.Scheme); err != nil {
 		return err
 	}
-	
+
 	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.Namespace, "name", redis.Name)
