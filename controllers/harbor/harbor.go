@@ -54,6 +54,10 @@ func (harbor *HarborReconciler) Delete() (*lcm.CRStatus, error) {
 }
 
 // ScaleUp will update replicas of all components, expect job service.
+func (harbor *HarborReconciler) Scale() (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
 func (harbor *HarborReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	currentHarborCR := harbor.CurrentHarborCR
 	currentHarborCR.Annotations["goharbor.io/current-replicas"] = string(newReplicas)

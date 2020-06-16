@@ -20,6 +20,9 @@ type Controller interface {
 	// Delete the service
 	Delete() (*CRStatus, error)
 
+	// Scale will get the replicas of components, and update the crd.
+	Scale() (*CRStatus, error)
+
 	// Scale up
 	ScaleUp(newReplicas uint64) (*CRStatus, error)
 
