@@ -74,6 +74,10 @@ func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
+func (redis *RedisReconciler) Scale() (*lcm.CRStatus, error) {
+	panic("implement me")
+}
+
 func (redis *RedisReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	if err := redis.ScaleUpCache(); err != nil {
 		return redis.CRStatus, err

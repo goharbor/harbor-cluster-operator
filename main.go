@@ -23,6 +23,7 @@ import (
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
+	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -40,6 +41,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = goharborv1.AddToScheme(scheme)
+	_ = minio.AddToScheme(scheme)
 	_ = redisCli.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
