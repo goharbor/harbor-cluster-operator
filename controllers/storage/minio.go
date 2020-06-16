@@ -27,12 +27,13 @@ const (
 )
 
 type MinIOReconciler struct {
-	HarborCluster *goharborv1.HarborCluster
-	KubeClient    k8s.Client
-	Ctx           context.Context
-	Log           logr.Logger
-	Scheme        *runtime.Scheme
-	Recorder      record.EventRecorder
+	HarborCluster  *goharborv1.HarborCluster
+	KubeClient     k8s.Client
+	Ctx            context.Context
+	Log            logr.Logger
+	Scheme         *runtime.Scheme
+	Recorder       record.EventRecorder
+	CurrentMinIOCR *minio.MinIOInstance
 }
 
 var (
@@ -58,6 +59,18 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(GetMinIOError, err.Error()), err
 	}
 
+	m.CurrentMinIOCR = &minioCR
+
+	isScale := m.checkMinIOScale()
+	if isScale {
+		return m.Scale()
+	}
+
+	isUpdate := m.checkMinIOUpdate()
+	if isUpdate {
+		return m.Update()
+	}
+
 	isReady, err := m.checkMinIOReady()
 	if err != nil {
 		return minioNotReadyStatus(GetMinIOError, err.Error()), err
@@ -75,6 +88,14 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 }
 
 func createDefaultBucket() error {
+	panic("implement me")
+}
+
+func (m *MinIOReconciler) checkMinIOUpdate() bool {
+	panic("implement me")
+}
+
+func (m *MinIOReconciler) checkMinIOScale() bool {
 	panic("implement me")
 }
 
@@ -135,27 +156,12 @@ func minioReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
 	}
 }
 
-func (m *MinIOReconciler) Delete() (*lcm.CRStatus, error) {
-	minioCR := m.generateMinIOCR()
-	err := m.KubeClient.Delete(minioCR)
-	if err != nil {
-		return minioUnknownStatus(), err
-	}
-	return nil, nil
-}
-
-func (m *MinIOReconciler) Scale() (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
+// TODO Deprecated
 func (m *MinIOReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
+// TODO Deprecated
 func (m *MinIOReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
-func (m *MinIOReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	panic("implement me")
 }
