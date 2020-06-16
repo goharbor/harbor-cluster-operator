@@ -6,11 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	ScaleUp   = "ScaleUp"
-	ScaleDown = "ScaleDown"
-)
-
 // This package container interface of harbor cluster service lifecycle manage.
 
 type Controller interface {
