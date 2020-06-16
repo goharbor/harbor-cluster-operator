@@ -65,7 +65,7 @@ func (redis *RedisReconciler) Readiness() error {
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
 		secretName := fmt.Sprintf("%s-redis", component)
-		//propertyName := fmt.Sprintf("%sSecret", component)
+		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
 			return err
@@ -84,8 +84,6 @@ func (redis *RedisReconciler) Readiness() error {
 // DeployComponentSecret deploy harbor component redis secret
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
-	secretName = fmt.Sprintf("%s-redis", component)
-	//propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
 	switch redis.HarborCluster.Spec.Redis.Kind {
