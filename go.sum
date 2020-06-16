@@ -203,6 +203,8 @@ github.com/go-openapi/swag v0.19.5/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh
 github.com/go-openapi/validate v0.18.0/go.mod h1:Uh4HdOzKt19xGIGm1qHf/ofbX1YQ4Y+MYsct2VUrAJ4=
 github.com/go-openapi/validate v0.19.2/go.mod h1:1tRCw7m3jtI8eNWEEliiAqUIcBztB2KDnRCRMUi7GTA=
 github.com/go-openapi/validate v0.19.5/go.mod h1:8DJv2CVJQ6kGNpFW6eV9N3JviE1C85nY1c2z52x1Gk4=
+github.com/go-redis/redis v6.15.8+incompatible h1:BKZuG6mCnRj5AOaWJXoCgf6rqTYnYJLe4en2hxT7r9o=
+github.com/go-redis/redis v6.15.8+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
@@ -412,6 +414,8 @@ github.com/minio/minio-go/v6 v6.0.55-0.20200424204115-7506d2996b22 h1:nZEve4vdUh
 github.com/minio/minio-go/v6 v6.0.55-0.20200424204115-7506d2996b22/go.mod h1:KQMM+/44DSlSGSQWSfRrAZ12FVMmpWNuX37i2AX0jfI=
 github.com/minio/minio-operator v0.0.0-20200515184103-acad2ca18729 h1:qc9pRKEldD3BxBobOkZ4opJcbnE3vCWn3pnG0Fz+894=
 github.com/minio/minio-operator v0.0.0-20200515184103-acad2ca18729/go.mod h1:wtZCfrTLhFQ8K8vjOK4k9daN//AVNKVSlNO87KRgWOw=
+github.com/minio/minio-operator v0.0.0-20200528235320-8d6919ae93fe h1:+DZ/PgAatYYWQs0kUVoGmxFv5vLVdhMbYdgASRp1l8Q=
+github.com/minio/minio-operator v0.0.0-20200528235320-8d6919ae93fe/go.mod h1:wtZCfrTLhFQ8K8vjOK4k9daN//AVNKVSlNO87KRgWOw=
 github.com/minio/parquet-go v0.0.0-20200414234858-838cfa8aae61/go.mod h1:4trzEJ7N1nBTd5Tt7OCZT5SEin+WiAXpdJ/WgPkESA8=
 github.com/minio/sha256-simd v0.1.1 h1:5QHSlgo3nt5yKOJrC7W8w7X+NFl8cMPZm96iu8kKUJU=
 github.com/minio/sha256-simd v0.1.1/go.mod h1:B5e1o+1/KgNmWrSQK08Y6Z1Vb5pwIktudl0J58iy0KM=
@@ -575,6 +579,8 @@ github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnIn
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/spf13/viper v1.3.2/go.mod h1:ZiWeW+zYFKm7srdB9IoDzzZXaJaI5eL9QjNiN/DMA2s=
+github.com/spotahome/redis-operator v1.0.0 h1:bPdPTcDdo1l7U5fQNpNAVb4n8+ms4wyyeuYOgGQeW5E=
+github.com/spotahome/redis-operator v1.0.0/go.mod h1:fg0aPOlKkHRKP98RBJ4lWw+EV6VkT7Dxf9HlQuBJuwE=
 github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

@@ -17,8 +17,8 @@ package controllers
 
 import (
 	"context"
-	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,7 +62,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	if harborCluster.DeletionTimestamp != nil {
 		return ctrl.Result{}, nil
 	}
-	
+
 	dClient, err := k8s.NewDynamicClient()
 	if err != nil {
 		log.Error(err, "unable to create dynamic client")
@@ -70,7 +70,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	}
 
 	option := &GetOptions{
-		Client:   k8s.WrapClient(r.Client),
+		Client:   k8s.WrapClient(ctx, r.Client),
 		Recorder: r.Recorder,
 		Log:      r.Log,
 		DClient:  k8s.WrapDClient(dClient),
@@ -89,7 +89,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(ctx, &harborCluster, nil).Reconcile()
+	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err

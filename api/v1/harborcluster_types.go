@@ -156,9 +156,9 @@ type Storage struct {
 
 type Oss struct {
 	// +kubebuilder:validation:Required
-	Accesskeyid string `json:"accesskeyid"`
+	AccessKeyId string `json:"accesskeyid"`
 	// +kubebuilder:validation:Required
-	Accesskeysecret string `json:"accesskeysecret"`
+	AccessKeySecret string `json:"accesskeysecret"`
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
 	// +kubebuilder:validation:Required
@@ -168,8 +168,8 @@ type Oss struct {
 	Internal      string `json:"internal,omitempty"`
 	Encrypt       string `json:"encrypt,omitempty"`
 	Secure        string `json:"secure,omitempty"`
-	Chunksize     string `json:"chunksize,omitempty"`
-	Rootdirectory string `json:"rootdirectory,omitempty"`
+	ChunkSize     string `json:"chunksize,omitempty"`
+	RootDirectory string `json:"rootdirectory,omitempty"`
 }
 
 type Swift struct {
@@ -185,14 +185,14 @@ type Swift struct {
 	Region string `json:"region"`
 	// +kubebuilder:validation:Required
 	Tenant              string `json:"tenant"`
-	Tenantid            string `json:"tenantid,omitempty"`
+	TenantId            string `json:"tenantid,omitempty"`
 	Domain              string `json:"domain,omitempty"`
-	Domainid            string `json:"domainid,omitempty"`
-	Trustid             string `json:"trustid,omitempty"`
-	Insecureskipverify  bool   `json:"insecureskipverify,omitempty"`
-	Chunksize           string `json:"chunksize,omitempty"`
+	DomainId            string `json:"domainid,omitempty"`
+	TrustId             string `json:"trustid,omitempty"`
+	InsecureSkipVerify  bool   `json:"insecureskipverify,omitempty"`
+	ChunkSize           string `json:"chunksize,omitempty"`
 	Prefix              string `json:"prefix,omitempty"`
-	Secretkey           string `json:"secretkey,omitempty"`
+	SecretKey           string `json:"secretkey,omitempty"`
 	AuthVersion         int    `json:"authversion,omitempty"`
 	EndpointType        string `json:"endpointtype,omitempty"`
 	TempurlContainerkey bool   `json:"tempurlcontainerkey,omitempty"`
@@ -205,35 +205,35 @@ type S3 struct {
 	// +kubebuilder:validation:Required
 	Bucket string `json:"bucket"`
 	// +kubebuilder:validation:Required
-	Accesskey string `json:"accesskey"`
+	AccessKey string `json:"accesskey"`
 	// +kubebuilder:validation:Required
-	Secretkey string `json:"secretkey"`
+	SecretKey string `json:"secretkey"`
 	// +kubebuilder:validation:Required
-	Regionendpoint string `json:"regionendpoint"`
+	RegionEndpoint string `json:"regionendpoint"`
 	Encrypt        bool   `json:"encrypt,omitempty"`
-	Keyid          string `json:"keyid,omitempty"`
+	KeyId          string `json:"keyid,omitempty"`
 	Secure         bool   `json:"secure,omitempty"`
-	V4auth         bool   `json:"v4auth,omitempty"`
-	Chunksize      string `json:"chunksize,omitempty"`
-	Rootdirectory  string `json:"rootdirectory,omitempty"`
-	Storageclass   string `json:"storageclass,omitempty"`
+	V4Auth         bool   `json:"v4auth,omitempty"`
+	ChunkSize      string `json:"chunksize,omitempty"`
+	RootDirectory  string `json:"rootdirectory,omitempty"`
+	StorageClass   string `json:"storageclass,omitempty"`
 }
 
 type Gcs struct {
 	// +kubebuilder:validation:Required
 	Bucket string `json:"bucket"`
 	// The base64 encoded json file which contains the key
-	Encodedkey string `json:"encodedkey"`
+	EncodedKey string `json:"encodedkey"`
 	// +kubebuilder:validation:Required
-	Rootdirectory string `json:"rootdirectory"`
-	Chunksize     string `json:"chunksize,omitempty"`
+	RootDirectory string `json:"rootdirectory"`
+	ChunkSize     string `json:"chunksize,omitempty"`
 }
 
 type Azure struct {
 	// +kubebuilder:validation:Required
-	Accountname string `json:"accountname"`
+	AccountName string `json:"accountname"`
 	// +kubebuilder:validation:Required
-	Accountkey string `json:"accountkey"`
+	AccountKey string `json:"accountkey"`
 	// +kubebuilder:validation:Required
 	Container string `json:"container"`
 	Realm     string `json:"realm,omitempty"`
