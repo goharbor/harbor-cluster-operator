@@ -248,7 +248,7 @@ type InCluster struct {
 
 type MinIOSpec struct {
 	// Supply number of replicas.
-	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
+	// For standalone mode, supply 1. For distributed mode, supply 4 to 16 drives (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
 	Replicas int32 `json:"replicas"`

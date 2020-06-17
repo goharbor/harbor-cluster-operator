@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -61,7 +62,10 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	m.CurrentMinIOCR = &minioCR
 
-	isScale := m.checkMinIOScale()
+	isScale, err := m.checkMinIOScale()
+	if err != nil {
+		return minioNotReadyStatus(ScaleMinIOError, err.Error()), err
+	}
 	if isScale {
 		return m.Scale()
 	}
@@ -95,8 +99,23 @@ func (m *MinIOReconciler) checkMinIOUpdate() bool {
 	panic("implement me")
 }
 
-func (m *MinIOReconciler) checkMinIOScale() bool {
-	panic("implement me")
+func (m *MinIOReconciler) checkMinIOScale() (bool, error) {
+	currentReplicas := m.CurrentMinIOCR.Spec.Zones[0].Servers
+	desiredReplicas := m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas
+	if currentReplicas == desiredReplicas {
+		return false, nil
+	} else if currentReplicas == 1 {
+		return false, fmt.Errorf("not support upgrading from standalone to distributed mode")
+	}
+
+	// MinIO creates erasure-coding sets of 4 to 16 drives per set.
+	// The number of drives you provide in total must be a multiple of one of those numbers.
+	// TODO validate by webhook
+	if desiredReplicas%2 == 0 && desiredReplicas < 16 {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("for distributed mode, supply 4 to 16 drives (should be even)")
 }
 
 func (m *MinIOReconciler) checkMinIOReady() (bool, error) {
