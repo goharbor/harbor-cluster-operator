@@ -35,7 +35,7 @@ var (
 // - create redis connection pool
 // - ping redis server
 // - return redis properties if redis has available
-func (redis *RedisReconciler) Readiness() error {
+func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 	var (
 		client *rediscli.Client
 		err    error
@@ -50,34 +50,33 @@ func (redis *RedisReconciler) Readiness() error {
 
 	if err != nil {
 		redis.Log.Error(err, "Fail to create redis client.", "namespace", redis.Namespace, "name", redis.Name)
-		return err
+		return cacheNotReadyStatus(GetRedisClientError, err.Error()),err
 	}
 
 	defer client.Close()
 
 	if err := client.Ping().Err(); err != nil {
 		redis.Log.Error(err, "Fail to check Redis.", "namespace", redis.Namespace, "name", redis.Name)
-		return err
+		return cacheNotReadyStatus(CheckRedisHealthError, err.Error()),err
 	}
 
 	redis.Log.Info("Redis already ready.", "namespace", redis.Namespace, "name", redis.Name)
 
+	properties := &lcm.Properties{}
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
 		secretName := fmt.Sprintf("%s-redis", component)
-		//propertyName := fmt.Sprintf("%sSecret", component)
+		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
-			return err
+			return cacheNotReadyStatus(CreateComponentSecretError, err.Error()),err
 		}
+
+		properties = properties.Add(propertyName, secretName)
 	}
 
-	redis.CRStatus = lcm.New(goharborv1.CacheReady).
-		WithStatus(corev1.ConditionTrue).
-		WithReason("redis already ready").
-		WithMessage("harbor component redis secrets are already create.").
-		WithProperties(*redis.Properties)
-	return nil
+
+	return cacheReadyStatus(properties), nil
 }
 
 // DeployComponentSecret deploy harbor component redis secret
@@ -156,7 +155,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  fmt.Sprintf("%s:%s", endpoint, port),
+			Endpoint:  strings.Join(endpoint[:], ","),
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,

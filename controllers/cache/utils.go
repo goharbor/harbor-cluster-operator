@@ -3,6 +3,8 @@ package cache
 import (
 	"bytes"
 	"fmt"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/lcm"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -267,4 +269,25 @@ func (redis *RedisReconciler) GetRedisFailover() (*redisCli.RedisFailover, error
 	}
 
 	return rf, nil
+}
+
+
+func cacheNotReadyStatus(reason, message string) *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionFalse).
+		WithReason(reason).
+		WithMessage(message)
+}
+
+func cacheUnknownStatus() *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionUnknown)
+}
+
+func cacheReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionTrue).
+		WithReason("redis already ready").
+		WithMessage("harbor component redis secrets are already create.").
+		WithProperties(*properties)
 }
