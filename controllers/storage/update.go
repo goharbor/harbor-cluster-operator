@@ -7,3 +7,7 @@ import (
 func (m *MinIOReconciler) Update() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
+
+func (m *MinIOReconciler) ExternalUpdate() (*lcm.CRStatus, error) {
+	panic("implement me")
+}

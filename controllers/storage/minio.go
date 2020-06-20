@@ -50,7 +50,19 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	var minioCR minio.MinIOInstance
 
 	if m.HarborCluster.Spec.Storage.Kind != inClusterStorage {
-		return m.ProvisionExternalStorage()
+		var exSecret corev1.Secret
+		err := m.KubeClient.Get(m.getExternalSecretNamespacedName(), &exSecret)
+		if k8serror.IsNotFound(err) {
+			return m.ProvisionExternalStorage()
+		} else if err != nil {
+			return minioNotReadyStatus(GetExternalSecretError, err.Error()), err
+		}
+
+		if m.checkExternalUpdate() {
+			return m.ExternalUpdate()
+		}
+
+		return nil, nil
 	}
 
 	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
@@ -95,6 +107,10 @@ func createDefaultBucket() error {
 	panic("implement me")
 }
 
+func (m *MinIOReconciler) checkExternalUpdate() bool {
+	panic("implement me")
+}
+
 func (m *MinIOReconciler) checkMinIOUpdate() bool {
 	panic("implement me")
 }
@@ -134,6 +150,17 @@ func (m *MinIOReconciler) getMinIONamespacedName() types.NamespacedName {
 		Namespace: m.HarborCluster.Namespace,
 		Name:      m.getServiceName(),
 	}
+}
+
+func (m *MinIOReconciler) getExternalSecretNamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: m.HarborCluster.Namespace,
+		Name:      m.getExternalSecretName(),
+	}
+}
+
+func (m *MinIOReconciler) getExternalSecretName() string {
+	return m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix
 }
 
 func minioNotReadyStatus(reason, message string) *lcm.CRStatus {

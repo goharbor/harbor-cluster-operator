@@ -124,7 +124,7 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix,
+			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
@@ -167,7 +167,7 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix,
+			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
@@ -203,7 +203,7 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix,
+			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
@@ -238,7 +238,7 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix,
+			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
@@ -287,7 +287,7 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix,
+			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
