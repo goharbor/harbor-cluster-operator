@@ -11,9 +11,10 @@ import (
 const DefaultTimeout = 1 * time.Minute
 
 // WrapClient returns a Client that performs requests within DefaultTimeout.
-func WrapClient(client client.Client) Client {
+func WrapClient(ctx context.Context, client client.Client) Client {
 	return &ClusterClient{
 		crClient: client,
+		ctx:      ctx,
 	}
 }
 
