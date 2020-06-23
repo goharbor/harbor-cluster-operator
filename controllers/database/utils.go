@@ -12,7 +12,7 @@ import (
 
 const (
 	DefaultDatabaseReplica = 3
-	DefaultDatabaseMemory = "1Gi"
+	DefaultDatabaseMemory  = "1Gi"
 	DefaultDatabaseVersion = "12"
 )
 
