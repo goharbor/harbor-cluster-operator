@@ -61,12 +61,22 @@ func (impl *ServiceGetterImpl) Cache(ctx context.Context, harborCluster *goharbo
 func (impl *ServiceGetterImpl) Database(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &database.PostgreSQLReconciler{
 		HarborCluster: harborCluster,
+		Client:        options.Client,
+		Recorder:      options.Recorder,
+		Log:           options.Log,
+		DClient:       options.DClient,
+		Scheme:        options.Scheme,
+		Ctx:           ctx,
 	}
 }
 
 func (impl *ServiceGetterImpl) Storage(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &storage.MinIOReconciler{
 		HarborCluster: harborCluster,
+		KubeClient:    options.Client,
+		Ctx:           ctx,
+		Log:           options.Log,
+		Recorder:      options.Recorder,
 	}
 }
 

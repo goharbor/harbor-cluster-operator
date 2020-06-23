@@ -70,7 +70,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	}
 
 	option := &GetOptions{
-		Client:   k8s.WrapClient(r.Client),
+		Client:   k8s.WrapClient(ctx, r.Client),
 		Recorder: r.Recorder,
 		Log:      r.Log,
 		DClient:  k8s.WrapDClient(dClient),
@@ -83,13 +83,13 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(ctx, &harborCluster, nil).Reconcile()
+	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(ctx, &harborCluster, nil).Reconcile()
+	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err
