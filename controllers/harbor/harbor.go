@@ -8,9 +8,15 @@ import (
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+const (
+	ScalingEvent  = "Scaling"
+	UpdatingEvent = "Updating"
 )
 
 type HarborReconciler struct {
@@ -34,13 +40,11 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 		}
 	}
 	harbor.CurrentHarborCR = &harborCR
-	isScalingEvent := harbor.isScalingEvent(harbor.HarborCluster, &harborCR)
-	if isScalingEvent {
+	event := harbor.checkReconcileEvent(harbor.HarborCluster, &harborCR)
+	switch event {
+	case ScalingEvent:
 		return harbor.Scale()
-	}
-
-	isUpdatingEvent := harbor.isUpdatingEvent(harbor.HarborCluster, &harborCR)
-	if isUpdatingEvent {
+	case UpdatingEvent:
 		return harbor.Update(harbor.HarborCluster)
 	}
 
@@ -49,6 +53,59 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return harborClusterCRUnknownStatus(), err
 	}
 	return harborClusterCRStatus(&harborCR), nil
+}
+
+func unsetReplicas(harbor *v1alpha1.Harbor) {
+	if harbor.Spec.Components.Core != nil {
+		harbor.Spec.Components.Core.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Portal != nil {
+		harbor.Spec.Components.Portal.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Registry != nil {
+		harbor.Spec.Components.Registry.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Clair != nil {
+		harbor.Spec.Components.Clair.Replicas = nil
+	}
+
+	if harbor.Spec.Components.ChartMuseum != nil {
+		harbor.Spec.Components.ChartMuseum.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Notary != nil {
+		harbor.Spec.Components.Notary.Server.Replicas = nil
+		harbor.Spec.Components.Notary.Signer.Replicas = nil
+	}
+
+	if harbor.Spec.Components.JobService != nil {
+		harbor.Spec.Components.JobService.Replicas = nil
+	}
+}
+
+func isEqualExpectReplicas(desiredHarborCR *v1alpha1.Harbor, currentHarborCR *v1alpha1.Harbor) bool {
+	desiredHarborCRCopied := desiredHarborCR.DeepCopy()
+	currentHarborCRCopied := currentHarborCR.DeepCopy()
+
+	unsetReplicas(desiredHarborCRCopied)
+	unsetReplicas(currentHarborCRCopied)
+
+	return cmp.Equal(desiredHarborCRCopied.Spec, currentHarborCRCopied.Spec)
+}
+
+func (harbor *HarborReconciler) checkReconcileEvent(desired *goharborv1.HarborCluster, current *v1alpha1.Harbor) string {
+	desiredHarborCR := harbor.newHarborCR()
+	isEqualExpectReplicas := isEqualExpectReplicas(desiredHarborCR, current)
+	if !isEqualExpectReplicas {
+		return UpdatingEvent
+	}
+	if harbor.isScalingEvent(desired, current) {
+		return ScalingEvent
+	}
+	return ""
 }
 
 func (harbor *HarborReconciler) Delete() (*lcm.CRStatus, error) {

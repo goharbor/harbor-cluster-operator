@@ -44,10 +44,10 @@ func (harbor *HarborReconciler) Scale() (*lcm.CRStatus, error) {
 
 	err := harbor.Client.Update(current)
 	if err != nil {
-		return harborCRUnknownStatus(), err
+		return harborClusterCRUnknownStatus(), err
 	}
 	// TODO declare the detail CRStatus
-	return harborCRReadyStatus(), nil
+	return harborClusterCRReadyStatus(), nil
 }
 
 // isScalingEvent will compare the actual replicas of any components with the desired replicas.
@@ -106,7 +106,7 @@ func (harbor *HarborReconciler) isScalingEvent(desired *goharborv1.HarborCluster
 		}
 	}
 
-	desiredJobServiceReplicas := int32(harbor.HarborCluster.Spec.JobService.Replicas)
+	desiredJobServiceReplicas := int32(desired.Spec.JobService.Replicas)
 	if current.Spec.Components.JobService != nil && current.Spec.Components.JobService.Replicas != nil {
 		jobServiceReplicas := current.Spec.Components.JobService.Replicas
 		if desiredJobServiceReplicas != *jobServiceReplicas {
