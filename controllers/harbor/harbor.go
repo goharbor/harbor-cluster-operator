@@ -36,7 +36,7 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 		if errors.IsNotFound(err) {
 			return harbor.Provision()
 		} else {
-			return harborClusterCRUnknownStatus(), err
+			return harborClusterCRNotReadyStatus("", ""), err
 		}
 	}
 	harbor.CurrentHarborCR = &harborCR
@@ -55,6 +55,8 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return harborClusterCRStatus(&harborCR), nil
 }
 
+// unsetReplicas will set replicas to nil for all components in v1alpha1.Harbor.
+// This is a helper method to check whether harbor cr is equal expect replicas.
 func unsetReplicas(harbor *v1alpha1.Harbor) {
 	if harbor.Spec.Components.Core != nil {
 		harbor.Spec.Components.Core.Replicas = nil
@@ -86,6 +88,7 @@ func unsetReplicas(harbor *v1alpha1.Harbor) {
 	}
 }
 
+// isEqualExpectReplicas check whether harbor cr is equal expect replicas.
 func isEqualExpectReplicas(desiredHarborCR *v1alpha1.Harbor, currentHarborCR *v1alpha1.Harbor) bool {
 	desiredHarborCRCopied := desiredHarborCR.DeepCopy()
 	currentHarborCRCopied := currentHarborCR.DeepCopy()
