@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
@@ -13,29 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	DefaultExternalSecretSuffix = "harbor-cluster-storage"
-	S3Secret                    = "s3Secret"
-	AzureSecret                 = "azureSecret"
-	GcsSecret                   = "gcsSecret"
-	SwiftSecret                 = "swiftSecret"
-	OssSecret                   = "ossSecret"
-	DefaultCredsSecret          = "minio-creds-secret"
-	DefaultMcsSecret            = "minio-mcs-secret"
-	CredsAccesskey              = "bWluaW8="
-	CredsSecretkey              = "bWluaW8xMjM="
-	DefaultZone                 = "zone-harbor"
-	DefaultMinIO                = "minio"
-	DefaultRegion               = "us-east-1"
-	DefaultBucket               = "harbor"
-)
-
 func (m *MinIOReconciler) ProvisionInClusterSecretAsOss(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
 	inClusterSecret := m.generateInClusterSecret(minioInstamnce)
 	err := m.KubeClient.Create(inClusterSecret)
 
 	p := &lcm.Property{
-		Name:  OssSecret,
+		Name:  ossStorage + ExternalStorageSecretSuffix,
 		Value: inClusterSecret.Name,
 	}
 	properties := &lcm.Properties{p}
@@ -43,7 +27,9 @@ func (m *MinIOReconciler) ProvisionInClusterSecretAsOss(minioInstamnce *minio.Mi
 }
 
 func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) *corev1.Secret {
-	return &corev1.Secret{
+	labels := m.getLabels()
+	labels[LabelOfStorageType] = inClusterStorage
+	inClusterSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -59,7 +45,7 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			// TODO how about using random passwords ??
+			// TODO how about using random password ??
 			"accesskeyid":     []byte("minio"),
 			"accesskeysecret": []byte("minio123"),
 			"region":          []byte(DefaultRegion),
@@ -67,57 +53,58 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 			"endpoint":        []byte(m.getServiceName() + "." + m.HarborCluster.Namespace),
 		},
 	}
+
+	return inClusterSecret
 }
 
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
-	switch m.HarborCluster.Spec.Storage.Kind {
-	case azureStorage:
-		properties, err := m.ProvisionAzure()
-		if err != nil {
-			minioNotReadyStatus(CreateExternalSecretError, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case gcsStorage:
-		properties, err := m.ProvisionGcs()
-		if err != nil {
-			minioNotReadyStatus(CreateExternalSecretError, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case s3Storage:
-		properties, err := m.ProvisionS3()
-		if err != nil {
-			minioNotReadyStatus(CreateExternalSecretError, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case swiftStorage:
-		properties, err := m.ProvisionSwift()
-		if err != nil {
-			minioNotReadyStatus(CreateExternalSecretError, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	case ossStorage:
-		properties, err := m.ProvisionOss()
-		if err != nil {
-			minioNotReadyStatus(CreateExternalSecretError, err.Error())
-		}
-		return minioReadyStatus(properties), nil
-	default:
-		return minioNotReadyStatus(NotSupportType, NotSupportType), nil
+	exSecret, err := m.generateExternalSecret()
+	if err != nil {
+		return minioNotReadyStatus(err.Error(), err.Error()), err
 	}
-}
 
-func (m *MinIOReconciler) ProvisionS3() (*lcm.Properties, error) {
-	s3Secret := m.generateS3Secret()
-	err := m.KubeClient.Create(s3Secret)
+	err = m.KubeClient.Create(exSecret)
+	if err != nil {
+		minioNotReadyStatus(CreateExternalSecretError, err.Error())
+	}
+
 	p := &lcm.Property{
-		Name:  S3Secret,
-		Value: s3Secret.Name,
+		Name:  m.HarborCluster.Spec.Storage.Kind + ExternalStorageSecretSuffix,
+		Value: m.getExternalSecretName(),
 	}
 	properties := &lcm.Properties{p}
-	return properties, err
+
+	return minioReadyStatus(properties), nil
 }
 
-func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
+func (m *MinIOReconciler) generateExternalSecret() (*corev1.Secret, error) {
+	var exSecret *corev1.Secret
+	labels := m.getLabels()
+
+	switch m.HarborCluster.Spec.Storage.Kind {
+	case azureStorage:
+		labels[LabelOfStorageType] = azureStorage
+		exSecret = m.generateAzureSecret(labels)
+	case gcsStorage:
+		labels[LabelOfStorageType] = gcsStorage
+		exSecret = m.generateGcsSecret(labels)
+	case s3Storage:
+		labels[LabelOfStorageType] = s3Storage
+		exSecret = m.generateS3Secret(labels)
+	case swiftStorage:
+		labels[LabelOfStorageType] = swiftStorage
+		exSecret = m.generateSwiftSecret(labels)
+	case ossStorage:
+		labels[LabelOfStorageType] = ossStorage
+		exSecret = m.generateOssSecret(labels)
+	default:
+		return exSecret, fmt.Errorf(NotSupportType)
+	}
+
+	return exSecret, nil
+}
+
+func (m *MinIOReconciler) generateS3Secret(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -126,7 +113,7 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
+			Labels:      labels,
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
@@ -149,18 +136,7 @@ func (m *MinIOReconciler) generateS3Secret() *corev1.Secret {
 	}
 }
 
-func (m *MinIOReconciler) ProvisionAzure() (*lcm.Properties, error) {
-	azureSecret := m.generateAzureSecret()
-	err := m.KubeClient.Create(azureSecret)
-	p := &lcm.Property{
-		Name:  AzureSecret,
-		Value: azureSecret.Name,
-	}
-	properties := &lcm.Properties{p}
-	return properties, err
-}
-
-func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -169,7 +145,7 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
+			Labels:      labels,
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
@@ -185,18 +161,7 @@ func (m *MinIOReconciler) generateAzureSecret() *corev1.Secret {
 	}
 }
 
-func (m *MinIOReconciler) ProvisionGcs() (*lcm.Properties, error) {
-	gcsSecret := m.generateGcsSecret()
-	err := m.KubeClient.Create(gcsSecret)
-	p := &lcm.Property{
-		Name:  GcsSecret,
-		Value: gcsSecret.Name,
-	}
-	properties := &lcm.Properties{p}
-	return properties, err
-}
-
-func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -205,7 +170,7 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
+			Labels:      labels,
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
@@ -220,18 +185,7 @@ func (m *MinIOReconciler) generateGcsSecret() *corev1.Secret {
 	}
 }
 
-func (m *MinIOReconciler) ProvisionSwift() (*lcm.Properties, error) {
-	swiftSecret := m.generateSwiftSecret()
-	err := m.KubeClient.Create(swiftSecret)
-	p := &lcm.Property{
-		Name:  SwiftSecret,
-		Value: swiftSecret.Name,
-	}
-	properties := &lcm.Properties{p}
-	return properties, err
-}
-
-func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -240,7 +194,7 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
+			Labels:      labels,
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
@@ -269,18 +223,7 @@ func (m *MinIOReconciler) generateSwiftSecret() *corev1.Secret {
 	}
 }
 
-func (m *MinIOReconciler) ProvisionOss() (*lcm.Properties, error) {
-	ossSecret := m.generateOssSecret()
-	err := m.KubeClient.Create(ossSecret)
-	p := &lcm.Property{
-		Name:  OssSecret,
-		Value: ossSecret.Name,
-	}
-	properties := &lcm.Properties{p}
-	return properties, err
-}
-
-func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -289,7 +232,7 @@ func (m *MinIOReconciler) generateOssSecret() *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        m.getExternalSecretName(),
 			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
+			Labels:      labels,
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
@@ -329,11 +272,11 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
-	minioCreate := m.generateMinIOCR()
-	err = m.KubeClient.Create(minioCreate)
+	err = m.KubeClient.Create(m.DesiredMinIOCR)
 	if err != nil {
 		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
+
 	var minioCR minio.MinIOInstance
 	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 	if err != nil {
@@ -341,7 +284,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	}
 
 	credsSecret.OwnerReferences = []metav1.OwnerReference{
-		*metav1.NewControllerRef(minioCreate, HarborClusterMinIOGVK),
+		*metav1.NewControllerRef(&minioCR, HarborClusterMinIOGVK),
 	}
 	err = m.KubeClient.Update(credsSecret)
 	if err != nil {
@@ -349,7 +292,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	}
 
 	service.OwnerReferences = []metav1.OwnerReference{
-		*metav1.NewControllerRef(minioCreate, HarborClusterMinIOGVK),
+		*metav1.NewControllerRef(&minioCR, HarborClusterMinIOGVK),
 	}
 	err = m.KubeClient.Update(service)
 	if err != nil {
