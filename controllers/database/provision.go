@@ -46,5 +46,4 @@ func (postgres *PostgreSQLReconciler) Deploy() (*lcm.CRStatus, error) {
 
 	postgres.Log.Info("Database create complete.", "namespace", postgres.HarborCluster.Namespace, "name", name)
 	return databaseUnknownStatus(), nil
-
 }
