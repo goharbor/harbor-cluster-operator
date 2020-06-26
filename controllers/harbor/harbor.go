@@ -8,16 +8,22 @@ import (
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+const (
+	ScalingEvent  = "Scaling"
+	UpdatingEvent = "Updating"
 )
 
 type HarborReconciler struct {
 	k8s.Client
 	Ctx                 context.Context
 	HarborCluster       *goharborv1.HarborCluster
+	CurrentHarborCR     *v1alpha1.Harbor
 	ImageGetter         image.ImageGetter
 	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
 }
@@ -30,18 +36,82 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 		if errors.IsNotFound(err) {
 			return harbor.Provision()
 		} else {
-			// TODO given clear reason and message.
-			return harborCRNotReadyStatus("", ""), err
+			return harborClusterCRNotReadyStatus("", ""), err
 		}
 	}
-	return nil, nil
+	harbor.CurrentHarborCR = &harborCR
+	event := harbor.checkReconcileEvent(harbor.HarborCluster, &harborCR)
+	switch event {
+	case ScalingEvent:
+		return harbor.Scale()
+	case UpdatingEvent:
+		return harbor.Update(harbor.HarborCluster)
+	}
+
+	err = harbor.Get(harbor.getHarborCRNamespacedName(), &harborCR)
+	if err != nil {
+		return harborClusterCRUnknownStatus(), err
+	}
+	return harborClusterCRStatus(&harborCR), nil
+}
+
+// unsetReplicas will set replicas to nil for all components in v1alpha1.Harbor.
+// This is a helper method to check whether harbor cr is equal expect replicas.
+func unsetReplicas(harbor *v1alpha1.Harbor) {
+	if harbor.Spec.Components.Core != nil {
+		harbor.Spec.Components.Core.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Portal != nil {
+		harbor.Spec.Components.Portal.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Registry != nil {
+		harbor.Spec.Components.Registry.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Clair != nil {
+		harbor.Spec.Components.Clair.Replicas = nil
+	}
+
+	if harbor.Spec.Components.ChartMuseum != nil {
+		harbor.Spec.Components.ChartMuseum.Replicas = nil
+	}
+
+	if harbor.Spec.Components.Notary != nil {
+		harbor.Spec.Components.Notary.Server.Replicas = nil
+		harbor.Spec.Components.Notary.Signer.Replicas = nil
+	}
+
+	if harbor.Spec.Components.JobService != nil {
+		harbor.Spec.Components.JobService.Replicas = nil
+	}
+}
+
+// isEqualExpectReplicas check whether harbor cr is equal expect replicas.
+func isEqualExpectReplicas(desiredHarborCR *v1alpha1.Harbor, currentHarborCR *v1alpha1.Harbor) bool {
+	desiredHarborCRCopied := desiredHarborCR.DeepCopy()
+	currentHarborCRCopied := currentHarborCR.DeepCopy()
+
+	unsetReplicas(desiredHarborCRCopied)
+	unsetReplicas(currentHarborCRCopied)
+
+	return cmp.Equal(desiredHarborCRCopied.Spec, currentHarborCRCopied.Spec)
+}
+
+func (harbor *HarborReconciler) checkReconcileEvent(desired *goharborv1.HarborCluster, current *v1alpha1.Harbor) string {
+	desiredHarborCR := harbor.newHarborCR()
+	isEqualExpectReplicas := isEqualExpectReplicas(desiredHarborCR, current)
+	if !isEqualExpectReplicas {
+		return UpdatingEvent
+	}
+	if harbor.isScalingEvent(desired, current) {
+		return ScalingEvent
+	}
+	return ""
 }
 
 func (harbor *HarborReconciler) Delete() (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
-func (harbor *HarborReconciler) Scale() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
@@ -57,30 +127,25 @@ func (harbor *HarborReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRS
 	panic("implement me")
 }
 
-func harborCRNotReadyStatus(reason, message string) *lcm.CRStatus {
-	return &lcm.CRStatus{
-		Condition: goharborv1.HarborClusterCondition{
-			Type:               goharborv1.ServiceReady,
-			Status:             corev1.ConditionFalse,
-			LastTransitionTime: metav1.Now(),
-			Reason:             reason,
-			Message:            message,
-		},
-		Properties: nil,
-	}
+func harborClusterCRNotReadyStatus(reason, message string) *lcm.CRStatus {
+	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionFalse).WithReason(reason).WithMessage(message)
 }
 
-func harborCRUnknownStatus() *lcm.CRStatus {
-	return &lcm.CRStatus{
-		Condition: goharborv1.HarborClusterCondition{
-			Type:               goharborv1.ServiceReady,
-			Status:             corev1.ConditionUnknown,
-			LastTransitionTime: metav1.Now(),
-			Reason:             "",
-			Message:            "",
-		},
-		Properties: nil,
+func harborClusterCRUnknownStatus() *lcm.CRStatus {
+	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionUnknown)
+}
+
+func harborClusterCRReadyStatus() *lcm.CRStatus {
+	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionTrue)
+}
+
+func harborClusterCRStatus(harbor *v1alpha1.Harbor) *lcm.CRStatus {
+	for _, condition := range harbor.Status.Conditions {
+		if condition.Type == v1alpha1.ReadyConditionType {
+			return lcm.New(goharborv1.ServiceReady).WithStatus(condition.Status).WithMessage(condition.Message).WithReason(condition.Reason)
+		}
 	}
+	return harborClusterCRUnknownStatus()
 }
 
 func (harbor *HarborReconciler) getHarborCRNamespacedName() types.NamespacedName {

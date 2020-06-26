@@ -68,6 +68,7 @@ func (redis *RedisReconciler) Readiness() error {
 		//propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
+			redis.Log.Error(err, "failed to deploy component secret.")
 			return err
 		}
 	}
@@ -152,7 +153,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
+			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
@@ -163,6 +164,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
+		redis.Log.Info("client info.", "client", client)
 	}
 
 	if err != nil {
