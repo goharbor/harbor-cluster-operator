@@ -4,7 +4,8 @@ const (
 	CheckDatabaseHealthError          = "Check database health error"
 	CreateDatabaseCrError             = "Create database CR error"
 	UpdateDatabaseCrError             = "Update database CR error"
-	GenerateRedisCrError              = "Generate database CR error"
+	GenerateDatabaseCrError           = "Generate database CR error"
+	GetDatabaseCrError                = "Get database CR error"
 	SetOwnerReferenceError            = "Set owner reference error"
 	DefaultUnstructuredConverterError = "Default unstructured converter error"
 )

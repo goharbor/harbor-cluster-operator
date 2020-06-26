@@ -39,10 +39,12 @@ func (postgres *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 	actualCR, err := crdClient.Get(name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return postgres.Provision()
+	} else if err != nil {
+		return databaseNotReadyStatus(GetDatabaseCrError, err.Error()), err
 	}
 	expectCR, err := postgres.generatePostgresCR()
 	if err != nil {
-		return databaseNotReadyStatus(GenerateRedisCrError, err.Error()), err
+		return databaseNotReadyStatus(GenerateDatabaseCrError, err.Error()), err
 	}
 
 	postgres.ActualCR = actualCR
@@ -53,7 +55,7 @@ func (postgres *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return databaseNotReadyStatus(CheckDatabaseHealthError, err.Error()), err
 	}
 
-	crStatus, err = postgres.Update(nil)
+	crStatus, err = postgres.Update()
 	if err != nil {
 		return crStatus, err
 	}
@@ -79,8 +81,4 @@ func (postgres *PostgreSQLReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus
 
 func (postgres *PostgreSQLReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
 	panic("implement me")
-}
-
-func (postgres *PostgreSQLReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
-	return postgres.RollingUpgrades()
 }
