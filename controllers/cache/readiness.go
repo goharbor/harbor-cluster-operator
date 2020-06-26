@@ -49,18 +49,21 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 	}
 
 	if err != nil {
-		redis.Log.Error(err, "Fail to create redis client.", "namespace", redis.Namespace, "name", redis.Name)
-		return cacheNotReadyStatus(GetRedisClientError, err.Error()),err
+		redis.Log.Error(err, "Fail to create redis client.",
+			"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+		return cacheNotReadyStatus(GetRedisClientError, err.Error()), err
 	}
 
 	defer client.Close()
 
 	if err := client.Ping().Err(); err != nil {
-		redis.Log.Error(err, "Fail to check Redis.", "namespace", redis.Namespace, "name", redis.Name)
-		return cacheNotReadyStatus(CheckRedisHealthError, err.Error()),err
+		redis.Log.Error(err, "Fail to check Redis.",
+			"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+		return cacheNotReadyStatus(CheckRedisHealthError, err.Error()), err
 	}
 
-	redis.Log.Info("Redis already ready.", "namespace", redis.Namespace, "name", redis.Name)
+	redis.Log.Info("Redis already ready.",
+		"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 
 	properties := &lcm.Properties{}
 	for _, component := range components {
@@ -69,12 +72,11 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
-			return cacheNotReadyStatus(CreateComponentSecretError, err.Error()),err
+			return cacheNotReadyStatus(CreateComponentSecretError, err.Error()), err
 		}
 
 		properties = properties.Add(propertyName, secretName)
 	}
-
 
 	return cacheReadyStatus(properties), nil
 }
@@ -101,10 +103,10 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, s
 		}
 	}
 
-	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil && kerr.IsNotFound(err) {
 		redis.Log.Info("Creating Harbor Component Secret",
-			"namespace", redis.Namespace,
+			"namespace", redis.HarborCluster.Namespace,
 			"name", secretName,
 			"component", component)
 		return redis.Client.Create(sc)
@@ -132,7 +134,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
+			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{

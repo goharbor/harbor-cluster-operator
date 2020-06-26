@@ -22,35 +22,35 @@ import (
 func (redis *RedisReconciler) Deploy() (*lcm.CRStatus, error) {
 
 	if redis.HarborCluster.Spec.Redis.Kind == "external" {
-		return cacheUnknownStatus(),nil
+		return cacheUnknownStatus(), nil
 	}
 
 	var expectCR *unstructured.Unstructured
 
-	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.Namespace)
+	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.HarborCluster.Namespace)
 
 	expectCR, err := redis.generateRedisCR()
 	if err != nil {
-		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()),err
+		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
 	}
 
 	if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
-		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()),err
+		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
 	}
 
 	if err := redis.DeploySecret(); err != nil {
-		return cacheNotReadyStatus(CreateRedisSecretError, err.Error()),err
+		return cacheNotReadyStatus(CreateRedisSecretError, err.Error()), err
 	}
 
-	redis.Log.Info("Creating Redis.", "namespace", redis.Namespace, "name", redis.Name)
+	redis.Log.Info("Creating Redis.", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 
 	_, err = crdClient.Create(expectCR, metav1.CreateOptions{})
 	if err != nil {
-		return cacheNotReadyStatus(CreateRedisCrError, err.Error()),err
+		return cacheNotReadyStatus(CreateRedisCrError, err.Error()), err
 	}
 
-	redis.Log.Info("Redis has been created.", "namespace", redis.Namespace, "name", redis.Name)
-	return cacheUnknownStatus(),nil
+	redis.Log.Info("Redis has been created.", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+	return cacheUnknownStatus(), nil
 }
 
 // DeploySecret deploy the Redis Password Secret
@@ -62,9 +62,9 @@ func (redis *RedisReconciler) DeploySecret() error {
 		return err
 	}
 
-	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: redis.HarborCluster.Name, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
-		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.Namespace, "name", redis.Name)
+		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 		return redis.Client.Create(sc)
 	}
 

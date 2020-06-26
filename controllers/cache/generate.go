@@ -27,8 +27,8 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 			APIVersion: "databases.spotahome.com/v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      redis.Name,
-			Namespace: redis.Namespace,
+			Name:      redis.HarborCluster.Name,
+			Namespace: redis.HarborCluster.Namespace,
 			Labels:    redis.Labels,
 		},
 		Spec: redisCli.RedisFailoverSpec{
@@ -46,11 +46,11 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 					Limits:   resource,
 				},
 			},
-			Auth: redisCli.AuthSettings{SecretPath: redis.Name},
+			Auth: redisCli.AuthSettings{SecretPath: redis.HarborCluster.Name},
 		},
 	}
 
-	conf.Spec.Redis.Storage.PersistentVolumeClaim = redis.generateRedisStorage(storageSize, redis.Name)
+	conf.Spec.Redis.Storage.PersistentVolumeClaim = redis.generateRedisStorage(storageSize, redis.HarborCluster.Name)
 
 	mapResult, err := runtime.DefaultUnstructuredConverter.ToUnstructured(conf)
 	if err != nil {
@@ -63,14 +63,14 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 
 //generateRedisSecret returns redis password secret
 func (redis *RedisReconciler) generateRedisSecret() *corev1.Secret {
-	//labels := MergeLabels(redis.Labels, generateLabels(RoleName, redis.Name))
+	//labels := MergeLabels(redis.Labels, generateLabels(RoleName, redis.HarborCluster.Name))
 
 	passStr := RandomString(8, "a")
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      redis.Name,
-			Namespace: redis.Namespace,
+			Name:      redis.HarborCluster.Name,
+			Namespace: redis.HarborCluster.Namespace,
 			Labels:    redis.Labels,
 		},
 		StringData: map[string]string{
@@ -106,7 +106,7 @@ func (redis *RedisReconciler) generateHarborCacheSecret(component, secretName, u
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: redis.Namespace,
+			Namespace: redis.HarborCluster.Namespace,
 		},
 		StringData: map[string]string{
 			"url":       url,

@@ -25,8 +25,6 @@ type RedisReconciler struct {
 	ExpectCR      *unstructured.Unstructured
 	ActualCR      *unstructured.Unstructured
 	Labels        map[string]string
-	Name          string
-	Namespace     string
 	RedisConnect  *RedisConnect
 }
 
@@ -35,18 +33,17 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	redis.Labels = redis.NewLabels()
 	redis.Client.WithContext(redis.CXT)
 	redis.DClient.WithContext(redis.CXT)
-	redis.Namespace = redis.HarborCluster.Namespace
 
-	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.Namespace)
+	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.HarborCluster.Namespace)
 
-	actualCR, err := crdClient.Get(redis.Name, metav1.GetOptions{})
+	actualCR, err := crdClient.Get(redis.HarborCluster.Name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return redis.Provision()
 	}
 
 	expectCR, err := redis.generateRedisCR()
 	if err != nil {
-		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()),err
+		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
 	}
 
 	redis.ActualCR = actualCR
@@ -83,7 +80,7 @@ func (redis *RedisReconciler) Scale() (*lcm.CRStatus, error) {
 
 func (redis *RedisReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
 	crStatus, err := redis.RollingUpgrades()
-	if  err != nil {
+	if err != nil {
 		return crStatus, err
 	}
 	return crStatus, nil
