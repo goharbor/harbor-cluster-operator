@@ -47,6 +47,7 @@ type HarborClusterReconciler struct {
 // +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
+// +kubebuilder:rbac:groups="",resources=secret,verbs=get;list
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -83,7 +84,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(ctx, &harborCluster, nil).Reconcile()
+	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err

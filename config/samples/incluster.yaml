@@ -1,0 +1,37 @@
+apiVersion: cluster.goharbor.io/v1
+kind: HarborCluster
+metadata:
+  name: harborcluster-sample
+  namespace: pg
+spec:
+  redis:
+    kind: "inCluster"
+    spec:
+      server:
+        replicas: 3
+        resources:
+          cpu: "1"
+          memory: "2Gi"
+        storage: "10Gi"
+      sentinel:
+        replicas: 3
+      schema: "sentinel"
+  adminPasswordSecret: "test"
+  database:
+    kind: "inCluster"
+    spec:
+      replicas: 3
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+  publicURL: "https://harbor.test.com"
+  replicas: 1
+  storage:
+    kind: "inCluster"
+    options:
+      provider: minIO
+  version: "v1.10.0"

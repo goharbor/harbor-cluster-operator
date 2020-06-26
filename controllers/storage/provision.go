@@ -385,7 +385,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 			ServiceName: m.getServiceName(),
 			Image:       "minio/minio:" + m.HarborCluster.Spec.Storage.InCluster.Spec.Version,
 			Zones: []minio.Zone{
-				minio.Zone{
+				{
 					Name:    m.HarborCluster.Name + "-" + DefaultZone,
 					Servers: m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas,
 				},
