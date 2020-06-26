@@ -151,7 +151,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
+			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
@@ -162,6 +162,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
+		redis.Log.Info("client info.", "client", client)
 	}
 
 	if err != nil {

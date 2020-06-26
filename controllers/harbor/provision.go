@@ -15,9 +15,9 @@ func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
 	harborCR := harbor.newHarborCR()
 	err := harbor.Create(harborCR)
 	if err != nil {
-		return harborCRNotReadyStatus("", ""), err
+		return harborClusterCRNotReadyStatus("", ""), err
 	}
-	return harborCRUnknownStatus(), err
+	return harborClusterCRUnknownStatus(), err
 }
 
 // newHarborCR will create a new Harbor CR controlled by harbor-operator

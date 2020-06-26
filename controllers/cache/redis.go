@@ -35,6 +35,7 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	redis.Labels = redis.NewLabels()
 	redis.Client.WithContext(redis.CXT)
 	redis.DClient.WithContext(redis.CXT)
+	redis.Namespace = redis.HarborCluster.Namespace
 
 	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.Namespace)
 
