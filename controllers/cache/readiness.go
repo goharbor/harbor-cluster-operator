@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	HarborChartMuseum = "chartmuseum"
+	HarborChartMuseum = "chartMuseum"
 	HarborClair       = "clair"
-	HarborJobService  = "jobservice"
+	HarborJobService  = "jobService"
 	HarborRegistry    = "registry"
 )
 
@@ -65,10 +65,10 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 	redis.Log.Info("Redis already ready.",
 		"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 
-	properties := &lcm.Properties{}
+	properties := lcm.Properties{}
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
-		secretName := fmt.Sprintf("%s-redis", component)
+		secretName := fmt.Sprintf("%s-redis", strings.ToLower(component))
 		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
@@ -84,7 +84,7 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 // DeployComponentSecret deploy harbor component redis secret
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
-	secretName = fmt.Sprintf("%s-redis", component)
+	//secretName = fmt.Sprintf("%s-redis", component)
 	//propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
@@ -164,7 +164,6 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
-		redis.Log.Info("client info.", "client", client)
 	}
 
 	if err != nil {

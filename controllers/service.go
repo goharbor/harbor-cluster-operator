@@ -83,6 +83,9 @@ func (impl *ServiceGetterImpl) Storage(ctx context.Context, harborCluster *gohar
 func (impl *ServiceGetterImpl) Harbor(ctx context.Context, harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus, options *GetOptions) Reconciler {
 	return &harbor.HarborReconciler{
 		HarborCluster:       harborCluster,
+		Client:              options.Client,
+		ImageGetter:         options.ImageGetter,
+		Ctx:                 ctx,
 		ComponentToCRStatus: componentToCRStatus,
 	}
 }

@@ -72,7 +72,7 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 		if err := postgres.DeployComponentSecret(conn, component, secretName); err != nil {
 			return nil, err
 		}
-		properties = properties.Add(propertyName, secretName)
+		properties.Add(propertyName, secretName)
 	}
 
 	crStatus := lcm.New(goharborv1.DatabaseReady).
@@ -122,7 +122,7 @@ func (postgres *PostgreSQLReconciler) GetExternalDatabaseInfo() (*Connect, *pgx.
 		return connect, client, errors.New(".database.spec.secretName is invalid")
 	}
 
-	if connect, err = GetExternalDatabaseConn(spec.SecretName, postgres.Client); err != nil {
+	if connect, err = postgres.GetExternalDatabaseConn(spec.SecretName, postgres.Client); err != nil {
 		return connect, client, err
 	}
 
@@ -138,12 +138,9 @@ func (postgres *PostgreSQLReconciler) GetExternalDatabaseInfo() (*Connect, *pgx.
 }
 
 // GetExternalDatabaseConn returns external database connection info
-func GetExternalDatabaseConn(secretName string, client k8s.Client) (*Connect, error) {
-	external := &PostgreSQLReconciler{
-		Client: client,
-	}
+func (postgres *PostgreSQLReconciler) GetExternalDatabaseConn(secretName string, client k8s.Client) (*Connect, error) {
 
-	conn, err := external.GetDatabaseConn(secretName)
+	conn, err := postgres.GetDatabaseConn(secretName)
 	if err != nil {
 		return nil, err
 	}
