@@ -18,7 +18,6 @@ package main
 import (
 	"flag"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
-	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"os"
 	"time"
 
