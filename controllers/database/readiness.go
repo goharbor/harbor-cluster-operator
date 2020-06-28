@@ -9,7 +9,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	labels1 "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -45,7 +48,7 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 	case "external":
 		conn, client, err = postgres.GetExternalDatabaseInfo()
 	case "inCluster":
-
+		conn, client, err = postgres.GetInClusterDatabaseInfo()
 	default:
 		return nil, errors.New("fail to check database kind")
 	}
@@ -143,4 +146,136 @@ func (postgres *PostgreSQLReconciler) GetExternalDatabaseConn(secretName string,
 	}
 
 	return conn, err
+}
+
+// GetInClusterDatabaseInfo returns inCluster database connection client
+func (postgres *PostgreSQLReconciler) GetInClusterDatabaseInfo() (*Connect, *pgx.Conn, error) {
+	var (
+		connect *Connect
+		client  *pgx.Conn
+		err     error
+	)
+
+	pw, err := postgres.GetInClusterDatabasePassword()
+	if err != nil {
+		return connect, client, err
+	}
+
+	if connect, err = postgres.GetInClusterDatabaseConn(postgres.GetDatabaseName(), pw); err != nil {
+		return connect, client, err
+	}
+
+	url := connect.GenDatabaseUrl()
+	fmt.Println(connect, url)
+
+	client, err = pgx.Connect(postgres.Ctx, url)
+	if err != nil {
+		postgres.Log.Error(err, "Unable to connect to database")
+		return connect, client, err
+	}
+
+	return connect, client, nil
+}
+
+// GetInClusterDatabaseConn returns inCluster database connection info
+func (postgres *PostgreSQLReconciler) GetInClusterDatabaseConn(name, pw string) (*Connect, error) {
+	host, err := postgres.GetInClusterHost(name)
+	if err != nil {
+		return nil, err
+	}
+	conn := &Connect{
+		Host:     host,
+		Port:     InClusterDatabasePort,
+		Password: pw,
+		Username: InClusterDatabaseUserName,
+		Database: InClusterDatabaseName,
+	}
+	return conn, nil
+}
+
+func GenInClusterPasswordSecretName(teamID, name string) string {
+	return fmt.Sprintf("postgres.%s-%s.credentials", teamID, name)
+}
+
+// GetInClusterHost returns the Database master pod ip or service name
+func (postgres *PostgreSQLReconciler) GetInClusterHost(name string) (string, error) {
+	var (
+		url string
+		err error
+	)
+	_, err = rest.InClusterConfig()
+	if err != nil {
+		url, err = postgres.GetMasterPodsIP()
+		if err != nil {
+			return url, err
+		}
+	} else {
+		url = fmt.Sprintf("%s.svc", name)
+	}
+
+	return url, nil
+}
+
+func (postgres *PostgreSQLReconciler) GetDatabaseName() string {
+	return fmt.Sprintf("%s-%s", postgres.HarborCluster.Namespace, postgres.HarborCluster.Name)
+}
+
+// GetInClusterDatabasePassword is get inCluster postgresql password
+func (postgres *PostgreSQLReconciler) GetInClusterDatabasePassword() (string, error) {
+	var pw string
+
+	secretName := GenInClusterPasswordSecretName(postgres.HarborCluster.Namespace, postgres.HarborCluster.Name)
+	secret, err := postgres.GetSecret(secretName)
+	if err != nil {
+		return pw, err
+	}
+
+	for k, v := range secret {
+		if k == InClusterDatabasePasswordKey {
+			pw = string(v)
+			return pw, nil
+		}
+	}
+	return pw, nil
+}
+
+// GetStatefulSetPods returns the postgresql master pod
+func (postgres *PostgreSQLReconciler) GetStatefulSetPods() (*corev1.PodList, error) {
+	name := postgres.GetDatabaseName()
+	label := map[string]string{
+		"application":  "spilo",
+		"cluster-name": name,
+		"spilo-role":   "master",
+	}
+
+	opts := &client.ListOptions{}
+	set := labels1.SelectorFromSet(label)
+	opts.LabelSelector = set
+	pod := &corev1.PodList{}
+
+	if err := postgres.Client.List(opts, pod); err != nil {
+		postgres.Log.Error(err, "fail to get pod.",
+			"namespace", postgres.HarborCluster.Namespace, "name", name)
+		return nil, err
+	}
+	return pod, nil
+}
+
+// GetMasterPodsIP returns postgresql master node ip
+func (postgres *PostgreSQLReconciler) GetMasterPodsIP() (string, error) {
+	var masterIP string
+	podList, err := postgres.GetStatefulSetPods()
+	if err != nil {
+		return masterIP, err
+	}
+	if len(podList.Items) > 1 {
+		return masterIP, errors.New("the number of master node copies cannot exceed 1")
+	}
+	for _, p := range podList.Items {
+		if p.DeletionTimestamp != nil {
+			continue
+		}
+		masterIP = p.Status.PodIP
+	}
+	return masterIP, nil
 }

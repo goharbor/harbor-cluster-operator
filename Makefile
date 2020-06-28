@@ -4,7 +4,7 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # apiextensions.k8s.io/v1beta1 are Deprecated in v1.16 in favor of apiextensions.k8s.io/v1
 # ref https://github.com/kubernetes-sigs/kubebuilder/issues/1065
-CRD_OPTIONS ?= "crd:trivialVersions=true,crdVersions=v1"
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
