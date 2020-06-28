@@ -69,7 +69,7 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 		if err := postgres.DeployComponentSecret(conn, component, secretName); err != nil {
 			return nil, err
 		}
-		properties = properties.Add(propertyName, secretName)
+		properties.Add(propertyName, secretName)
 	}
 
 	crStatus := lcm.New(goharborv1.DatabaseReady).

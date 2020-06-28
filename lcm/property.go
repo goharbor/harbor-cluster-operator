@@ -45,29 +45,18 @@ type Property struct {
 
 type Properties []*Property
 
-//New returns a new properties
-func (ps Properties) New(Name string, Value interface{}) *Property {
-	p := &Property{
-		Name:  Name,
-		Value: Value,
-	}
-
-	return p
-}
-
 //Add append a new property to properties
-func (ps Properties) Add(Name string, Value interface{}) *Properties {
+func (ps *Properties) Add(Name string, Value interface{}) {
 	p := &Property{
 		Name:  Name,
 		Value: Value,
 	}
-	ps = append(ps, p)
-	return &ps
+	*ps = append(*ps, p)
 }
 
 //Update updates properties according to the given arguments
-func (ps Properties) Update(Name string, Value interface{}) {
-	for _, p := range ps {
+func (ps *Properties) Update(Name string, Value interface{}) {
+	for _, p := range *ps {
 		if p.Name == Name {
 			p.Value = Value
 			return
@@ -76,8 +65,8 @@ func (ps Properties) Update(Name string, Value interface{}) {
 }
 
 //Get retrieves properties according to the given name
-func (ps Properties) Get(Name string) *Property {
-	for _, p := range ps {
+func (ps *Properties) Get(Name string) *Property {
+	for _, p := range *ps {
 		if p.Name == Name {
 			return p
 		}

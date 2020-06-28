@@ -63,6 +63,7 @@ func (harbor *HarborReconciler) newCoreComponent() *v1alpha1.CoreComponent {
 			NodeSelector:     nil,
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
+		DatabaseSecret: harbor.getDatabaseSecret(lcm.CoreSecretForDatabase),
 	}
 }
 

@@ -54,27 +54,27 @@ func (i *ImageGetterImpl) JobServiceImage() string {
 }
 
 func (i *ImageGetterImpl) NotaryServerImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.NotaryServerImage())
 }
 
 func (i *ImageGetterImpl) NotarySingerImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.NotarySingerImage())
 }
 
 func (i *ImageGetterImpl) NotaryDBMigratorImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.NotaryDBMigratorImage())
 }
 
 func (i *ImageGetterImpl) PortalImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.PortalImage())
 }
 
 func (i *ImageGetterImpl) RegistryImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.RegistryImage())
 }
 
 func (i *ImageGetterImpl) RegistryControllerImage() string {
-	return GetImage(i.registry, i.locator.ClairAdapterImage())
+	return GetImage(i.registry, i.locator.RegistryControllerImage())
 }
 
 // ImageLocator provider method to get harbor component image.

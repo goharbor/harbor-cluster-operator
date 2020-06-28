@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	HarborChartMuseum = "chartmuseum"
+	HarborChartMuseum = "chartMuseum"
 	HarborClair       = "clair"
-	HarborJobService  = "jobservice"
+	HarborJobService  = "jobService"
 	HarborRegistry    = "registry"
 )
 
@@ -62,29 +62,31 @@ func (redis *RedisReconciler) Readiness() error {
 
 	redis.Log.Info("Redis already ready.", "namespace", redis.Namespace, "name", redis.Name)
 
+	properties := lcm.Properties{}
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
-		secretName := fmt.Sprintf("%s-redis", component)
-		//propertyName := fmt.Sprintf("%sSecret", component)
+		secretName := fmt.Sprintf("%s-redis", strings.ToLower(component))
+		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
 			redis.Log.Error(err, "failed to deploy component secret.")
 			return err
 		}
+		properties.Add(propertyName, secretName)
 	}
 
 	redis.CRStatus = lcm.New(goharborv1.CacheReady).
 		WithStatus(corev1.ConditionTrue).
 		WithReason("redis already ready").
 		WithMessage("harbor component redis secrets are already create.").
-		WithProperties(*redis.Properties)
+		WithProperties(properties)
 	return nil
 }
 
 // DeployComponentSecret deploy harbor component redis secret
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
-	secretName = fmt.Sprintf("%s-redis", component)
+	//secretName = fmt.Sprintf("%s-redis", component)
 	//propertyName := fmt.Sprintf("%sSecret", component)
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
