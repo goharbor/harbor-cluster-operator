@@ -2,8 +2,10 @@ package storage
 
 import (
 	"fmt"
+	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"strconv"
 
@@ -11,24 +13,31 @@ import (
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m *MinIOReconciler) ProvisionInClusterSecretAsOss(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
-	inClusterSecret := m.generateInClusterSecret(minioInstamnce)
-	err := m.KubeClient.Create(inClusterSecret)
+func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
+	inClusterSecret, err := m.generateInClusterSecret(minioInstamnce)
+	if err != nil {
+		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
+	}
+	err = m.KubeClient.Create(inClusterSecret)
 
 	p := &lcm.Property{
-		Name:  ossStorage + ExternalStorageSecretSuffix,
+		Name:  s3Storage + ExternalStorageSecretSuffix,
 		Value: inClusterSecret.Name,
 	}
 	properties := &lcm.Properties{p}
 	return minioReadyStatus(properties), err
 }
 
-func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) *corev1.Secret {
+func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) (*corev1.Secret, error) {
 	labels := m.getLabels()
 	labels[LabelOfStorageType] = inClusterStorage
+	accessKey, secretKey, err := m.getCredsFromSecret()
+	if err != nil {
+		return nil, err
+	}
+
 	inClusterSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -45,16 +54,18 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			// TODO how about using random password ??
-			"accesskeyid":     []byte("minio"),
-			"accesskeysecret": []byte("minio123"),
-			"region":          []byte(DefaultRegion),
-			"bucket":          []byte(DefaultBucket),
-			"endpoint":        []byte(m.getServiceName() + "." + m.HarborCluster.Namespace),
+			"accesskey":      accessKey,
+			"secretkey":      secretKey,
+			"region":         []byte(DefaultRegion),
+			"bucket":         []byte(DefaultBucket),
+			"regionendpoint": []byte(m.getServiceName() + "." + m.HarborCluster.Namespace),
+			"encrypt":        []byte("false"),
+			"secure":         []byte("false"),
+			"v4auth":         []byte("false"),
 		},
 	}
 
-	return inClusterSecret
+	return inClusterSecret, nil
 }
 
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
@@ -255,12 +266,6 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Se
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
-	// TODO remove mcs secret ref https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml
-	//mcsSecret := m.generateMcsSecret()
-	//err := m.KubeClient.Create(mcsSecret)
-	//if err != nil {
-	//	return minioNotReadyStatus(ErrorReason2, err.Error()), err
-	//}
 	credsSecret := m.generateCredsSecret()
 	err := m.KubeClient.Create(credsSecret)
 	if err != nil {
@@ -337,7 +342,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 			Mountpath:           minio.MinIOVolumeMountPath,
 			VolumeClaimTemplate: m.getVolumeClaimTemplate(),
 			CredsSecret: &corev1.LocalObjectReference{
-				Name: m.HarborCluster.Name + "-" + DefaultCredsSecret,
+				Name: m.getMinIOSecretNamespacedName().Name,
 			},
 			PodManagementPolicy: "Parallel",
 			RequestAutoCert:     false,
@@ -432,7 +437,7 @@ func (m *MinIOReconciler) generateService() *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 			Selector: m.getLabels(),
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
+				{
 					Port:       9000,
 					TargetPort: intstr.FromInt(9000),
 					Protocol:   corev1.ProtocolTCP,
@@ -442,45 +447,31 @@ func (m *MinIOReconciler) generateService() *corev1.Service {
 	}
 }
 
-func (m *MinIOReconciler) generateMcsSecret() *corev1.Secret {
+func (m *MinIOReconciler) generateCredsSecret() *corev1.Secret {
+	credsAccesskey := common.RandomString(8, "a")
+	credsSecretkey := common.RandomString(8, "a")
+
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultMcsSecret,
+			Name:        m.getMinIOSecretNamespacedName().Name,
 			Namespace:   m.HarborCluster.Namespace,
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
-			},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"mcshmacjwt":         []byte("WU9VUkpXVFNJR05JTkdTRUNSRVQ="),
-			"mcspbkdfpassphrase": []byte("U0VDUkVU"),
-			"mcspbkdfsalt":       []byte("U0VDUkVU"),
-			"mcssecretkey":       []byte("WU9VUk1DU1NFQ1JFVA")},
+			"accesskey": []byte(credsAccesskey),
+			"secretkey": []byte(credsSecretkey)},
 	}
 }
 
-func (m *MinIOReconciler) generateCredsSecret() *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.HarborCluster.Name + "-" + DefaultCredsSecret,
-			Namespace:   m.HarborCluster.Namespace,
-			Labels:      m.getLabels(),
-			Annotations: m.generateAnnotations(),
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			"accesskey": []byte(CredsAccesskey),
-			"secretkey": []byte(CredsSecretkey)},
-	}
+func (m *MinIOReconciler) getCredsFromSecret() ([]byte, []byte, error) {
+	var minIOSecret corev1.Secret
+	namespaced := m.getMinIOSecretNamespacedName()
+	err := m.KubeClient.Get(namespaced, &minIOSecret)
+	return minIOSecret.Data["accesskey"], minIOSecret.Data["secretkey"], err
 }

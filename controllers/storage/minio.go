@@ -29,16 +29,13 @@ const (
 	ossStorage       = "oss"
 
 	DefaultExternalSecretSuffix = "harbor-cluster-storage"
-	DefaultCredsSecret          = "minio-creds-secret"
-	DefaultMcsSecret            = "minio-mcs-secret"
+	DefaultCredsSecret          = "minio-creds"
 	ExternalStorageSecretSuffix = "Secret"
 
-	CredsAccesskey = "bWluaW8="
-	CredsSecretkey = "bWluaW8xMjM="
-	DefaultZone    = "zone-harbor"
-	DefaultMinIO   = "minio"
-	DefaultRegion  = "us-east-1"
-	DefaultBucket  = "harbor"
+	DefaultZone   = "zone-harbor"
+	DefaultMinIO  = "minio"
+	DefaultRegion = "us-east-1"
+	DefaultBucket = "harbor"
 
 	LabelOfStorageType = "storageType"
 )
@@ -124,7 +121,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		if err != nil {
 			return minioNotReadyStatus(CreateDefaultBucketError, err.Error()), err
 		}
-		return m.ProvisionInClusterSecretAsOss(&minioCR)
+		return m.ProvisionInClusterSecretAsS3(&minioCR)
 	}
 
 	return nil, nil
@@ -139,11 +136,15 @@ func (m *MinIOReconciler) checkMinIOUpdate() bool {
 		return true
 	}
 
+	if !cmp.Equal(m.DesiredMinIOCR.DeepCopy().Labels, m.CurrentMinIOCR.DeepCopy().Labels) {
+		return true
+	}
+
 	return false
 }
 
 func (m *MinIOReconciler) checkExternalUpdate() bool {
-	return !cmp.Equal(m.DesiredMinIOCR.DeepCopy().Spec, m.CurrentMinIOCR.DeepCopy().Spec)
+	return !cmp.Equal(m.DesiredExternalSecret.DeepCopy().Data, m.CurrentExternalSecret.DeepCopy().Data)
 }
 
 func (m *MinIOReconciler) checkMinIOScale() (bool, error) {
@@ -180,6 +181,13 @@ func (m *MinIOReconciler) getMinIONamespacedName() types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: m.HarborCluster.Namespace,
 		Name:      m.getServiceName(),
+	}
+}
+
+func (m *MinIOReconciler) getMinIOSecretNamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: m.HarborCluster.Namespace,
+		Name:      m.HarborCluster.Name + "-" + DefaultCredsSecret,
 	}
 }
 
