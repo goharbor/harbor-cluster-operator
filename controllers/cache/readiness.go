@@ -164,7 +164,6 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
-		redis.Log.Info("client info.", "client", client)
 	}
 
 	if err != nil {

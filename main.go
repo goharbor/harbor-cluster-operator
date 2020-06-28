@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"os"
 	"time"
@@ -43,6 +44,8 @@ func init() {
 	_ = goharborv1.AddToScheme(scheme)
 	_ = minio.AddToScheme(scheme)
 	_ = redisCli.AddToScheme(scheme)
+	// harbor operator crd
+	_ = v1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 

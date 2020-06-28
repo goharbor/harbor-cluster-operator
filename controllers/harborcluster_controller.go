@@ -47,11 +47,13 @@ type HarborClusterReconciler struct {
 // +kubebuilder:rbac:groups=cluster.goharbor.io,resources=harborclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=databases.spotahome.com,resources=redisfailovers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
-// +kubebuilder:rbac:groups="",resources=secret,verbs=get;list
+// +kubebuilder:rbac:groups="",resources=secret,verbs=get;list;create
 
 func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("harborcluster", req.NamespacedName)
+
+	log.Info("start to reconcile.")
 
 	var harborCluster goharborv1.HarborCluster
 	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
@@ -120,9 +122,8 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		log.Error(err, "error when create ImageGetter.")
 		return ctrl.Result{}, err
 	}
-	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, &GetOptions{
-		ImageGetter: imageGetter,
-	}).Reconcile()
+	option.ImageGetter = imageGetter
+	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err
@@ -196,8 +197,9 @@ func (r *HarborClusterReconciler) getHarborClusterCondition(
 		}
 	}
 	return &goharborv1.HarborClusterCondition{
-		Type:   goharborv1.HarborClusterConditionType(conditionType),
-		Status: corev1.ConditionUnknown,
+		Type:               goharborv1.HarborClusterConditionType(conditionType),
+		LastTransitionTime: metav1.Now(),
+		Status:             corev1.ConditionUnknown,
 	}, true
 }
 

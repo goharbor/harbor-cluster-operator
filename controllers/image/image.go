@@ -20,11 +20,11 @@ func NewImageGetter(registry *string, harborVersion string) (ImageGetter, error)
 	// or keep the current returns
 	var locator ImageGetter
 	switch harborVersion {
-	case "v1.10.0":
+	case "1.10.0":
 		locator = &harborV1_10_0_ImageLocator{}
 	}
 	if locator == nil {
-		return nil, fmt.Errorf("failed to relate images with this harbor version %s ", harborVersion)
+		return nil, fmt.Errorf("failed to get relate images with this harbor version %s ", harborVersion)
 	}
 	return &ImageGetterImpl{
 		locator:       locator,
