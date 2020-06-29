@@ -68,9 +68,9 @@ func RandomString(randLength int, randType string) (result string) {
 }
 
 // GetRedisPassword is get redis password
-func (redis *RedisReconciler) GetRedisPassword() (string, error) {
+func (redis *RedisReconciler) GetRedisPassword(secretName string) (string, error) {
 	var redisPassWord string
-	redisPassMap, err := redis.GetRedisSecret()
+	redisPassMap, err := redis.GetRedisSecret(secretName)
 	if err != nil {
 		return "", err
 	}
@@ -84,9 +84,9 @@ func (redis *RedisReconciler) GetRedisPassword() (string, error) {
 }
 
 // GetRedisSecret returns the Redis Password Secret
-func (redis *RedisReconciler) GetRedisSecret() (map[string][]byte, error) {
+func (redis *RedisReconciler) GetRedisSecret(secretName string) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
-	err := redis.Client.Get(types.NamespacedName{Name: redis.HarborCluster.Name, Namespace: redis.HarborCluster.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,36 @@ func (redis *RedisReconciler) GetPodsStatus(podArray []corev1.Pod) ([]corev1.Pod
 
 // GenRedisConnURL returns harbor component redis secret
 func (c *RedisConnect) GenRedisConnURL() string {
-	return fmt.Sprintf("redis://%s:%s/0", c.Endpoint, c.Port)
+	switch c.Schema {
+	case RedisSentinelSchema:
+		return c.genRedisSentinelConnURL()
+	case RedisServerSchema:
+		return c.genRedisServerConnURL()
+	default:
+		return ""
+	}
+}
+
+// genRedisSentinelConnURL returns redis sentinel connection url
+func (c *RedisConnect) genRedisSentinelConnURL() string {
+
+	hostInfo := GenHostInfo(c.Endpoint, c.Port)
+	if c.Password != "" {
+		return fmt.Sprintf("redis+sentinel://:%s@%s/mymaster/0", c.Password, hostInfo)
+	}
+
+	return fmt.Sprintf("redis+sentinel://%s/mymaster/0", hostInfo)
+}
+
+// genRedisServerConnURL returns redis server connection url
+func (c *RedisConnect) genRedisServerConnURL() string {
+
+	hostInfo := GenHostInfo(c.Endpoint, c.Port)
+	if c.Password != "" {
+		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo)
+	}
+
+	return fmt.Sprintf("redis://%s/0", hostInfo)
 }
 
 // GetRedisFailover returns RedisFailover object
