@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	rediscli "github.com/go-redis/redis"
 	"strings"
 	"time"
@@ -25,20 +24,11 @@ const (
 )
 
 type RedisConnect struct {
-	Endpoint  string
+	Schema    string
+	Endpoint  []string
 	Port      string
 	Password  string
 	GroupName string
-}
-
-// NewRedisConnection returns redis connection
-func NewRedisConnection(endpoint, port, password, groupName string) *RedisConnect {
-	return &RedisConnect{
-		Endpoint:  endpoint,
-		Port:      port,
-		Password:  password,
-		GroupName: groupName,
-	}
 }
 
 // NewRedisPool returns redis sentinel client
@@ -54,16 +44,9 @@ func (c *RedisConnect) NewRedisClient() *rediscli.Client {
 }
 
 // BuildRedisPool returns redis connection pool client
-func BuildRedisPool(redisSentinelIP, redisSentinelPort, redisSentinelPassword, redisGroupName string, redisIndex int) *rediscli.Client {
+func BuildRedisPool(redisSentinelIP []string, redisSentinelPort, redisSentinelPassword, redisGroupName string, redisIndex int) *rediscli.Client {
 
-	var sentinelsInfo []string
-	sentinels := strings.Split(redisSentinelIP, ",")
-	if len(sentinels) > 0 {
-		for _, s := range sentinels {
-			sp := s + ":" + redisSentinelPort
-			sentinelsInfo = append(sentinelsInfo, sp)
-		}
-	}
+	sentinelsInfo := GenHostInfo(redisSentinelIP, redisSentinelPort)
 
 	options := &rediscli.FailoverOptions{
 		MasterName:         redisGroupName,
@@ -86,10 +69,10 @@ func BuildRedisPool(redisSentinelIP, redisSentinelPort, redisSentinelPassword, r
 }
 
 // BuildRedisClient returns redis connection client
-func BuildRedisClient(host, port, password string, index int) *rediscli.Client {
-
+func BuildRedisClient(host []string, port, password string, index int) *rediscli.Client {
+	hostInfo := GenHostInfo(host, port)
 	options := &rediscli.Options{
-		Addr:     fmt.Sprintf("%s:%s", host, port),
+		Addr:     strings.Join(hostInfo[:], ","),
 		Password: password,
 		DB:       index,
 	}
@@ -97,4 +80,15 @@ func BuildRedisClient(host, port, password string, index int) *rediscli.Client {
 
 	return client
 
+}
+
+// GenHostInfo splice host and port
+func GenHostInfo(endpoint []string, port string) []string {
+	var hostInfo []string
+	for _, s := range endpoint {
+		sp := s + ":" + port
+		hostInfo = append(hostInfo, sp)
+	}
+
+	return hostInfo
 }
