@@ -137,7 +137,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  endpoint,
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
@@ -157,7 +157,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  endpoint,
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
@@ -237,7 +237,7 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	endpoint := redis.GetSentinelServiceUrl(currentSentinelPods)
 
 	connect := &RedisConnect{
-		Endpoint:  endpoint,
+		Endpoints: []string{endpoint},
 		Port:      RedisSentinelConnPort,
 		Password:  password,
 		GroupName: RedisSentinelConnGroup,

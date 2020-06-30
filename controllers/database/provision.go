@@ -31,7 +31,7 @@ func (postgres *PostgreSQLReconciler) Deploy() (*lcm.CRStatus, error) {
 
 	expectCR, err := postgres.generatePostgresCR()
 	if err != nil {
-		return databaseNotReadyStatus(GenerateRedisCrError, err.Error()), err
+		return databaseNotReadyStatus(GenerateDatabaseCrError, err.Error()), err
 	}
 
 	if err := controllerutil.SetControllerReference(postgres.HarborCluster, expectCR, postgres.Scheme); err != nil {

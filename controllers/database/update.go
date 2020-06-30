@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
+	"github.com/goharbor/harbor-cluster-operator/controllers/database/api"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/google/go-cmp/cmp"
-	pg "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,8 +21,8 @@ func (postgres *PostgreSQLReconciler) Update() (*lcm.CRStatus, error) {
 		return databaseUnknownStatus(), nil
 	}
 
-	var actualCR pg.Postgresql
-	var expectCR pg.Postgresql
+	var actualCR api.Postgresql
+	var expectCR api.Postgresql
 
 	if err := runtime.DefaultUnstructuredConverter.
 		FromUnstructured(postgres.ActualCR.UnstructuredContent(), &actualCR); err != nil {
@@ -34,12 +34,12 @@ func (postgres *PostgreSQLReconciler) Update() (*lcm.CRStatus, error) {
 		return databaseNotReadyStatus(DefaultUnstructuredConverterError, err.Error()), err
 	}
 
-	if IsEqual(expectCR, actualCR) {
+	if !IsEqual(expectCR, actualCR) {
 		msg := fmt.Sprintf(MessageDatabaseUpdate, name)
 		postgres.Recorder.Event(postgres.HarborCluster, corev1.EventTypeNormal, RollingUpgradesDatabase, msg)
 
 		postgres.Log.Info(
-			"Update Redis resource",
+			"Update Database resource",
 			"namespace", postgres.HarborCluster.Namespace, "name", name,
 		)
 
@@ -59,6 +59,6 @@ func (postgres *PostgreSQLReconciler) Update() (*lcm.CRStatus, error) {
 }
 
 // isEqual check whether cache cr is equal expect.
-func IsEqual(actualCR, expectCR pg.Postgresql) bool {
+func IsEqual(actualCR, expectCR api.Postgresql) bool {
 	return cmp.Equal(expectCR.DeepCopy().Spec, actualCR.DeepCopy().Spec)
 }

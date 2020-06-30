@@ -25,7 +25,7 @@ const (
 
 type RedisConnect struct {
 	Schema    string
-	Endpoint  []string
+	Endpoints []string
 	Port      string
 	Password  string
 	GroupName string
@@ -34,13 +34,13 @@ type RedisConnect struct {
 // NewRedisPool returns redis sentinel client
 func (c *RedisConnect) NewRedisPool() *rediscli.Client {
 
-	return BuildRedisPool(c.Endpoint, c.Port, c.Password, c.GroupName, 0)
+	return BuildRedisPool(c.Endpoints, c.Port, c.Password, c.GroupName, 0)
 }
 
 // NewRedisClient returns redis client
 func (c *RedisConnect) NewRedisClient() *rediscli.Client {
 
-	return BuildRedisClient(c.Endpoint, c.Port, c.Password, 0)
+	return BuildRedisClient(c.Endpoints, c.Port, c.Password, 0)
 }
 
 // BuildRedisPool returns redis connection pool client

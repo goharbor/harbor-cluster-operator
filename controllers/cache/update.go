@@ -38,7 +38,7 @@ func (redis *RedisReconciler) RollingUpgrades() (*lcm.CRStatus, error) {
 		return cacheNotReadyStatus(DefaultUnstructuredConverterError, err.Error()), err
 	}
 
-	if IsEqual(expectCR, actualCR) {
+	if !IsEqual(expectCR, actualCR) {
 		msg := fmt.Sprintf(UpdateMessageRedisCluster, redis.HarborCluster.Name)
 		redis.Recorder.Event(redis.HarborCluster, corev1.EventTypeNormal, RedisUpScaling, msg)
 

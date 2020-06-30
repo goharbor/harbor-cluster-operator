@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // RedisReconciler implement the Reconciler interface and lcm.Controller interface.
@@ -44,6 +45,10 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	expectCR, err := redis.generateRedisCR()
 	if err != nil {
 		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
+	}
+
+	if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
+		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
 	}
 
 	redis.ActualCR = actualCR
