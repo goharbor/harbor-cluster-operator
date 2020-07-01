@@ -132,11 +132,7 @@ func createDefaultBucket() error {
 }
 
 func (m *MinIOReconciler) checkMinIOUpdate() bool {
-	if !cmp.Equal(m.DesiredMinIOCR.DeepCopy().Spec, m.CurrentMinIOCR.DeepCopy().Spec) {
-		return true
-	}
-
-	if !cmp.Equal(m.DesiredMinIOCR.DeepCopy().Labels, m.CurrentMinIOCR.DeepCopy().Labels) {
+	if m.DesiredMinIOCR.Spec.Image != m.CurrentMinIOCR.Spec.Image {
 		return true
 	}
 
