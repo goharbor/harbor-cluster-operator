@@ -124,7 +124,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return m.ProvisionInClusterSecretAsS3(&minioCR)
 	}
 
-	return nil, nil
+	return minioUnknownStatus(), nil
 }
 
 func createDefaultBucket() error {

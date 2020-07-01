@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -38,6 +39,17 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		return nil, err
 	}
 
+	data := map[string]string{
+		"accesskey":      string(accessKey),
+		"secretkey":      string(secretKey),
+		"region":         DefaultRegion,
+		"bucket":         DefaultBucket,
+		"regionendpoint": m.getServiceName() + "." + m.HarborCluster.Namespace,
+		"encrypt":        "false",
+		"secure":         "false",
+		"v4auth":         "false",
+	}
+	dataJson, _ := json.Marshal(&data)
 	inClusterSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -54,14 +66,7 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"accesskey":      accessKey,
-			"secretkey":      secretKey,
-			"region":         []byte(DefaultRegion),
-			"bucket":         []byte(DefaultBucket),
-			"regionendpoint": []byte(m.getServiceName() + "." + m.HarborCluster.Namespace),
-			"encrypt":        []byte("false"),
-			"secure":         []byte("false"),
-			"v4auth":         []byte("false"),
+			s3Storage: dataJson,
 		},
 	}
 
@@ -116,6 +121,21 @@ func (m *MinIOReconciler) generateExternalSecret() (*corev1.Secret, error) {
 }
 
 func (m *MinIOReconciler) generateS3Secret(labels map[string]string) *corev1.Secret {
+	data := map[string]string{
+		"region":         m.HarborCluster.Spec.Storage.S3.Region,
+		"bucket":         m.HarborCluster.Spec.Storage.S3.Bucket,
+		"accesskey":      m.HarborCluster.Spec.Storage.S3.AccessKey,
+		"secretkey":      m.HarborCluster.Spec.Storage.S3.SecretKey,
+		"regionendpoint": m.HarborCluster.Spec.Storage.S3.RegionEndpoint,
+		"encrypt":        strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Encrypt),
+		"keyid":          m.HarborCluster.Spec.Storage.S3.KeyId,
+		"secure":         strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Secure),
+		"chunksize":      m.HarborCluster.Spec.Storage.S3.ChunkSize,
+		"rootdirectory":  m.HarborCluster.Spec.Storage.S3.RootDirectory,
+		"storageclass":   m.HarborCluster.Spec.Storage.S3.StorageClass,
+		"v4auth":         strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.V4Auth),
+	}
+	dataJson, _ := json.Marshal(&data)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -132,22 +152,19 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) *corev1.Sec
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"region":         []byte(m.HarborCluster.Spec.Storage.S3.Region),
-			"bucket":         []byte(m.HarborCluster.Spec.Storage.S3.Bucket),
-			"accesskey":      []byte(m.HarborCluster.Spec.Storage.S3.AccessKey),
-			"secretkey":      []byte(m.HarborCluster.Spec.Storage.S3.SecretKey),
-			"regionendpoint": []byte(m.HarborCluster.Spec.Storage.S3.RegionEndpoint),
-			"encrypt":        []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Encrypt)),
-			"keyid":          []byte(m.HarborCluster.Spec.Storage.S3.KeyId),
-			"secure":         []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Secure)),
-			"chunksize":      []byte(m.HarborCluster.Spec.Storage.S3.ChunkSize),
-			"rootdirectory":  []byte(m.HarborCluster.Spec.Storage.S3.RootDirectory),
-			"storageclass":   []byte(m.HarborCluster.Spec.Storage.S3.StorageClass),
-			"v4auth":         []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.V4Auth))},
+			s3Storage: dataJson,
+		},
 	}
 }
 
 func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) *corev1.Secret {
+	data := map[string]string{
+		"realm":       m.HarborCluster.Spec.Storage.Azure.Realm,
+		"accountname": m.HarborCluster.Spec.Storage.Azure.AccountName,
+		"accountkey":  m.HarborCluster.Spec.Storage.Azure.AccountKey,
+		"container":   m.HarborCluster.Spec.Storage.Azure.Container,
+	}
+	dataJson, _ := json.Marshal(&data)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -164,15 +181,19 @@ func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) *corev1.
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"realm":       []byte(m.HarborCluster.Spec.Storage.Azure.Realm),
-			"accountname": []byte(m.HarborCluster.Spec.Storage.Azure.AccountName),
-			"accountkey":  []byte(m.HarborCluster.Spec.Storage.Azure.AccountKey),
-			"container":   []byte(m.HarborCluster.Spec.Storage.Azure.Container),
+			azureStorage: dataJson,
 		},
 	}
 }
 
 func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) *corev1.Secret {
+	data := map[string]string{
+		"bucket":        m.HarborCluster.Spec.Storage.Gcs.Bucket,
+		"encodedkey":    m.HarborCluster.Spec.Storage.Gcs.EncodedKey,
+		"rootdirectory": m.HarborCluster.Spec.Storage.Gcs.RootDirectory,
+		"chunksize":     m.HarborCluster.Spec.Storage.Gcs.ChunkSize,
+	}
+	dataJson, _ := json.Marshal(&data)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -189,14 +210,33 @@ func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) *corev1.Se
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"bucket":        []byte(m.HarborCluster.Spec.Storage.Gcs.Bucket),
-			"encodedkey":    []byte(m.HarborCluster.Spec.Storage.Gcs.EncodedKey),
-			"rootdirectory": []byte(m.HarborCluster.Spec.Storage.Gcs.RootDirectory),
-			"chunksize":     []byte(m.HarborCluster.Spec.Storage.Gcs.ChunkSize)},
+			gcsStorage: dataJson,
+		},
 	}
 }
 
 func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) *corev1.Secret {
+	data := map[string]string{
+		"authurl":             m.HarborCluster.Spec.Storage.Swift.Authurl,
+		"username":            m.HarborCluster.Spec.Storage.Swift.Username,
+		"password":            m.HarborCluster.Spec.Storage.Swift.Password,
+		"container":           m.HarborCluster.Spec.Storage.Swift.Container,
+		"region":              m.HarborCluster.Spec.Storage.Swift.Region,
+		"tenant":              m.HarborCluster.Spec.Storage.Swift.Tenant,
+		"tenantid":            m.HarborCluster.Spec.Storage.Swift.TenantId,
+		"domain":              m.HarborCluster.Spec.Storage.Swift.Domain,
+		"domainid":            m.HarborCluster.Spec.Storage.Swift.DomainId,
+		"trustid":             m.HarborCluster.Spec.Storage.Swift.TrustId,
+		"insecureskipverify":  strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.InsecureSkipVerify),
+		"prefix":              m.HarborCluster.Spec.Storage.Swift.Prefix,
+		"secretkey":           m.HarborCluster.Spec.Storage.Swift.SecretKey,
+		"authversion":         string(m.HarborCluster.Spec.Storage.Swift.AuthVersion),
+		"endpointtype":        m.HarborCluster.Spec.Storage.Swift.EndpointType,
+		"tempurlcontainerkey": strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey),
+		"tempurlmethods":      m.HarborCluster.Spec.Storage.Swift.TempurlMethods,
+		"chunksize":           m.HarborCluster.Spec.Storage.Swift.ChunkSize,
+	}
+	dataJson, _ := json.Marshal(&data)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -213,28 +253,25 @@ func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) *corev1.
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"authurl":             []byte(m.HarborCluster.Spec.Storage.Swift.Authurl),
-			"username":            []byte(m.HarborCluster.Spec.Storage.Swift.Username),
-			"password":            []byte(m.HarborCluster.Spec.Storage.Swift.Password),
-			"container":           []byte(m.HarborCluster.Spec.Storage.Swift.Container),
-			"region":              []byte(m.HarborCluster.Spec.Storage.Swift.Region),
-			"tenant":              []byte(m.HarborCluster.Spec.Storage.Swift.Tenant),
-			"tenantid":            []byte(m.HarborCluster.Spec.Storage.Swift.TenantId),
-			"domain":              []byte(m.HarborCluster.Spec.Storage.Swift.Domain),
-			"domainid":            []byte(m.HarborCluster.Spec.Storage.Swift.DomainId),
-			"trustid":             []byte(m.HarborCluster.Spec.Storage.Swift.TrustId),
-			"insecureskipverify":  []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.InsecureSkipVerify)),
-			"prefix":              []byte(m.HarborCluster.Spec.Storage.Swift.Prefix),
-			"secretkey":           []byte(m.HarborCluster.Spec.Storage.Swift.SecretKey),
-			"authversion":         []byte(string(m.HarborCluster.Spec.Storage.Swift.AuthVersion)),
-			"endpointtype":        []byte(m.HarborCluster.Spec.Storage.Swift.EndpointType),
-			"tempurlcontainerkey": []byte(strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey)),
-			"tempurlmethods":      []byte(m.HarborCluster.Spec.Storage.Swift.TempurlMethods),
-			"chunksize":           []byte(m.HarborCluster.Spec.Storage.Swift.ChunkSize)},
+			swiftStorage: dataJson,
+		},
 	}
 }
 
 func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Secret {
+	data := map[string]string{
+		"accesskeyid":     m.HarborCluster.Spec.Storage.Oss.AccessKeyId,
+		"accesskeysecret": m.HarborCluster.Spec.Storage.Oss.AccessKeySecret,
+		"region":          m.HarborCluster.Spec.Storage.Oss.Region,
+		"bucket":          m.HarborCluster.Spec.Storage.Oss.Bucket,
+		"endpoint":        m.HarborCluster.Spec.Storage.Oss.Region,
+		"internal":        m.HarborCluster.Spec.Storage.Oss.Internal,
+		"encrypt":         m.HarborCluster.Spec.Storage.Oss.Encrypt,
+		"secure":          m.HarborCluster.Spec.Storage.Oss.Secure,
+		"chunksize":       m.HarborCluster.Spec.Storage.Oss.ChunkSize,
+		"rootdirectory":   m.HarborCluster.Spec.Storage.Oss.RootDirectory,
+	}
+	dataJson, _ := json.Marshal(&data)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -251,16 +288,7 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Se
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			"accesskeyid":     []byte(m.HarborCluster.Spec.Storage.Oss.AccessKeyId),
-			"accesskeysecret": []byte(m.HarborCluster.Spec.Storage.Oss.AccessKeySecret),
-			"region":          []byte(m.HarborCluster.Spec.Storage.Oss.Region),
-			"bucket":          []byte(m.HarborCluster.Spec.Storage.Oss.Bucket),
-			"endpoint":        []byte(m.HarborCluster.Spec.Storage.Oss.Region),
-			"internal":        []byte(m.HarborCluster.Spec.Storage.Oss.Internal),
-			"encrypt":         []byte(m.HarborCluster.Spec.Storage.Oss.Encrypt),
-			"secure":          []byte(m.HarborCluster.Spec.Storage.Oss.Secure),
-			"chunksize":       []byte(m.HarborCluster.Spec.Storage.Oss.ChunkSize),
-			"rootdirectory":   []byte(m.HarborCluster.Spec.Storage.Oss.RootDirectory),
+			ossStorage: dataJson,
 		},
 	}
 }
