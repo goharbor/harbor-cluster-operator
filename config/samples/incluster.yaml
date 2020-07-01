@@ -1,4 +1,4 @@
-apiVersion: cluster.goharbor.io/v1
+apiVersion: goharbor.io/v1
 kind: HarborCluster
 metadata:
   name: harborcluster-sample
