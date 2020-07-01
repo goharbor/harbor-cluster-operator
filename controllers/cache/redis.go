@@ -37,29 +37,33 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.HarborCluster.Namespace)
 
-	actualCR, err := crdClient.Get(redis.HarborCluster.Name, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		return redis.Provision()
-	}
+	if redis.HarborCluster.Spec.Redis.Kind == goharborv1.InClusterComponent {
+		actualCR, err := crdClient.Get(redis.HarborCluster.Name, metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			return redis.Provision()
+		} else if err != nil {
+			return cacheNotReadyStatus(GetRedisClientError, err.Error()), err
+		}
 
-	expectCR, err := redis.generateRedisCR()
-	if err != nil {
-		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
-	}
+		expectCR, err := redis.generateRedisCR()
+		if err != nil {
+			return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
+		}
 
-	if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
-		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
-	}
+		if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
+			return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
+		}
 
-	redis.ActualCR = actualCR
-	redis.ExpectCR = expectCR
+		redis.ActualCR = actualCR
+		redis.ExpectCR = expectCR
+
+		crStatus, err := redis.Update(nil)
+		if err != nil {
+			return crStatus, err
+		}
+	}
 
 	crStatus, err := redis.Readiness()
-	if err != nil {
-		return crStatus, err
-	}
-
-	crStatus, err = redis.Update(nil)
 	if err != nil {
 		return crStatus, err
 	}

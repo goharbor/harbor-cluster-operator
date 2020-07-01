@@ -86,6 +86,7 @@ func (redis *RedisReconciler) GetRedisPassword(secretName string) (string, error
 // GetRedisSecret returns the Redis Password Secret
 func (redis *RedisReconciler) GetRedisSecret(secretName string) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
+
 	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil {
 		return nil, err

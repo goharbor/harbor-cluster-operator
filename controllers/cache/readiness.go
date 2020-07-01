@@ -5,7 +5,6 @@ import (
 	"fmt"
 	rediscli "github.com/go-redis/redis"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
-	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -133,7 +132,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
+			pw, err = redis.GetExternalRedisPassword(spec)
 		}
 
 		connect = &RedisConnect{
@@ -153,7 +152,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
+			pw, err = redis.GetExternalRedisPassword(spec)
 		}
 
 		connect = &RedisConnect{
@@ -189,12 +188,9 @@ func GetExternalRedisHost(spec *goharborv1.RedisSpec) ([]string, string) {
 }
 
 // GetExternalRedisPassword returns external redis password
-func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, client k8s.Client) (string, error) {
-	external := &RedisReconciler{
-		Client: client,
-	}
+func (redis *RedisReconciler) GetExternalRedisPassword(spec *goharborv1.RedisSpec) (string, error) {
 
-	pw, err := external.GetRedisPassword(spec.SecretName)
+	pw, err := redis.GetRedisPassword(spec.SecretName)
 	if err != nil {
 		return "", err
 	}
