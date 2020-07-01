@@ -1,16 +1,15 @@
 package cache
 
 const (
-	AppLabel = "harbor-cluster-operator"
+	AppLabel = "goharbor.io/harbor-cluster"
 )
 
 // NewLabels returns new labels
 func (redis *RedisReconciler) NewLabels() map[string]string {
 	dynLabels := map[string]string{
-		AppLabel:                     redis.Name,
 		"app.kubernetes.io/name":     "cache",
-		"app.kubernetes.io/instance": redis.Namespace,
-		"goharbor.io/harbor-cluster": redis.Name,
+		"app.kubernetes.io/instance": redis.HarborCluster.Namespace,
+		AppLabel:                     redis.HarborCluster.Name,
 	}
 
 	return MergeLabels(redis.Labels, dynLabels, redis.HarborCluster.Labels)

@@ -54,13 +54,19 @@ func (impl *ServiceGetterImpl) Cache(ctx context.Context, harborCluster *goharbo
 		Log:           options.Log,
 		DClient:       options.DClient,
 		Scheme:        options.Scheme,
-		Properties:    &lcm.Properties{},
+		CXT:           ctx,
 	}
 }
 
 func (impl *ServiceGetterImpl) Database(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &database.PostgreSQLReconciler{
 		HarborCluster: harborCluster,
+		Client:        options.Client,
+		Recorder:      options.Recorder,
+		Log:           options.Log,
+		DClient:       options.DClient,
+		Scheme:        options.Scheme,
+		Ctx:           ctx,
 	}
 }
 
@@ -77,6 +83,9 @@ func (impl *ServiceGetterImpl) Storage(ctx context.Context, harborCluster *gohar
 func (impl *ServiceGetterImpl) Harbor(ctx context.Context, harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus, options *GetOptions) Reconciler {
 	return &harbor.HarborReconciler{
 		HarborCluster:       harborCluster,
+		Client:              options.Client,
+		ImageGetter:         options.ImageGetter,
+		Ctx:                 ctx,
 		ComponentToCRStatus: componentToCRStatus,
 	}
 }

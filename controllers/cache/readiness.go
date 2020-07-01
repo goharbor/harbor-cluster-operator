@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	HarborChartMuseum = "chartmuseum"
+	HarborChartMuseum = "chartMuseum"
 	HarborClair       = "clair"
-	HarborJobService  = "jobservice"
+	HarborJobService  = "jobService"
 	HarborRegistry    = "registry"
 )
 
@@ -35,7 +35,7 @@ var (
 // - create redis connection pool
 // - ping redis server
 // - return redis properties if redis has available
-func (redis *RedisReconciler) Readiness() error {
+func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 	var (
 		client *rediscli.Client
 		err    error
@@ -49,42 +49,42 @@ func (redis *RedisReconciler) Readiness() error {
 	}
 
 	if err != nil {
-		redis.Log.Error(err, "Fail to create redis client.", "namespace", redis.Namespace, "name", redis.Name)
-		return err
+		redis.Log.Error(err, "Fail to create redis client.",
+			"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+		return cacheNotReadyStatus(GetRedisClientError, err.Error()), err
 	}
 
 	defer client.Close()
 
 	if err := client.Ping().Err(); err != nil {
-		redis.Log.Error(err, "Fail to check Redis.", "namespace", redis.Namespace, "name", redis.Name)
-		return err
+		redis.Log.Error(err, "Fail to check Redis.",
+			"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+		return cacheNotReadyStatus(CheckRedisHealthError, err.Error()), err
 	}
 
-	redis.Log.Info("Redis already ready.", "namespace", redis.Namespace, "name", redis.Name)
+	redis.Log.Info("Redis already ready.",
+		"namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 
+	properties := lcm.Properties{}
 	for _, component := range components {
 		url := redis.RedisConnect.GenRedisConnURL()
-		secretName := fmt.Sprintf("%s-redis", component)
-		//propertyName := fmt.Sprintf("%sSecret", component)
+		secretName := fmt.Sprintf("%s-redis", strings.ToLower(component))
+		propertyName := fmt.Sprintf("%sSecret", component)
 
 		if err := redis.DeployComponentSecret(component, url, "", secretName); err != nil {
-			return err
+			return cacheNotReadyStatus(CreateComponentSecretError, err.Error()), err
 		}
+
+		properties.Add(propertyName, secretName)
 	}
 
-	redis.CRStatus = lcm.New(goharborv1.CacheReady).
-		WithStatus(corev1.ConditionTrue).
-		WithReason("redis already ready").
-		WithMessage("harbor component redis secrets are already create.").
-		WithProperties(*redis.Properties)
-	return nil
+	return cacheReadyStatus(&properties), nil
 }
 
 // DeployComponentSecret deploy harbor component redis secret
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
-	secretName = fmt.Sprintf("%s-redis", component)
-	//propertyName := fmt.Sprintf("%sSecret", component)
+
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
 	switch redis.HarborCluster.Spec.Redis.Kind {
@@ -102,10 +102,10 @@ func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, s
 		}
 	}
 
-	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil && kerr.IsNotFound(err) {
 		redis.Log.Info("Creating Harbor Component Secret",
-			"namespace", redis.Namespace,
+			"namespace", redis.HarborCluster.Namespace,
 			"name", secretName,
 			"component", component)
 		return redis.Client.Create(sc)
@@ -125,7 +125,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 	)
 	spec := redis.HarborCluster.Spec.Redis.Spec
 	switch spec.Schema {
-	case "sentinel":
+	case RedisSentinelSchema:
 		if len(spec.Hosts) < 1 || spec.GroupName == "" {
 			return nil, errors.New(".redis.spec.hosts or .redis.spec.groupName is invalid")
 		}
@@ -133,33 +133,35 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
+			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  strings.Join(endpoint[:], ","),
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
+			Schema:    RedisSentinelSchema,
 		}
 
 		redis.RedisConnect = connect
 		client = connect.NewRedisPool()
-	case "redis":
+	case RedisServerSchema:
 		if len(spec.Hosts) != 1 {
 			return nil, errors.New(".redis.spec.hosts is invalid")
 		}
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.Namespace, redis.Client)
+			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  fmt.Sprintf("%s:%s", endpoint, port),
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
+			Schema:    RedisServerSchema,
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
@@ -189,12 +191,10 @@ func GetExternalRedisHost(spec *goharborv1.RedisSpec) ([]string, string) {
 // GetExternalRedisPassword returns external redis password
 func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, client k8s.Client) (string, error) {
 	external := &RedisReconciler{
-		Name:      spec.SecretName,
-		Namespace: namespace,
-		Client:    client,
+		Client: client,
 	}
 
-	pw, err := external.GetRedisPassword()
+	pw, err := external.GetRedisPassword(spec.SecretName)
 	if err != nil {
 		return "", err
 	}
@@ -204,7 +204,7 @@ func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, clie
 
 // GetInClusterRedisInfo returns inCluster redis sentinel pool client
 func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) {
-	password, err := redis.GetRedisPassword()
+	password, err := redis.GetRedisPassword(redis.HarborCluster.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	endpoint := redis.GetSentinelServiceUrl(currentSentinelPods)
 
 	connect := &RedisConnect{
-		Endpoint:  endpoint,
+		Endpoints: []string{endpoint},
 		Port:      RedisSentinelConnPort,
 		Password:  password,
 		GroupName: RedisSentinelConnGroup,

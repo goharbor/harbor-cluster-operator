@@ -3,6 +3,8 @@ package cache
 import (
 	"bytes"
 	"fmt"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	"github.com/goharbor/harbor-cluster-operator/lcm"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,9 +69,9 @@ func RandomString(randLength int, randType string) (result string) {
 }
 
 // GetRedisPassword is get redis password
-func (redis *RedisReconciler) GetRedisPassword() (string, error) {
+func (redis *RedisReconciler) GetRedisPassword(secretName string) (string, error) {
 	var redisPassWord string
-	redisPassMap, err := redis.GetRedisSecret()
+	redisPassMap, err := redis.GetRedisSecret(secretName)
 	if err != nil {
 		return "", err
 	}
@@ -83,9 +85,9 @@ func (redis *RedisReconciler) GetRedisPassword() (string, error) {
 }
 
 // GetRedisSecret returns the Redis Password Secret
-func (redis *RedisReconciler) GetRedisSecret() (map[string][]byte, error) {
+func (redis *RedisReconciler) GetRedisSecret(secretName string) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
-	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: secretName, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +98,9 @@ func (redis *RedisReconciler) GetRedisSecret() (map[string][]byte, error) {
 // GetDeploymentPods returns the Redis Sentinel pod list
 func (redis *RedisReconciler) GetDeploymentPods() (*appsv1.Deployment, *corev1.PodList, error) {
 	deploy := &appsv1.Deployment{}
-	name := fmt.Sprintf("%s-%s", "rfs", redis.Name)
+	name := fmt.Sprintf("%s-%s", "rfs", redis.HarborCluster.Name)
 
-	err := redis.Client.Get(types.NamespacedName{Name: name, Namespace: redis.Namespace}, deploy)
+	err := redis.Client.Get(types.NamespacedName{Name: name, Namespace: redis.HarborCluster.Namespace}, deploy)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -110,7 +112,7 @@ func (redis *RedisReconciler) GetDeploymentPods() (*appsv1.Deployment, *corev1.P
 	pod := &corev1.PodList{}
 	err = redis.Client.List(opts, pod)
 	if err != nil {
-		redis.Log.Error(err, "fail to get pod.", "namespace", redis.Namespace, "name", name)
+		redis.Log.Error(err, "fail to get pod.", "namespace", redis.HarborCluster.Namespace, "name", name)
 		return nil, nil, err
 	}
 	return deploy, pod, nil
@@ -119,9 +121,9 @@ func (redis *RedisReconciler) GetDeploymentPods() (*appsv1.Deployment, *corev1.P
 // GetStatefulSetPods returns the Redis Server pod list
 func (redis *RedisReconciler) GetStatefulSetPods() (*appsv1.StatefulSet, *corev1.PodList, error) {
 	sts := &appsv1.StatefulSet{}
-	name := fmt.Sprintf("%s-%s", "rfr", redis.Name)
+	name := fmt.Sprintf("%s-%s", "rfr", redis.HarborCluster.Name)
 
-	err := redis.Client.Get(types.NamespacedName{Name: name, Namespace: redis.Namespace}, sts)
+	err := redis.Client.Get(types.NamespacedName{Name: name, Namespace: redis.HarborCluster.Namespace}, sts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -133,7 +135,7 @@ func (redis *RedisReconciler) GetStatefulSetPods() (*appsv1.StatefulSet, *corev1
 	pod := &corev1.PodList{}
 	err = redis.Client.List(opts, pod)
 	if err != nil {
-		redis.Log.Error(err, "fail to get pod.", "namespace", redis.Namespace, "name", name)
+		redis.Log.Error(err, "fail to get pod.", "namespace", redis.HarborCluster.Namespace, "name", name)
 		return nil, nil, err
 	}
 	return sts, pod, nil
@@ -173,6 +175,7 @@ func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 
 	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
 	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
+
 	if cpu != nil {
 		resources[corev1.ResourceCPU] = *cpu
 	}
@@ -256,16 +259,65 @@ func (redis *RedisReconciler) GetPodsStatus(podArray []corev1.Pod) ([]corev1.Pod
 
 // GenRedisConnURL returns harbor component redis secret
 func (c *RedisConnect) GenRedisConnURL() string {
-	return fmt.Sprintf("redis://%s:%s/0", c.Endpoint, c.Port)
+	switch c.Schema {
+	case RedisSentinelSchema:
+		return c.genRedisSentinelConnURL()
+	case RedisServerSchema:
+		return c.genRedisServerConnURL()
+	default:
+		return ""
+	}
+}
+
+// genRedisSentinelConnURL returns redis sentinel connection url
+func (c *RedisConnect) genRedisSentinelConnURL() string {
+
+	hostInfo := GenHostInfo(c.Endpoints, c.Port)
+	if c.Password != "" {
+		return fmt.Sprintf("redis+sentinel://:%s@%s/mymaster/0", c.Password, hostInfo)
+	}
+
+	return fmt.Sprintf("redis+sentinel://%s/mymaster/0", hostInfo)
+}
+
+// genRedisServerConnURL returns redis server connection url
+func (c *RedisConnect) genRedisServerConnURL() string {
+
+	hostInfo := GenHostInfo(c.Endpoints, c.Port)
+	if c.Password != "" {
+		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo)
+	}
+
+	return fmt.Sprintf("redis://%s/0", hostInfo)
 }
 
 // GetRedisFailover returns RedisFailover object
 func (redis *RedisReconciler) GetRedisFailover() (*redisCli.RedisFailover, error) {
 	rf := &redisCli.RedisFailover{}
-	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, rf)
+	err := redis.Client.Get(types.NamespacedName{Name: redis.HarborCluster.Name, Namespace: redis.HarborCluster.Namespace}, rf)
 	if err != nil {
 		return nil, err
 	}
 
 	return rf, nil
+}
+
+func cacheNotReadyStatus(reason, message string) *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionFalse).
+		WithReason(reason).
+		WithMessage(message)
+}
+
+func cacheUnknownStatus() *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionUnknown)
+}
+
+func cacheReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
+	return lcm.New(goharborv1.CacheReady).
+		WithStatus(corev1.ConditionTrue).
+		WithReason("redis already ready").
+		WithMessage("harbor component redis secrets are already create.").
+		WithProperties(*properties)
 }

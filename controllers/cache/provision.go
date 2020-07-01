@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,51 +19,38 @@ import (
 // - perform any RedisFailovers downscale (left for downscale phase)
 // - perform any RedisFailovers upscale (left for upscale phase)
 // - perform any pod upgrade (left for rolling upgrade phase)
-func (redis *RedisReconciler) Deploy() error {
+func (redis *RedisReconciler) Deploy() (*lcm.CRStatus, error) {
 
 	if redis.HarborCluster.Spec.Redis.Kind == "external" {
-		return nil
+		return cacheUnknownStatus(), nil
 	}
 
-	var actualCR *unstructured.Unstructured
 	var expectCR *unstructured.Unstructured
 
-	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.Namespace)
+	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.HarborCluster.Namespace)
 
 	expectCR, err := redis.generateRedisCR()
 	if err != nil {
-		return err
+		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
 	}
 
 	if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
-		return err
+		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
 	}
 
-	actualCR, err = crdClient.Get(redis.Name, metav1.GetOptions{})
-	if err != nil && errors.IsNotFound(err) {
-
-		if err := redis.DeploySecret(); err != nil {
-			return err
-		}
-
-		redis.Log.Info("Creating Redis.", "namespace", redis.Namespace, "name", redis.Name)
-		_, err = crdClient.Create(expectCR, metav1.CreateOptions{})
-		if err != nil {
-			return err
-		}
-
-		redis.Log.Info("Redis create complete.", "namespace", redis.Namespace, "name", redis.Name)
-		return nil
+	if err := redis.DeploySecret(); err != nil {
+		return cacheNotReadyStatus(CreateRedisSecretError, err.Error()), err
 	}
 
+	redis.Log.Info("Creating Redis.", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+
+	_, err = crdClient.Create(expectCR, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		return cacheNotReadyStatus(CreateRedisCrError, err.Error()), err
 	}
 
-	redis.ExpectCR = expectCR
-	redis.ActualCR = actualCR
-
-	return nil
+	redis.Log.Info("Redis has been created.", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
+	return cacheUnknownStatus(), nil
 }
 
 // DeploySecret deploy the Redis Password Secret
@@ -74,9 +62,9 @@ func (redis *RedisReconciler) DeploySecret() error {
 		return err
 	}
 
-	err := redis.Client.Get(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, secret)
+	err := redis.Client.Get(types.NamespacedName{Name: redis.HarborCluster.Name, Namespace: redis.HarborCluster.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
-		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.Namespace, "name", redis.Name)
+		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 		return redis.Client.Create(sc)
 	}
 

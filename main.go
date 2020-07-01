@@ -17,13 +17,14 @@ package main
 
 import (
 	"flag"
-	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
+	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	"os"
 	"time"
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -43,6 +44,8 @@ func init() {
 	_ = goharborv1.AddToScheme(scheme)
 	_ = minio.AddToScheme(scheme)
 	_ = redisCli.AddToScheme(scheme)
+	// harbor operator crd
+	_ = v1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -61,10 +64,12 @@ func main() {
 	}))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		Port:               9443,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionID:        "configmap-name",
+		LeaderElectionNamespace: "default",
+		Port:                    9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -80,6 +85,10 @@ func main() {
 		Recorder:      mgr.GetEventRecorderFor("HarborCluster-Controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
+		os.Exit(1)
+	}
+	if err = (&goharborv1.HarborCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "HarborCluster")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
