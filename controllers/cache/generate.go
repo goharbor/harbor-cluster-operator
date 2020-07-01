@@ -16,7 +16,7 @@ var (
 
 // generateRedisCR returns RedisFailovers CRs
 func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, error) {
-	resource := redis.GetRedisResource()
+	redisResource := redis.GetRedisResource()
 	redisRep := redis.GetRedisServerReplica()
 	sentinelRep := redis.GetRedisSentinelReplica()
 	storageSize := redis.GetRedisStorageSize()
@@ -35,15 +35,15 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 			Redis: redisCli.RedisSettings{
 				Replicas: redisRep,
 				Resources: corev1.ResourceRequirements{
-					Requests: resource,
-					Limits:   resource,
+					Requests: redisResource,
+					Limits:   redisResource,
 				},
 			},
 			Sentinel: redisCli.SentinelSettings{
 				Replicas: sentinelRep,
 				Resources: corev1.ResourceRequirements{
-					Requests: resource,
-					Limits:   resource,
+					Requests: redisResource,
+					Limits:   redisResource,
 				},
 			},
 			Auth: redisCli.AuthSettings{SecretPath: redis.HarborCluster.Name},

@@ -166,7 +166,6 @@ func (postgres *PostgreSQLReconciler) GetInClusterDatabaseInfo() (*Connect, *pgx
 	}
 
 	url := connect.GenDatabaseUrl()
-	fmt.Println(connect, url)
 
 	client, err = pgx.Connect(postgres.Ctx, url)
 	if err != nil {

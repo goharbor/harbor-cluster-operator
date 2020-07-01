@@ -174,6 +174,7 @@ func (redis *RedisReconciler) GetRedisResource() corev1.ResourceList {
 
 	cpu := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Cpu()
 	mem := redis.HarborCluster.Spec.Redis.Spec.Server.Resources.Requests.Memory()
+
 	if cpu != nil {
 		resources[corev1.ResourceCPU] = *cpu
 	}
@@ -270,7 +271,7 @@ func (c *RedisConnect) GenRedisConnURL() string {
 // genRedisSentinelConnURL returns redis sentinel connection url
 func (c *RedisConnect) genRedisSentinelConnURL() string {
 
-	hostInfo := GenHostInfo(c.Endpoint, c.Port)
+	hostInfo := GenHostInfo(c.Endpoints, c.Port)
 	if c.Password != "" {
 		return fmt.Sprintf("redis+sentinel://:%s@%s/mymaster/0", c.Password, hostInfo)
 	}
@@ -281,7 +282,7 @@ func (c *RedisConnect) genRedisSentinelConnURL() string {
 // genRedisServerConnURL returns redis server connection url
 func (c *RedisConnect) genRedisServerConnURL() string {
 
-	hostInfo := GenHostInfo(c.Endpoint, c.Port)
+	hostInfo := GenHostInfo(c.Endpoints, c.Port)
 	if c.Password != "" {
 		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo)
 	}
