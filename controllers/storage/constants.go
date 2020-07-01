@@ -14,6 +14,7 @@ const (
 	GetExternalSecretError    = "Get external storage secret error"
 	UpdateExternalSecretError = "Update external storage secret error"
 	NotSupportType            = "The type of storage are not supported"
-
 	CreateDefaultBucketError = "Create default bucket in minIO Error"
+	CreateDefaultBucketeError = "Create default buckete in minIO Error"
+	ScaleMinIOError           = "Scale minIO error"
 )

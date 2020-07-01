@@ -2,15 +2,16 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // RedisReconciler implement the Reconciler interface and lcm.Controller interface.
@@ -25,11 +26,7 @@ type RedisReconciler struct {
 	ExpectCR      *unstructured.Unstructured
 	ActualCR      *unstructured.Unstructured
 	Labels        map[string]string
-	Name          string
-	Namespace     string
-	CRStatus      *lcm.CRStatus
 	RedisConnect  *RedisConnect
-	Properties    *lcm.Properties
 }
 
 // Reconciler implements the reconcile logic of redis service
@@ -38,26 +35,44 @@ func (redis *RedisReconciler) Reconcile() (*lcm.CRStatus, error) {
 	redis.Client.WithContext(redis.CXT)
 	redis.DClient.WithContext(redis.CXT)
 
-	crStatus, err := redis.Provision()
+	crdClient := redis.DClient.WithResource(redisFailoversGVR).WithNamespace(redis.HarborCluster.Namespace)
+
+	actualCR, err := crdClient.Get(redis.HarborCluster.Name, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		return redis.Provision()
+	}
+
+	expectCR, err := redis.generateRedisCR()
+	if err != nil {
+		return cacheNotReadyStatus(GenerateRedisCrError, err.Error()), err
+	}
+
+	if err := controllerutil.SetControllerReference(redis.HarborCluster, expectCR, redis.Scheme); err != nil {
+		return cacheNotReadyStatus(SetOwnerReferenceError, err.Error()), err
+	}
+
+	redis.ActualCR = actualCR
+	redis.ExpectCR = expectCR
+
+	crStatus, err := redis.Readiness()
 	if err != nil {
 		return crStatus, err
 	}
 
-	c, _ := json.Marshal(crStatus)
-	fmt.Println(string(c))
+	crStatus, err = redis.Update(nil)
+	if err != nil {
+		return crStatus, err
+	}
 
 	return crStatus, nil
 }
 
 func (redis *RedisReconciler) Provision() (*lcm.CRStatus, error) {
-	if err := redis.Deploy(); err != nil {
-		return redis.CRStatus, err
+	crStatus, err := redis.Deploy()
+	if err != nil {
+		return crStatus, err
 	}
-
-	if err := redis.Readiness(); err != nil {
-		return redis.CRStatus, err
-	}
-	return redis.CRStatus, nil
+	return crStatus, nil
 }
 
 func (redis *RedisReconciler) Delete() (*lcm.CRStatus, error) {
@@ -68,14 +83,10 @@ func (redis *RedisReconciler) Scale() (*lcm.CRStatus, error) {
 	panic("implement me")
 }
 
-func (redis *RedisReconciler) ScaleUp(newReplicas uint64) (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
-func (redis *RedisReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
 func (redis *RedisReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
-	panic("implement me")
+	crStatus, err := redis.RollingUpgrades()
+	if err != nil {
+		return crStatus, err
+	}
+	return crStatus, nil
 }
