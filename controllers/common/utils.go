@@ -15,19 +15,14 @@ func RandomString(randLength int, randType string) (result string) {
 	b := bytes.Buffer{}
 	if strings.Contains(randType, "0") {
 		b.WriteString(num)
-	}
-	if strings.Contains(randType, "a") {
+	} else if strings.Contains(randType, "A") {
+		b.WriteString(upper)
+	} else {
 		b.WriteString(lower)
 	}
-	if strings.Contains(randType, "A") {
-		b.WriteString(upper)
-	}
+
 	var str = b.String()
 	var strLen = len(str)
-	if strLen == 0 {
-		result = ""
-		return
-	}
 
 	rand.Seed(time.Now().UnixNano())
 	b = bytes.Buffer{}
