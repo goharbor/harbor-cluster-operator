@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type PostgreSQLReconciler struct {
@@ -34,30 +35,36 @@ func (postgres *PostgreSQLReconciler) Reconcile() (*lcm.CRStatus, error) {
 	postgres.DClient.WithContext(postgres.Ctx)
 
 	crdClient := postgres.DClient.WithResource(databaseFailoversGVR).WithNamespace(postgres.HarborCluster.Namespace)
-	name := fmt.Sprintf("%s-%s", postgres.HarborCluster.Namespace, postgres.HarborCluster.Name)
+	if postgres.HarborCluster.Spec.Database.Kind == goharborv1.InClusterComponent {
 
-	actualCR, err := crdClient.Get(name, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		return postgres.Provision()
-	} else if err != nil {
-		return databaseNotReadyStatus(GetDatabaseCrError, err.Error()), err
-	}
-	expectCR, err := postgres.generatePostgresCR()
-	if err != nil {
-		return databaseNotReadyStatus(GenerateDatabaseCrError, err.Error()), err
-	}
+		name := fmt.Sprintf("%s-%s", postgres.HarborCluster.Namespace, postgres.HarborCluster.Name)
+		actualCR, err := crdClient.Get(name, metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			return postgres.Provision()
+		} else if err != nil {
+			return databaseNotReadyStatus(GetDatabaseCrError, err.Error()), err
+		}
+		expectCR, err := postgres.generatePostgresCR()
+		if err != nil {
+			return databaseNotReadyStatus(GenerateDatabaseCrError, err.Error()), err
+		}
 
-	postgres.ActualCR = actualCR
-	postgres.ExpectCR = expectCR
+		if err := controllerutil.SetControllerReference(postgres.HarborCluster, expectCR, postgres.Scheme); err != nil {
+			return databaseNotReadyStatus(SetOwnerReferenceError, err.Error()), err
+		}
+
+		postgres.ActualCR = actualCR
+		postgres.ExpectCR = expectCR
+
+		crStatus, err := postgres.Update()
+		if err != nil {
+			return crStatus, err
+		}
+	}
 
 	crStatus, err := postgres.Readiness()
 	if err != nil {
 		return databaseNotReadyStatus(CheckDatabaseHealthError, err.Error()), err
-	}
-
-	crStatus, err = postgres.Update()
-	if err != nil {
-		return crStatus, err
 	}
 
 	return crStatus, nil
