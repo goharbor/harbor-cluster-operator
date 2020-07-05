@@ -51,6 +51,7 @@ type MinIOReconciler struct {
 	DesiredMinIOCR        *minio.MinIOInstance
 	CurrentExternalSecret *corev1.Secret
 	DesiredExternalSecret *corev1.Secret
+	MinioClient           Minio
 }
 
 var (
@@ -117,7 +118,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	}
 
 	if isReady {
-		err := createDefaultBucket()
+		err := m.minioInit()
 		if err != nil {
 			return minioNotReadyStatus(CreateDefaultBucketError, err.Error()), err
 		}
@@ -127,8 +128,25 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return minioUnknownStatus(), nil
 }
 
-func createDefaultBucket() error {
-	panic("implement me")
+func (m *MinIOReconciler) minioInit() error {
+	accessKey, secretKey, err := m.getCredsFromSecret()
+	if err != nil {
+		return err
+	}
+	endpoint := m.getServiceName() + "." + m.HarborCluster.Namespace
+
+	m.MinioClient, err = GetMinioClient(endpoint, string(accessKey), string(secretKey), DefaultRegion, false)
+	if err != nil {
+		return err
+	}
+
+	exists, err := m.MinioClient.IsBucketExists(DefaultBucket)
+	if err != nil || exists {
+		return err
+	}
+
+	err = m.MinioClient.CreateBucket(DefaultBucket)
+	return err
 }
 
 func (m *MinIOReconciler) checkMinIOUpdate() bool {

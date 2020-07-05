@@ -9,6 +9,7 @@ require (
 	github.com/google/go-cmp v0.3.1
 	github.com/jackc/pgx/v4 v4.6.0
 	github.com/jetstack/cert-manager v0.14.2
+	github.com/minio/minio-go/v6 v6.0.55-0.20200424204115-7506d2996b22
 	github.com/minio/minio-operator v0.0.0-20200528235320-8d6919ae93fe
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
