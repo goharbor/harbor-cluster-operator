@@ -36,6 +36,7 @@ func generateName(typeName, metaName string) string {
 	return fmt.Sprintf("%s-%s", typeName, metaName)
 }
 
+// Deprecated
 func RandomString(randLength int, randType string) (result string) {
 	var num string = "0123456789"
 	var lower string = "abcdefghijklmnopqrstuvwxyz"
