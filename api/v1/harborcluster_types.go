@@ -44,6 +44,11 @@ const (
 	ComponentDatabase Component = "database"
 )
 
+const (
+	ExternalComponent  string = "external"
+	InClusterComponent string = "inCluster"
+)
+
 // HarborClusterSpec defines the desired state of HarborCluster
 type HarborClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -151,9 +156,9 @@ type Storage struct {
 
 type Oss struct {
 	// +kubebuilder:validation:Required
-	Accesskeyid string `json:"accesskeyid"`
+	AccessKeyId string `json:"accesskeyid"`
 	// +kubebuilder:validation:Required
-	Accesskeysecret string `json:"accesskeysecret"`
+	AccessKeySecret string `json:"accesskeysecret"`
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
 	// +kubebuilder:validation:Required
@@ -163,8 +168,8 @@ type Oss struct {
 	Internal      string `json:"internal,omitempty"`
 	Encrypt       string `json:"encrypt,omitempty"`
 	Secure        string `json:"secure,omitempty"`
-	Chunksize     string `json:"chunksize,omitempty"`
-	Rootdirectory string `json:"rootdirectory,omitempty"`
+	ChunkSize     string `json:"chunksize,omitempty"`
+	RootDirectory string `json:"rootdirectory,omitempty"`
 }
 
 type Swift struct {
@@ -180,14 +185,14 @@ type Swift struct {
 	Region string `json:"region"`
 	// +kubebuilder:validation:Required
 	Tenant              string `json:"tenant"`
-	Tenantid            string `json:"tenantid,omitempty"`
+	TenantId            string `json:"tenantid,omitempty"`
 	Domain              string `json:"domain,omitempty"`
-	Domainid            string `json:"domainid,omitempty"`
-	Trustid             string `json:"trustid,omitempty"`
-	Insecureskipverify  bool   `json:"insecureskipverify,omitempty"`
-	Chunksize           string `json:"chunksize,omitempty"`
+	DomainId            string `json:"domainid,omitempty"`
+	TrustId             string `json:"trustid,omitempty"`
+	InsecureSkipVerify  bool   `json:"insecureskipverify,omitempty"`
+	ChunkSize           string `json:"chunksize,omitempty"`
 	Prefix              string `json:"prefix,omitempty"`
-	Secretkey           string `json:"secretkey,omitempty"`
+	SecretKey           string `json:"secretkey,omitempty"`
 	AuthVersion         int    `json:"authversion,omitempty"`
 	EndpointType        string `json:"endpointtype,omitempty"`
 	TempurlContainerkey bool   `json:"tempurlcontainerkey,omitempty"`
@@ -200,35 +205,35 @@ type S3 struct {
 	// +kubebuilder:validation:Required
 	Bucket string `json:"bucket"`
 	// +kubebuilder:validation:Required
-	Accesskey string `json:"accesskey"`
+	AccessKey string `json:"accesskey"`
 	// +kubebuilder:validation:Required
-	Secretkey string `json:"secretkey"`
+	SecretKey string `json:"secretkey"`
 	// +kubebuilder:validation:Required
-	Regionendpoint string `json:"regionendpoint"`
+	RegionEndpoint string `json:"regionendpoint"`
 	Encrypt        bool   `json:"encrypt,omitempty"`
-	Keyid          string `json:"keyid,omitempty"`
+	KeyId          string `json:"keyid,omitempty"`
 	Secure         bool   `json:"secure,omitempty"`
-	V4auth         bool   `json:"v4auth,omitempty"`
-	Chunksize      string `json:"chunksize,omitempty"`
-	Rootdirectory  string `json:"rootdirectory,omitempty"`
-	Storageclass   string `json:"storageclass,omitempty"`
+	V4Auth         bool   `json:"v4auth,omitempty"`
+	ChunkSize      string `json:"chunksize,omitempty"`
+	RootDirectory  string `json:"rootdirectory,omitempty"`
+	StorageClass   string `json:"storageclass,omitempty"`
 }
 
 type Gcs struct {
 	// +kubebuilder:validation:Required
 	Bucket string `json:"bucket"`
 	// The base64 encoded json file which contains the key
-	Encodedkey string `json:"encodedkey"`
+	EncodedKey string `json:"encodedkey"`
 	// +kubebuilder:validation:Required
-	Rootdirectory string `json:"rootdirectory"`
-	Chunksize     string `json:"chunksize,omitempty"`
+	RootDirectory string `json:"rootdirectory"`
+	ChunkSize     string `json:"chunksize,omitempty"`
 }
 
 type Azure struct {
 	// +kubebuilder:validation:Required
-	Accountname string `json:"accountname"`
+	AccountName string `json:"accountname"`
 	// +kubebuilder:validation:Required
-	Accountkey string `json:"accountkey"`
+	AccountKey string `json:"accountkey"`
 	// +kubebuilder:validation:Required
 	Container string `json:"container"`
 	Realm     string `json:"realm,omitempty"`
@@ -243,7 +248,7 @@ type InCluster struct {
 
 type MinIOSpec struct {
 	// Supply number of replicas.
-	// For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
+	// For standalone mode, supply 1. For distributed mode, supply 4 to 16 drives (should be even).
 	// Note that the operator does not support upgrading from standalone to distributed mode.
 	// +kubebuilder:validation:Required
 	Replicas int32 `json:"replicas"`
@@ -265,7 +270,12 @@ type PostgresSQL struct {
 	Resources        corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// External params following.
-	// The secret must contains "address:port","usernane" and "password".
+	// The secret must contains "host","port","database","usernane" and "password".
+	// host: 192.168.1.1
+	// port: 5432
+	// username: root
+	// password: password
+	// database: database
 	SecretName     string `json:"secretName,omitempty"`
 	SslConfig      string `json:"sslConfig,omitempty"`
 	ConnectTimeout int    `json:"connectTimeout,omitempty"`
@@ -276,7 +286,8 @@ type Database struct {
 	// +kubebuilder:validation:Enum=inCluster;external
 	Kind string `json:"kind"`
 
-	PostgresSQL *PostgresSQL `json:"spec,omitempty"`
+	// +kubebuilder:validation:Required
+	Spec *PostgresSQL `json:"spec"`
 }
 
 type Redis struct {
@@ -293,7 +304,7 @@ type RedisSpec struct {
 	Sentinel *Sentinel    `json:"sentinel,omitempty"`
 
 	// External params following.
-	// The secret must contains "address:port","usernane" and "password".
+	// The secret must contains "password".
 	SecretName string `json:"secretName,omitempty"`
 	// Maximum number of socket connections.
 	// Default is 10 connections per every CPU as reported by runtime.NumCPU.

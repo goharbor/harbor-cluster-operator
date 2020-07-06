@@ -13,6 +13,28 @@ const (
 	ProperNodes = "AvailableNodes"
 )
 
+const (
+	RegisterSecretForCache    string = "registrySecret"
+	ClairSecretForCache       string = "clairSecret"
+	ChartMuseumSecretForCache string = "chartMuseumSecret"
+	JobServiceSecretForCache  string = "jobServiceSecret"
+)
+
+const (
+	CoreSecretForDatabase         string = "coreSecret"
+	ClairSecretForDatabase        string = "clairSecret"
+	NotaryServerSecretForDatabase string = "notaryServerSecret"
+	NotarySignerSecretForDatabase string = "notarySignerSecret"
+)
+
+const (
+	AzureSecretForStorage string = "azureSecret"
+	GcsSecretForStorage   string = "gcsSecret"
+	SwiftSecretForStorage string = "swiftSecret"
+	S3SecretForStorage    string = "s3Secret"
+	OssSecretForStorage   string = "ossSecret"
+)
+
 //Property is the current property of component.
 type Property struct {
 	//Property name, e.p: Connection,Port.
@@ -23,26 +45,33 @@ type Property struct {
 
 type Properties []*Property
 
-//New returns a new properties
-func (ps Properties) New(Name string, Value interface{}) *Property {
+//Add append a new property to properties
+func (ps *Properties) Add(Name string, Value interface{}) {
 	p := &Property{
 		Name:  Name,
 		Value: Value,
 	}
-
-	ps = append(ps, p)
-
-	return p
+	*ps = append(*ps, p)
 }
 
 //Update updates properties according to the given arguments
-func (ps Properties) Update(Name string, Value interface{}) {
-	for _, p := range ps {
+func (ps *Properties) Update(Name string, Value interface{}) {
+	for _, p := range *ps {
 		if p.Name == Name {
 			p.Value = Value
 			return
 		}
 	}
+}
+
+//Get retrieves properties according to the given name
+func (ps *Properties) Get(Name string) *Property {
+	for _, p := range *ps {
+		if p.Name == Name {
+			return p
+		}
+	}
+	return nil
 }
 
 //ToInt parse properties value to int type

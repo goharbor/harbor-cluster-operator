@@ -17,9 +17,12 @@ package controllers
 
 import (
 	"context"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
+	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -37,6 +40,7 @@ type HarborClusterReconciler struct {
 	Log          logr.Logger
 	Scheme       *runtime.Scheme
 	RequeueAfter time.Duration
+	Recorder     record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
@@ -52,6 +56,8 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	ctx := context.Background()
 	log := r.Log.WithValues("harborcluster", req.NamespacedName)
 
+	log.Info("start to reconcile.")
+
 	var harborCluster goharborv1.HarborCluster
 	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
 		log.Error(err, "unable to fetch HarborCluster")
@@ -63,19 +69,33 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	cacheStatus, err := r.Cache(ctx, &harborCluster, nil).Reconcile()
+	dClient, err := k8s.NewDynamicClient()
+	if err != nil {
+		log.Error(err, "unable to create dynamic client")
+		return ctrl.Result{}, err
+	}
+
+	option := &GetOptions{
+		Client:   k8s.WrapClient(ctx, r.Client),
+		Recorder: r.Recorder,
+		Log:      r.Log,
+		DClient:  k8s.WrapDClient(dClient),
+		Scheme:   r.Scheme,
+	}
+
+	cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile cache component.")
 		return ctrl.Result{}, err
 	}
 
-	dbStatus, err := r.Database(ctx, &harborCluster, nil).Reconcile()
+	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
 		return ctrl.Result{}, err
 	}
 
-	storageStatus, err := r.Storage(ctx, &harborCluster, nil).Reconcile()
+	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
 		return ctrl.Result{}, err
@@ -87,6 +107,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	componentToStatus[goharborv1.ComponentStorage] = storageStatus
 	// if components is not all ready, requeue the HarborCluster
 	if !r.ComponentsAreAllReady(componentToStatus) {
+		log.Info("components not all ready.", goharborv1.ComponentCache, cacheStatus, goharborv1.ComponentDatabase, dbStatus, goharborv1.ComponentStorage, storageStatus)
 		err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
 		return ctrl.Result{
 			Requeue:      true,
@@ -94,7 +115,19 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		}, err
 	}
 
-	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, nil).Reconcile()
+	getRegistry := func() *string {
+		if harborCluster.Spec.ImageSource != nil && harborCluster.Spec.ImageSource.Registry != "" {
+			return &harborCluster.Spec.ImageSource.Registry
+		}
+		return nil
+	}
+	var imageGetter image.ImageGetter
+	if imageGetter, err = image.NewImageGetter(getRegistry(), harborCluster.Spec.Version); err != nil {
+		log.Error(err, "error when create ImageGetter.")
+		return ctrl.Result{}, err
+	}
+	option.ImageGetter = imageGetter
+	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
 		return ctrl.Result{}, err
@@ -168,8 +201,9 @@ func (r *HarborClusterReconciler) getHarborClusterCondition(
 		}
 	}
 	return &goharborv1.HarborClusterCondition{
-		Type:   goharborv1.HarborClusterConditionType(conditionType),
-		Status: corev1.ConditionUnknown,
+		Type:               goharborv1.HarborClusterConditionType(conditionType),
+		LastTransitionTime: metav1.Now(),
+		Status:             corev1.ConditionUnknown,
 	}, true
 }
 

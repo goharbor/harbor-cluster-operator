@@ -7,6 +7,7 @@ import (
 	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
 	"github.com/goharbor/harbor-cluster-operator/controllers/database"
 	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"
+	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/controllers/storage"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -34,11 +35,12 @@ type ServiceGetter interface {
 }
 
 type GetOptions struct {
-	Client   k8s.Client
-	Recorder record.EventRecorder
-	Log      logr.Logger
-	DClient  k8s.DClient
-	Scheme   *runtime.Scheme
+	Client      k8s.Client
+	Recorder    record.EventRecorder
+	Log         logr.Logger
+	DClient     k8s.DClient
+	Scheme      *runtime.Scheme
+	ImageGetter image.ImageGetter
 }
 
 type ServiceGetterImpl struct {
@@ -47,24 +49,43 @@ type ServiceGetterImpl struct {
 func (impl *ServiceGetterImpl) Cache(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &cache.RedisReconciler{
 		HarborCluster: harborCluster,
+		Client:        options.Client,
+		Recorder:      options.Recorder,
+		Log:           options.Log,
+		DClient:       options.DClient,
+		Scheme:        options.Scheme,
+		CXT:           ctx,
 	}
 }
 
 func (impl *ServiceGetterImpl) Database(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &database.PostgreSQLReconciler{
 		HarborCluster: harborCluster,
+		Client:        options.Client,
+		Recorder:      options.Recorder,
+		Log:           options.Log,
+		DClient:       options.DClient,
+		Scheme:        options.Scheme,
+		Ctx:           ctx,
 	}
 }
 
 func (impl *ServiceGetterImpl) Storage(ctx context.Context, harborCluster *goharborv1.HarborCluster, options *GetOptions) Reconciler {
 	return &storage.MinIOReconciler{
 		HarborCluster: harborCluster,
+		KubeClient:    options.Client,
+		Ctx:           ctx,
+		Log:           options.Log,
+		Recorder:      options.Recorder,
 	}
 }
 
 func (impl *ServiceGetterImpl) Harbor(ctx context.Context, harborCluster *goharborv1.HarborCluster, componentToCRStatus map[goharborv1.Component]*lcm.CRStatus, options *GetOptions) Reconciler {
 	return &harbor.HarborReconciler{
 		HarborCluster:       harborCluster,
+		Client:              options.Client,
+		ImageGetter:         options.ImageGetter,
+		Ctx:                 ctx,
 		ComponentToCRStatus: componentToCRStatus,
 	}
 }

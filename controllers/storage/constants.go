@@ -2,10 +2,18 @@ package storage
 
 // Define error message
 const (
-	ErrorReason0 = "Get minIO error"
-	ErrorReason1 = "Create external storage secret error"
-	ErrorReason2 = "Create minIO secret error"
-	ErrorReason3 = "The type of storage are not supported"
-	ErrorReason4 = "Create service of minIO error"
-	ErrorReason5 = "Create minIO CR error"
+	GetMinIOError           = "Get minIO error"
+	UpdateMinIOError        = "Update minIO error"
+	CreateMinIOSecretError  = "Create minIO secret error"
+	CreateMinIOServiceError = "Create service of minIO error"
+	GetMinIOSecretError     = "Get minIO secret error"
+	CreateMinIOError        = "Create minIO CR error"
+	ScaleMinIOError         = "Scale minIO error"
+
+	CreateExternalSecretError = "Create external storage secret error"
+	GetExternalSecretError    = "Get external storage secret error"
+	UpdateExternalSecretError = "Update external storage secret error"
+	NotSupportType            = "The type of storage are not supported"
+	CreateDefaultBucketError  = "Create default bucket in minIO Error"
+	CreateDefaultBucketeError = "Create default buckete in minIO Error"
 )

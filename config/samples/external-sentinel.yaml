@@ -1,0 +1,26 @@
+apiVersion: goharbor.io/v1
+kind: HarborCluster
+metadata:
+  name: harborcluster-sample
+spec:
+  redis:
+    kind: "external"
+    spec:
+      secretName: "redis-auth"
+      groupName: "calllog"
+      schema: "sentinel"
+      hosts:
+        - host: "10.101.188.149"
+          port: "26379"
+  adminPasswordSecret: "test"
+  database:
+    kind: "external"
+    spec:
+      secretName: "database-external-secret"
+  publicURL: "https://harbor.test.com"
+  replicas: 1
+  storage:
+    kind: "inCluster"
+    options:
+      provider: minIO
+  version: "1.10.0"
