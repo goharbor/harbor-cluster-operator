@@ -108,7 +108,10 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	componentToStatus[goharborv1.ComponentStorage] = storageStatus
 	// if components is not all ready, requeue the HarborCluster
 	if !r.ComponentsAreAllReady(componentToStatus) {
-		log.Info("components not all ready.", goharborv1.ComponentCache, cacheStatus, goharborv1.ComponentDatabase, dbStatus, goharborv1.ComponentStorage, storageStatus)
+		log.Info("components not all ready.",
+			string(goharborv1.ComponentCache), cacheStatus,
+			string(goharborv1.ComponentDatabase), dbStatus,
+			string(goharborv1.ComponentStorage), storageStatus)
 		err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
 		return ctrl.Result{
 			Requeue:      true,
