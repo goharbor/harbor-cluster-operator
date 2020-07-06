@@ -44,10 +44,9 @@ func (harbor *HarborReconciler) Scale() (*lcm.CRStatus, error) {
 
 	err := harbor.Client.Update(current)
 	if err != nil {
-		return harborClusterCRUnknownStatus(), err
+		return harborClusterCRUnknownStatus(ScaleHarborCRError, err.Error()), err
 	}
-	// TODO declare the detail CRStatus
-	return harborClusterCRReadyStatus(), nil
+	return harborClusterCRStatus(current), nil
 }
 
 // isScalingEvent will compare the actual replicas of any components with the desired replicas.
