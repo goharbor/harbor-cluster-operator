@@ -4,20 +4,19 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/google/go-cmp/cmp"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
-
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -65,19 +64,20 @@ var (
 // Reconciler implements the reconcile logic of minIO service
 func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	var minioCR minio.MinIOInstance
-
 	if m.HarborCluster.Spec.Storage.Kind != inClusterStorage {
-		var exSecret *corev1.Secret
-		err := m.KubeClient.Get(m.getExternalSecretNamespacedName(), exSecret)
+		var exSecret corev1.Secret
+		err := m.KubeClient.Get(m.getExternalSecretNamespacedName(), &exSecret)
 		if k8serror.IsNotFound(err) {
 			return m.ProvisionExternalStorage()
 		} else if err != nil {
+			m.Log.Error(err, "failed to get secret", m.getExternalSecretNamespacedName())
 			return minioNotReadyStatus(GetExternalSecretError, err.Error()), err
 		}
 
-		m.CurrentExternalSecret = exSecret
+		m.CurrentExternalSecret = &exSecret
 		m.DesiredExternalSecret, err = m.generateExternalSecret()
 		if err != nil {
+			m.Log.Error(err, "failed to generate external secret", m.getExternalSecretNamespacedName())
 			return minioNotReadyStatus(err.Error(), err.Error()), err
 		}
 
