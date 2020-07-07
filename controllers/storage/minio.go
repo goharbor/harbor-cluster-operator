@@ -70,14 +70,12 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		if k8serror.IsNotFound(err) {
 			return m.ProvisionExternalStorage()
 		} else if err != nil {
-			m.Log.Error(err, "failed to get secret", m.getExternalSecretNamespacedName())
 			return minioNotReadyStatus(GetExternalSecretError, err.Error()), err
 		}
 
 		m.CurrentExternalSecret = &exSecret
 		m.DesiredExternalSecret, err = m.generateExternalSecret()
 		if err != nil {
-			m.Log.Error(err, "failed to generate external secret", m.getExternalSecretNamespacedName())
 			return minioNotReadyStatus(err.Error(), err.Error()), err
 		}
 
