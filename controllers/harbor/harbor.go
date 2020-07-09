@@ -24,6 +24,7 @@ type HarborReconciler struct {
 	Ctx                 context.Context
 	HarborCluster       *goharborv1.HarborCluster
 	CurrentHarborCR     *v1alpha1.Harbor
+	DesiredHarborCR     *v1alpha1.Harbor
 	ImageGetter         image.ImageGetter
 	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
 }
@@ -36,10 +37,13 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 		if errors.IsNotFound(err) {
 			return harbor.Provision()
 		} else {
-			return harborClusterCRNotReadyStatus("", ""), err
+			return harborClusterCRNotReadyStatus(GetHarborCRError, err.Error()), err
 		}
 	}
+
 	harbor.CurrentHarborCR = &harborCR
+	harbor.DesiredHarborCR = harbor.newHarborCR()
+
 	event := harbor.checkReconcileEvent(harbor.HarborCluster, &harborCR)
 	switch event {
 	case ScalingEvent:
@@ -50,7 +54,7 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	err = harbor.Get(harbor.getHarborCRNamespacedName(), &harborCR)
 	if err != nil {
-		return harborClusterCRUnknownStatus(), err
+		return harborClusterCRUnknownStatus(GetHarborCRError, err.Error()), err
 	}
 	return harborClusterCRStatus(&harborCR), nil
 }
@@ -100,8 +104,7 @@ func isEqualExpectReplicas(desiredHarborCR *v1alpha1.Harbor, currentHarborCR *v1
 }
 
 func (harbor *HarborReconciler) checkReconcileEvent(desired *goharborv1.HarborCluster, current *v1alpha1.Harbor) string {
-	desiredHarborCR := harbor.newHarborCR()
-	isEqualExpectReplicas := isEqualExpectReplicas(desiredHarborCR, current)
+	isEqualExpectReplicas := isEqualExpectReplicas(harbor.DesiredHarborCR, current)
 	if !isEqualExpectReplicas {
 		return UpdatingEvent
 	}
@@ -123,29 +126,22 @@ func (harbor *HarborReconciler) ScaleDown(newReplicas uint64) (*lcm.CRStatus, er
 	panic("implement me")
 }
 
-func (harbor *HarborReconciler) Update(spec *goharborv1.HarborCluster) (*lcm.CRStatus, error) {
-	panic("implement me")
-}
-
 func harborClusterCRNotReadyStatus(reason, message string) *lcm.CRStatus {
 	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionFalse).WithReason(reason).WithMessage(message)
 }
 
-func harborClusterCRUnknownStatus() *lcm.CRStatus {
-	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionUnknown)
+func harborClusterCRUnknownStatus(reason, message string) *lcm.CRStatus {
+	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionUnknown).WithReason(reason).WithMessage(message)
 }
 
-func harborClusterCRReadyStatus() *lcm.CRStatus {
-	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionTrue)
-}
-
+// harborClusterCRStatus will assembly the harbor cluster status according the v1alpha1.Harbor status
 func harborClusterCRStatus(harbor *v1alpha1.Harbor) *lcm.CRStatus {
 	for _, condition := range harbor.Status.Conditions {
 		if condition.Type == v1alpha1.ReadyConditionType {
 			return lcm.New(goharborv1.ServiceReady).WithStatus(condition.Status).WithMessage(condition.Message).WithReason(condition.Reason)
 		}
 	}
-	return harborClusterCRUnknownStatus()
+	return harborClusterCRUnknownStatus(EmptyHarborCRStatusError, "The ready condition of harbor.goharbor.io is empty. Please wait for minutes.")
 }
 
 func (harbor *HarborReconciler) getHarborCRNamespacedName() types.NamespacedName {

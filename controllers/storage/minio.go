@@ -7,6 +7,7 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
+	"github.com/google/go-cmp/cmp"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -25,16 +26,31 @@ const (
 	s3Storage        = "s3"
 	swiftStorage     = "swift"
 	ossStorage       = "oss"
+
+	DefaultExternalSecretSuffix = "harbor-cluster-storage"
+	DefaultCredsSecret          = "minio-creds"
+	ExternalStorageSecretSuffix = "Secret"
+
+	DefaultZone   = "zone-harbor"
+	DefaultMinIO  = "minio"
+	DefaultRegion = "us-east-1"
+	DefaultBucket = "harbor"
+
+	LabelOfStorageType = "storageType"
 )
 
 type MinIOReconciler struct {
-	HarborCluster  *goharborv1.HarborCluster
-	KubeClient     k8s.Client
-	Ctx            context.Context
-	Log            logr.Logger
-	Scheme         *runtime.Scheme
-	Recorder       record.EventRecorder
-	CurrentMinIOCR *minio.MinIOInstance
+	HarborCluster         *goharborv1.HarborCluster
+	KubeClient            k8s.Client
+	Ctx                   context.Context
+	Log                   logr.Logger
+	Scheme                *runtime.Scheme
+	Recorder              record.EventRecorder
+	CurrentMinIOCR        *minio.MinIOInstance
+	DesiredMinIOCR        *minio.MinIOInstance
+	CurrentExternalSecret *corev1.Secret
+	DesiredExternalSecret *corev1.Secret
+	MinioClient           Minio
 }
 
 var (
@@ -48,10 +64,29 @@ var (
 // Reconciler implements the reconcile logic of minIO service
 func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	var minioCR minio.MinIOInstance
-
 	if m.HarborCluster.Spec.Storage.Kind != inClusterStorage {
-		return m.ProvisionExternalStorage()
+		var exSecret corev1.Secret
+		err := m.KubeClient.Get(m.getExternalSecretNamespacedName(), &exSecret)
+		if k8serror.IsNotFound(err) {
+			return m.ProvisionExternalStorage()
+		} else if err != nil {
+			return minioNotReadyStatus(GetExternalSecretError, err.Error()), err
+		}
+
+		m.CurrentExternalSecret = &exSecret
+		m.DesiredExternalSecret, err = m.generateExternalSecret()
+		if err != nil {
+			return minioNotReadyStatus(err.Error(), err.Error()), err
+		}
+
+		if m.checkExternalUpdate() {
+			return m.ExternalUpdate()
+		}
+
+		return nil, nil
 	}
+
+	m.DesiredMinIOCR = m.generateMinIOCR()
 
 	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 	if k8serror.IsNotFound(err) {
@@ -62,6 +97,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 
 	m.CurrentMinIOCR = &minioCR
 
+	// TODO remove scale event
 	isScale, err := m.checkMinIOScale()
 	if err != nil {
 		return minioNotReadyStatus(ScaleMinIOError, err.Error()), err
@@ -70,8 +106,7 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 		return m.Scale()
 	}
 
-	isUpdate := m.checkMinIOUpdate()
-	if isUpdate {
+	if m.checkMinIOUpdate() {
 		return m.Update()
 	}
 
@@ -81,22 +116,47 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	}
 
 	if isReady {
-		err := createDefaultBucket()
+		err := m.minioInit()
 		if err != nil {
-			return minioNotReadyStatus(CreateDefaultBucketeError, err.Error()), err
+			return minioNotReadyStatus(CreateDefaultBucketError, err.Error()), err
 		}
-		return m.ProvisionInClusterSecretAsOss(&minioCR)
+		return m.ProvisionInClusterSecretAsS3(&minioCR)
 	}
 
-	return nil, nil
+	return minioUnknownStatus(), nil
 }
 
-func createDefaultBucket() error {
-	panic("implement me")
+func (m *MinIOReconciler) minioInit() error {
+	accessKey, secretKey, err := m.getCredsFromSecret()
+	if err != nil {
+		return err
+	}
+	endpoint := m.getServiceName() + "." + m.HarborCluster.Namespace
+
+	m.MinioClient, err = GetMinioClient(endpoint, string(accessKey), string(secretKey), DefaultRegion, false)
+	if err != nil {
+		return err
+	}
+
+	exists, err := m.MinioClient.IsBucketExists(DefaultBucket)
+	if err != nil || exists {
+		return err
+	}
+
+	err = m.MinioClient.CreateBucket(DefaultBucket)
+	return err
 }
 
 func (m *MinIOReconciler) checkMinIOUpdate() bool {
-	panic("implement me")
+	if m.DesiredMinIOCR.Spec.Image != m.CurrentMinIOCR.Spec.Image {
+		return true
+	}
+
+	return false
+}
+
+func (m *MinIOReconciler) checkExternalUpdate() bool {
+	return !cmp.Equal(m.DesiredExternalSecret.DeepCopy().Data, m.CurrentExternalSecret.DeepCopy().Data)
 }
 
 func (m *MinIOReconciler) checkMinIOScale() (bool, error) {
@@ -134,6 +194,24 @@ func (m *MinIOReconciler) getMinIONamespacedName() types.NamespacedName {
 		Namespace: m.HarborCluster.Namespace,
 		Name:      m.getServiceName(),
 	}
+}
+
+func (m *MinIOReconciler) getMinIOSecretNamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: m.HarborCluster.Namespace,
+		Name:      m.HarborCluster.Name + "-" + DefaultCredsSecret,
+	}
+}
+
+func (m *MinIOReconciler) getExternalSecretNamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: m.HarborCluster.Namespace,
+		Name:      m.getExternalSecretName(),
+	}
+}
+
+func (m *MinIOReconciler) getExternalSecretName() string {
+	return m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix
 }
 
 func minioNotReadyStatus(reason, message string) *lcm.CRStatus {

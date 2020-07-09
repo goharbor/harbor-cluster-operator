@@ -5,7 +5,6 @@ import (
 	"fmt"
 	rediscli "github.com/go-redis/redis"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
-	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -75,17 +74,16 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 			return cacheNotReadyStatus(CreateComponentSecretError, err.Error()), err
 		}
 
-		properties = properties.Add(propertyName, secretName)
+		properties.Add(propertyName, secretName)
 	}
 
-	return cacheReadyStatus(properties), nil
+	return cacheReadyStatus(&properties), nil
 }
 
 // DeployComponentSecret deploy harbor component redis secret
 func (redis *RedisReconciler) DeployComponentSecret(component, url, namespace, secretName string) error {
 	secret := &corev1.Secret{}
-	//secretName = fmt.Sprintf("%s-redis", component)
-	//propertyName := fmt.Sprintf("%sSecret", component)
+
 	sc := redis.generateHarborCacheSecret(component, secretName, url, namespace)
 
 	switch redis.HarborCluster.Spec.Redis.Kind {
@@ -126,7 +124,7 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 	)
 	spec := redis.HarborCluster.Spec.Redis.Spec
 	switch spec.Schema {
-	case "sentinel":
+	case RedisSentinelSchema:
 		if len(spec.Hosts) < 1 || spec.GroupName == "" {
 			return nil, errors.New(".redis.spec.hosts or .redis.spec.groupName is invalid")
 		}
@@ -134,33 +132,35 @@ func (redis *RedisReconciler) GetExternalRedisInfo() (*rediscli.Client, error) {
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
+			pw, err = redis.GetExternalRedisPassword(spec)
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  strings.Join(endpoint[:], ","),
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
+			Schema:    RedisSentinelSchema,
 		}
 
 		redis.RedisConnect = connect
 		client = connect.NewRedisPool()
-	case "redis":
+	case RedisServerSchema:
 		if len(spec.Hosts) != 1 {
 			return nil, errors.New(".redis.spec.hosts is invalid")
 		}
 		endpoint, port = GetExternalRedisHost(spec)
 
 		if spec.SecretName != "" {
-			pw, err = GetExternalRedisPassword(spec, redis.HarborCluster.Namespace, redis.Client)
+			pw, err = redis.GetExternalRedisPassword(spec)
 		}
 
 		connect = &RedisConnect{
-			Endpoint:  strings.Join(endpoint[:], ","),
+			Endpoints: endpoint,
 			Port:      port,
 			Password:  pw,
 			GroupName: spec.GroupName,
+			Schema:    RedisServerSchema,
 		}
 		redis.RedisConnect = connect
 		client = connect.NewRedisClient()
@@ -188,14 +188,9 @@ func GetExternalRedisHost(spec *goharborv1.RedisSpec) ([]string, string) {
 }
 
 // GetExternalRedisPassword returns external redis password
-func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, client k8s.Client) (string, error) {
-	external := &RedisReconciler{
-		Name:      spec.SecretName,
-		Namespace: namespace,
-		Client:    client,
-	}
+func (redis *RedisReconciler) GetExternalRedisPassword(spec *goharborv1.RedisSpec) (string, error) {
 
-	pw, err := external.GetRedisPassword()
+	pw, err := redis.GetRedisPassword(spec.SecretName)
 	if err != nil {
 		return "", err
 	}
@@ -205,7 +200,7 @@ func GetExternalRedisPassword(spec *goharborv1.RedisSpec, namespace string, clie
 
 // GetInClusterRedisInfo returns inCluster redis sentinel pool client
 func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) {
-	password, err := redis.GetRedisPassword()
+	password, err := redis.GetRedisPassword(redis.HarborCluster.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +233,7 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 	endpoint := redis.GetSentinelServiceUrl(currentSentinelPods)
 
 	connect := &RedisConnect{
-		Endpoint:  endpoint,
+		Endpoints: []string{endpoint},
 		Port:      RedisSentinelConnPort,
 		Password:  password,
 		GroupName: RedisSentinelConnGroup,
