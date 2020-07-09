@@ -150,7 +150,7 @@ func (redis *RedisReconciler) GetSentinelServiceUrl(pods []corev1.Pod) string {
 		randomPod := pods[rand.Intn(len(pods))]
 		url = randomPod.Status.PodIP
 	} else {
-		url = fmt.Sprintf("%s-%s.svc", "rfs", redis.GetHarborClusterName())
+		url = fmt.Sprintf("%s-%s.%s.svc", "rfs", redis.GetHarborClusterName(), redis.HarborCluster.Namespace)
 	}
 
 	return url
@@ -286,10 +286,10 @@ func (c *RedisConnect) genRedisServerConnURL() string {
 
 	hostInfo := GenHostInfo(c.Endpoints, c.Port)
 	if c.Password != "" {
-		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo)
+		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo[0])
 	}
 
-	return fmt.Sprintf("redis://%s/0", hostInfo)
+	return fmt.Sprintf("redis://%s/0", hostInfo[0])
 }
 
 // GetRedisFailover returns RedisFailover object

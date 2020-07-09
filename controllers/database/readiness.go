@@ -209,7 +209,7 @@ func (postgres *PostgreSQLReconciler) GetInClusterHost(name string) (string, err
 			return url, err
 		}
 	} else {
-		url = fmt.Sprintf("%s.svc", name)
+		url = fmt.Sprintf("%s.%s.svc", name, postgres.HarborCluster.Namespace)
 	}
 
 	return url, nil
