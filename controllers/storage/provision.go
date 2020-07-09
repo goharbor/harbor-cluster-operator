@@ -13,6 +13,7 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -296,13 +297,8 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Se
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	credsSecret := m.generateCredsSecret()
 	err := m.KubeClient.Create(credsSecret)
-	if err != nil {
+	if err != nil && !k8serror.IsAlreadyExists(err) {
 		return minioNotReadyStatus(CreateMinIOSecretError, err.Error()), err
-	}
-	service := m.generateService()
-	err = m.KubeClient.Create(service)
-	if err != nil {
-		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
 	err = m.KubeClient.Create(m.DesiredMinIOCR)
@@ -316,12 +312,10 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
 
-	credsSecret.OwnerReferences = []metav1.OwnerReference{
-		*metav1.NewControllerRef(&minioCR, HarborClusterMinIOGVK),
-	}
-	err = m.KubeClient.Update(credsSecret)
-	if err != nil {
-		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
+	service := m.generateService()
+	err = m.KubeClient.Create(service)
+	if err != nil && !k8serror.IsAlreadyExists(err) {
+		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
 	service.OwnerReferences = []metav1.OwnerReference{
