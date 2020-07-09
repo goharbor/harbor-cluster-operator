@@ -79,7 +79,6 @@ func BuildRedisClient(host []string, port, password string, index int) *rediscli
 	client := rediscli.NewClient(options)
 
 	return client
-
 }
 
 // GenHostInfo splice host and port
