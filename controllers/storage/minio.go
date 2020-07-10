@@ -131,7 +131,7 @@ func (m *MinIOReconciler) minioInit() error {
 	if err != nil {
 		return err
 	}
-	endpoint := m.getServiceName() + "." + m.HarborCluster.Namespace
+	endpoint := m.getServiceName() + "." + m.HarborCluster.Namespace + ":9000"
 
 	m.MinioClient, err = GetMinioClient(endpoint, string(accessKey), string(secretKey), DefaultRegion, false)
 	if err != nil {
