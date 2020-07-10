@@ -24,5 +24,11 @@ func (m *MinIOReconciler) ExternalUpdate() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(UpdateExternalSecretError, err.Error()), err
 	}
 
-	return minioUnknownStatus(), nil
+	p := &lcm.Property{
+		Name:  m.HarborCluster.Spec.Storage.Kind + ExternalStorageSecretSuffix,
+		Value: m.getExternalSecretName(),
+	}
+	properties := &lcm.Properties{p}
+
+	return minioReadyStatus(properties), nil
 }
