@@ -45,6 +45,18 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 				},
 				"foo_user": {},
 			},
+			DockerImage: "harbor.ymmoa.com/monitoring/postgresql:12",
+			Patroni: api.Patroni{
+				InitDB: map[string]string{
+					"encoding":       "UTF8",
+					"locale":         "en_US.UTF-8",
+					"data-checksums": "true",
+				},
+				PgHba: []string{
+					"hostssl all all 0.0.0.0/0 md5",
+					"host    all all 0.0.0.0/0 md5",
+				},
+			},
 			Databases: map[string]string{
 				"foo": "zalando",
 			},
