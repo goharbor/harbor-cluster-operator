@@ -23,13 +23,16 @@ func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Min
 		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
 	}
 	err = m.KubeClient.Create(inClusterSecret)
+	if err != nil && !k8serror.IsAlreadyExists(err) {
+		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
+	}
 
 	p := &lcm.Property{
 		Name:  s3Storage + ExternalStorageSecretSuffix,
 		Value: inClusterSecret.Name,
 	}
 	properties := &lcm.Properties{p}
-	return minioReadyStatus(properties), err
+	return minioReadyStatus(properties), nil
 }
 
 func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) (*corev1.Secret, error) {
