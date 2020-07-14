@@ -3,18 +3,16 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"reflect"
-	"strconv"
-
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"reflect"
 )
 
 func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
@@ -97,49 +95,34 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 	return minioReadyStatus(properties), nil
 }
 
-func (m *MinIOReconciler) generateExternalSecret() (*corev1.Secret, error) {
-	var exSecret *corev1.Secret
+func (m *MinIOReconciler) generateExternalSecret() (exSecret *corev1.Secret, err error) {
 	labels := m.getLabels()
 
 	switch m.HarborCluster.Spec.Storage.Kind {
 	case azureStorage:
 		labels[LabelOfStorageType] = azureStorage
-		exSecret = m.generateAzureSecret(labels)
+		exSecret, err = m.generateAzureSecret(labels)
 	case gcsStorage:
 		labels[LabelOfStorageType] = gcsStorage
-		exSecret = m.generateGcsSecret(labels)
+		exSecret, err = m.generateGcsSecret(labels)
 	case s3Storage:
 		labels[LabelOfStorageType] = s3Storage
-		exSecret = m.generateS3Secret(labels)
+		exSecret, err = m.generateS3Secret(labels)
 	case swiftStorage:
 		labels[LabelOfStorageType] = swiftStorage
-		exSecret = m.generateSwiftSecret(labels)
+		exSecret, err = m.generateSwiftSecret(labels)
 	case ossStorage:
 		labels[LabelOfStorageType] = ossStorage
-		exSecret = m.generateOssSecret(labels)
+		exSecret, err = m.generateOssSecret(labels)
 	default:
 		return exSecret, fmt.Errorf(NotSupportType)
 	}
 
-	return exSecret, nil
+	return exSecret, err
 }
 
-func (m *MinIOReconciler) generateS3Secret(labels map[string]string) *corev1.Secret {
-	data := map[string]string{
-		"region":         m.HarborCluster.Spec.Storage.S3.Region,
-		"bucket":         m.HarborCluster.Spec.Storage.S3.Bucket,
-		"accesskey":      m.HarborCluster.Spec.Storage.S3.AccessKey,
-		"secretkey":      m.HarborCluster.Spec.Storage.S3.SecretKey,
-		"regionendpoint": m.HarborCluster.Spec.Storage.S3.RegionEndpoint,
-		"encrypt":        strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Encrypt),
-		"keyid":          m.HarborCluster.Spec.Storage.S3.KeyId,
-		"secure":         strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.Secure),
-		"chunksize":      m.HarborCluster.Spec.Storage.S3.ChunkSize,
-		"rootdirectory":  m.HarborCluster.Spec.Storage.S3.RootDirectory,
-		"storageclass":   m.HarborCluster.Spec.Storage.S3.StorageClass,
-		"v4auth":         strconv.FormatBool(m.HarborCluster.Spec.Storage.S3.V4Auth),
-	}
-	dataJson, _ := json.Marshal(&data)
+func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Secret, error) {
+	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.S3)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -158,17 +141,11 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) *corev1.Sec
 		Data: map[string][]byte{
 			s3Storage: dataJson,
 		},
-	}
+	},err
 }
 
-func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) *corev1.Secret {
-	data := map[string]string{
-		"realm":       m.HarborCluster.Spec.Storage.Azure.Realm,
-		"accountname": m.HarborCluster.Spec.Storage.Azure.AccountName,
-		"accountkey":  m.HarborCluster.Spec.Storage.Azure.AccountKey,
-		"container":   m.HarborCluster.Spec.Storage.Azure.Container,
-	}
-	dataJson, _ := json.Marshal(&data)
+func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) (*corev1.Secret, error) {
+	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Azure)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -187,17 +164,11 @@ func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) *corev1.
 		Data: map[string][]byte{
 			azureStorage: dataJson,
 		},
-	}
+	}, err
 }
 
-func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) *corev1.Secret {
-	data := map[string]string{
-		"bucket":        m.HarborCluster.Spec.Storage.Gcs.Bucket,
-		"encodedkey":    m.HarborCluster.Spec.Storage.Gcs.EncodedKey,
-		"rootdirectory": m.HarborCluster.Spec.Storage.Gcs.RootDirectory,
-		"chunksize":     m.HarborCluster.Spec.Storage.Gcs.ChunkSize,
-	}
-	dataJson, _ := json.Marshal(&data)
+func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) (*corev1.Secret, error) {
+	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Gcs)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -216,31 +187,11 @@ func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) *corev1.Se
 		Data: map[string][]byte{
 			gcsStorage: dataJson,
 		},
-	}
+	}, err
 }
 
-func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) *corev1.Secret {
-	data := map[string]string{
-		"authurl":             m.HarborCluster.Spec.Storage.Swift.Authurl,
-		"username":            m.HarborCluster.Spec.Storage.Swift.Username,
-		"password":            m.HarborCluster.Spec.Storage.Swift.Password,
-		"container":           m.HarborCluster.Spec.Storage.Swift.Container,
-		"region":              m.HarborCluster.Spec.Storage.Swift.Region,
-		"tenant":              m.HarborCluster.Spec.Storage.Swift.Tenant,
-		"tenantid":            m.HarborCluster.Spec.Storage.Swift.TenantId,
-		"domain":              m.HarborCluster.Spec.Storage.Swift.Domain,
-		"domainid":            m.HarborCluster.Spec.Storage.Swift.DomainId,
-		"trustid":             m.HarborCluster.Spec.Storage.Swift.TrustId,
-		"insecureskipverify":  strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.InsecureSkipVerify),
-		"prefix":              m.HarborCluster.Spec.Storage.Swift.Prefix,
-		"secretkey":           m.HarborCluster.Spec.Storage.Swift.SecretKey,
-		"authversion":         string(m.HarborCluster.Spec.Storage.Swift.AuthVersion),
-		"endpointtype":        m.HarborCluster.Spec.Storage.Swift.EndpointType,
-		"tempurlcontainerkey": strconv.FormatBool(m.HarborCluster.Spec.Storage.Swift.TempurlContainerkey),
-		"tempurlmethods":      m.HarborCluster.Spec.Storage.Swift.TempurlMethods,
-		"chunksize":           m.HarborCluster.Spec.Storage.Swift.ChunkSize,
-	}
-	dataJson, _ := json.Marshal(&data)
+func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) (*corev1.Secret, error) {
+	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Swift)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -259,23 +210,11 @@ func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) *corev1.
 		Data: map[string][]byte{
 			swiftStorage: dataJson,
 		},
-	}
+	},err
 }
 
-func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Secret {
-	data := map[string]string{
-		"accesskeyid":     m.HarborCluster.Spec.Storage.Oss.AccessKeyId,
-		"accesskeysecret": m.HarborCluster.Spec.Storage.Oss.AccessKeySecret,
-		"region":          m.HarborCluster.Spec.Storage.Oss.Region,
-		"bucket":          m.HarborCluster.Spec.Storage.Oss.Bucket,
-		"endpoint":        m.HarborCluster.Spec.Storage.Oss.Region,
-		"internal":        m.HarborCluster.Spec.Storage.Oss.Internal,
-		"encrypt":         m.HarborCluster.Spec.Storage.Oss.Encrypt,
-		"secure":          m.HarborCluster.Spec.Storage.Oss.Secure,
-		"chunksize":       m.HarborCluster.Spec.Storage.Oss.ChunkSize,
-		"rootdirectory":   m.HarborCluster.Spec.Storage.Oss.RootDirectory,
-	}
-	dataJson, _ := json.Marshal(&data)
+func (m *MinIOReconciler) generateOssSecret(labels map[string]string) (*corev1.Secret, error) {
+	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Oss)
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -294,7 +233,7 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) *corev1.Se
 		Data: map[string][]byte{
 			ossStorage: dataJson,
 		},
-	}
+	},err
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
