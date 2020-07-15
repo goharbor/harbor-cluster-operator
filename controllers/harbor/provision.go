@@ -207,7 +207,8 @@ func (harbor *HarborReconciler) getStorageSecret() string {
 	case "oss":
 		name = lcm.OssSecretForStorage
 	default:
-		name = ""
+		// default in cluster storage has been provided.
+		name = lcm.InClusterSecretForStorage
 	}
 	p := harbor.getProperty(goharborv1.ComponentStorage, name)
 	if p != nil {

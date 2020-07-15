@@ -28,11 +28,12 @@ const (
 )
 
 const (
-	AzureSecretForStorage string = "azureSecret"
-	GcsSecretForStorage   string = "gcsSecret"
-	SwiftSecretForStorage string = "swiftSecret"
-	S3SecretForStorage    string = "s3Secret"
-	OssSecretForStorage   string = "ossSecret"
+	InClusterSecretForStorage string = "inClusterSecret"
+	AzureSecretForStorage     string = "azureSecret"
+	GcsSecretForStorage       string = "gcsSecret"
+	SwiftSecretForStorage     string = "swiftSecret"
+	S3SecretForStorage        string = "s3Secret"
+	OssSecretForStorage       string = "ossSecret"
 )
 
 //Property is the current property of component.
