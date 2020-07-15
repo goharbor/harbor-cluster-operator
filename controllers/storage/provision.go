@@ -28,7 +28,7 @@ func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Min
 	}
 
 	p := &lcm.Property{
-		Name:  s3Storage + ExternalStorageSecretSuffix,
+		Name:  lcm.InClusterSecretForStorage,
 		Value: inClusterSecret.Name,
 	}
 	properties := &lcm.Properties{p}
