@@ -123,6 +123,9 @@ func (m *MinIOReconciler) generateExternalSecret() (exSecret *corev1.Secret, err
 
 func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Secret, error) {
 	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.S3)
+	if err != nil {
+		return nil, err
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -141,11 +144,14 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Se
 		Data: map[string][]byte{
 			s3Storage: dataJson,
 		},
-	},err
+	},nil
 }
 
 func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) (*corev1.Secret, error) {
 	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Azure)
+	if err != nil {
+		return nil, err
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -164,11 +170,14 @@ func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) (*corev1
 		Data: map[string][]byte{
 			azureStorage: dataJson,
 		},
-	}, err
+	}, nil
 }
 
 func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) (*corev1.Secret, error) {
 	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Gcs)
+	if err != nil {
+		return nil, err
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -187,11 +196,14 @@ func (m *MinIOReconciler) generateGcsSecret(labels map[string]string) (*corev1.S
 		Data: map[string][]byte{
 			gcsStorage: dataJson,
 		},
-	}, err
+	}, nil
 }
 
 func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) (*corev1.Secret, error) {
 	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Swift)
+	if err != nil {
+		return nil, err
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -210,11 +222,14 @@ func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) (*corev1
 		Data: map[string][]byte{
 			swiftStorage: dataJson,
 		},
-	},err
+	},nil
 }
 
 func (m *MinIOReconciler) generateOssSecret(labels map[string]string) (*corev1.Secret, error) {
 	dataJson, err := json.Marshal(m.HarborCluster.Spec.Storage.Oss)
+	if err != nil {
+		return nil, err
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -233,7 +248,7 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) (*corev1.S
 		Data: map[string][]byte{
 			ossStorage: dataJson,
 		},
-	},err
+	},nil
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
