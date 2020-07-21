@@ -12,8 +12,14 @@ import (
 
 // Provision will create a new Harbor CR.
 func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
+
+	err := harbor.CheckIssuer()
+	if err != nil {
+		return harborClusterCRNotReadyStatus(CreateRegistryCertError, err.Error()), err
+	}
+
 	harborCR := harbor.newHarborCR()
-	err := harbor.Create(harborCR)
+	err = harbor.Create(harborCR)
 	if err != nil {
 		return harborClusterCRNotReadyStatus(CreateHarborCRError, err.Error()), err
 	}

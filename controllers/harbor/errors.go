@@ -6,4 +6,5 @@ const (
 	ScaleHarborCRError       = "Scale harbor.goharbor.io CR error"
 	UpdateHarborCRError      = "Update harbor.goharbor.io CR error"
 	EmptyHarborCRStatusError = "Empty harbor.goharbor.io CR status error"
+	CreateRegistryCertError  = "Create Registry Cert error"
 )
