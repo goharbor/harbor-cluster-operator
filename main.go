@@ -17,9 +17,11 @@ package main
 
 import (
 	"flag"
-	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	"os"
 	"time"
+
+	"github.com/goharbor/harbor-operator/api/v1alpha1"
+	certv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
@@ -44,6 +46,7 @@ func init() {
 	_ = goharborv1.AddToScheme(scheme)
 	_ = minio.AddToScheme(scheme)
 	_ = redisCli.AddToScheme(scheme)
+	_ = certv1.AddToScheme(scheme)
 	// harbor operator crd
 	_ = v1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme

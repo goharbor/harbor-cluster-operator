@@ -17,6 +17,7 @@ package v1
 
 import (
 	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -70,7 +71,7 @@ func (r *HarborCluster) ValidateDelete() error {
 	harborclusterlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return r.ValidateCertificateIssuerRef()
 }
 
 func (r *HarborCluster) ValidateComponentKind(old runtime.Object) error {
@@ -79,6 +80,13 @@ func (r *HarborCluster) ValidateComponentKind(old runtime.Object) error {
 		r.Spec.Database.Kind != oldHarbor.Spec.Database.Kind ||
 		r.Spec.Storage.Kind != oldHarbor.Spec.Storage.Kind {
 		return errors.New("service kind switching is not supported")
+	}
+	return nil
+}
+
+func (r *HarborCluster) ValidateCertificateIssuerRef() error {
+	if len(r.Spec.CertificateIssuerRef.Name) < 1 {
+		return errors.New("CertificateIssuerRef name required")
 	}
 	return nil
 }
