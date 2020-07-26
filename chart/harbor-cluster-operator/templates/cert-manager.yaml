@@ -1,0 +1,22 @@
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: harbor-cluster-operator-serving-cert
+  namespace: harbor-cluster-operator-system
+spec:
+  dnsNames:
+  - harbor-cluster-operator-webhook-service.harbor-cluster-operator-system.svc
+  - harbor-cluster-operator-webhook-service.harbor-cluster-operator-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: harbor-cluster-operator-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: harbor-cluster-operator-selfsigned-issuer
+  namespace: harbor-cluster-operator-system
+spec:
+  selfSigned: {}

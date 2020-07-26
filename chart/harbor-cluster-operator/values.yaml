@@ -1,0 +1,22 @@
+# Default values for harbor-cluster-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+manager:
+  # resources of kruise-manager container
+  resources:
+    limits:
+      cpu: 100m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  metrics:
+    addr: 127.0.0.1
+    port: 8080
+
+  proxy:
+    image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
+
+  manager:
+    image: harbor.ymmoa.com/monitoring/harbor-controller:latest

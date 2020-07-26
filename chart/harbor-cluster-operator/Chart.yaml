@@ -1,0 +1,14 @@
+apiVersion: v2
+name: harbor-cluster-operator
+description: Helm chart for all harbor-cluster-operator components
+type: application
+version: 0.5.0
+appVersion: 0.5.0
+keywords:
+  - kubernetes
+  - harbor
+  - cluster
+  - operator
+home: https://goharbor.io
+sources:
+  - https://github.com/goharbor/harbor-cluster-operator
