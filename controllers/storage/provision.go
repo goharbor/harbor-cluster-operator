@@ -3,6 +3,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -12,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"reflect"
 )
 
 func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
@@ -41,12 +42,14 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOIns
 		return nil, err
 	}
 
+	endpoint := fmt.Sprintf("http://%s.%s.svc:%s", m.getServiceName(), m.HarborCluster.Namespace, "9000")
+
 	data := map[string]string{
 		"accesskey":      string(accessKey),
 		"secretkey":      string(secretKey),
 		"region":         DefaultRegion,
 		"bucket":         DefaultBucket,
-		"regionendpoint": m.getServiceName() + "." + m.HarborCluster.Namespace,
+		"regionendpoint": endpoint,
 		"encrypt":        "false",
 		"secure":         "false",
 		"v4auth":         "false",
@@ -144,7 +147,7 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Se
 		Data: map[string][]byte{
 			s3Storage: dataJson,
 		},
-	},nil
+	}, nil
 }
 
 func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) (*corev1.Secret, error) {
@@ -222,7 +225,7 @@ func (m *MinIOReconciler) generateSwiftSecret(labels map[string]string) (*corev1
 		Data: map[string][]byte{
 			swiftStorage: dataJson,
 		},
-	},nil
+	}, nil
 }
 
 func (m *MinIOReconciler) generateOssSecret(labels map[string]string) (*corev1.Secret, error) {
@@ -248,7 +251,7 @@ func (m *MinIOReconciler) generateOssSecret(labels map[string]string) (*corev1.S
 		Data: map[string][]byte{
 			ossStorage: dataJson,
 		},
-	},nil
+	}, nil
 }
 
 func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
