@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
@@ -42,6 +43,13 @@ type HarborClusterReconciler struct {
 	Scheme       *runtime.Scheme
 	RequeueAfter time.Duration
 	Recorder     record.EventRecorder
+}
+
+var ComponentToConditionType = map[goharborv1.Component]goharborv1.HarborClusterConditionType{
+	goharborv1.ComponentHarbor:   goharborv1.ServiceReady,
+	goharborv1.ComponentCache:    goharborv1.CacheReady,
+	goharborv1.ComponentStorage:  goharborv1.StorageReady,
+	goharborv1.ComponentDatabase: goharborv1.DatabaseReady,
 }
 
 // +kubebuilder:rbac:groups=goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
@@ -168,16 +176,22 @@ func (r *HarborClusterReconciler) UpdateHarborClusterStatus(
 	ctx context.Context,
 	harborCluster *goharborv1.HarborCluster,
 	componentToCRStatus map[goharborv1.Component]*lcm.CRStatus) error {
-	for service, status := range componentToCRStatus {
+	for component, status := range componentToCRStatus {
 		if status == nil {
 			continue
 		}
-		harborClusterCondition, defaulted := r.getHarborClusterCondition(harborCluster, string(service))
+		var conditionType goharborv1.HarborClusterConditionType
+		var ok bool
+		if conditionType, ok = ComponentToConditionType[component]; !ok {
+			r.Log.Info(fmt.Sprintf("can not found the condition type for %s", component))
+		}
+		harborClusterCondition, defaulted := r.getHarborClusterCondition(harborCluster, conditionType)
 		r.updateHarborClusterCondition(harborClusterCondition, status)
 		if defaulted {
 			harborCluster.Status.Conditions = append(harborCluster.Status.Conditions, *harborClusterCondition)
 		}
 	}
+	r.Log.Info("update harbor cluster.", "harborcluster", harborCluster)
 	return r.Update(ctx, harborCluster)
 }
 
@@ -200,15 +214,15 @@ func (r *HarborClusterReconciler) updateHarborClusterCondition(condition *goharb
 // getHarborClusterCondition will get HarborClusterCondition by conditionType
 func (r *HarborClusterReconciler) getHarborClusterCondition(
 	harborCluster *goharborv1.HarborCluster,
-	conditionType string) (condition *goharborv1.HarborClusterCondition, defaulted bool) {
+	conditionType goharborv1.HarborClusterConditionType) (condition *goharborv1.HarborClusterCondition, defaulted bool) {
 	for i := range harborCluster.Status.Conditions {
 		condition = &harborCluster.Status.Conditions[i]
-		if string(condition.Type) == conditionType {
+		if condition.Type == conditionType {
 			return condition, false
 		}
 	}
 	return &goharborv1.HarborClusterCondition{
-		Type:               goharborv1.HarborClusterConditionType(conditionType),
+		Type:               conditionType,
 		LastTransitionTime: metav1.Now(),
 		Status:             corev1.ConditionUnknown,
 	}, true
