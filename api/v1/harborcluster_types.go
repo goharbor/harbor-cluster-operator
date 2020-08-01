@@ -73,6 +73,10 @@ type HarborClusterSpec struct {
 	// +optional
 	TLSSecret string `json:"tlsSecret,omitempty"`
 
+	// DisableRedirect expose docker registry redirect parameter
+	// +optional
+	DisableRedirect bool `json:"disableRedirect,omitempty"`
+
 	// The issuer for Harbor certificates.
 	// If the 'kind' field is not set, or set to 'Issuer', an Issuer resource
 	// with the given name in the same namespace as the Certificate will be used.

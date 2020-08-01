@@ -95,8 +95,9 @@ func (harbor *HarborReconciler) newRegistryComponent() *v1alpha1.RegistryCompone
 		Controller: v1alpha1.RegistryControllerComponent{
 			Image: image.String(harbor.ImageGetter.RegistryControllerImage()),
 		},
-		StorageSecret: harbor.getStorageSecret(),
-		CacheSecret:   harbor.getCacheSecret(lcm.RegisterSecretForCache),
+		StorageSecret:   harbor.getStorageSecret(),
+		CacheSecret:     harbor.getCacheSecret(lcm.RegisterSecretForCache),
+		DisableRedirect: harbor.HarborCluster.Spec.DisableRedirect,
 	}
 }
 
