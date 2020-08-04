@@ -79,6 +79,9 @@ spec:
 #       // set the secret which type of Opaque, and contains "tls.key","tls.crt","ca.crt".
 #       // optional
 #      tlsConfig: secretName
+      hosts:
+        - host: ""
+          port: "6379"
 #    kind: inCluster
 #    server:
 #      replicas: 3
@@ -105,7 +108,7 @@ spec:
 #       // the secret must contains "address:port","usernane" and "password".
 #       // required
     spec:
-      secretName: all-in-one-database-secret
+      secretName: db-secret
 #       // TLS Config to use. When set TLS will be negotiated.
 #       // set the secret which type of Opaque, and contains "tls.key","tls.crt","ca.crt".
 #       // optional
