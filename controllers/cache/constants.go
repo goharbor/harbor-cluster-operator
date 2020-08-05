@@ -7,6 +7,7 @@ const (
 	GenerateRedisCrError              = "Generate redis cr error"
 	SetOwnerReferenceError            = "Set owner reference error"
 	CreateRedisSecretError            = "Create redis secret error"
+	CreateRedisServerServiceError     = "Create redis server service error"
 	CreateRedisCrError                = "Create redis cr error"
 	GetRedisCrError                   = "Get redis cr error"
 	GetRedisServerPodError            = "Get redis server pod error"

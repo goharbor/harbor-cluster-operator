@@ -1,9 +1,10 @@
 package cache
 
 import (
-	rediscli "github.com/go-redis/redis"
 	"strings"
 	"time"
+
+	rediscli "github.com/go-redis/redis"
 )
 
 const (
@@ -20,6 +21,7 @@ const (
 	MessageRedisRollingUpgrades = "Redis resource from %s to %s"
 
 	RedisSentinelConnPort  = "26379"
+	RedisRedisConnPort     = "6379"
 	RedisSentinelConnGroup = "mymaster"
 )
 

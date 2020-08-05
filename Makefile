@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= harbor-cluster-operator:dev
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # apiextensions.k8s.io/v1beta1 are Deprecated in v1.16 in favor of apiextensions.k8s.io/v1
 # ref https://github.com/kubernetes-sigs/kubebuilder/issues/1065
@@ -39,6 +39,11 @@ uninstall: manifests
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
 	kustomize build config/default | kubectl apply -f -
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+detach: manifests
+	cd config/manager && kustomize edit set image controller=${IMG}
+	kustomize build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen

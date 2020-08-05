@@ -83,7 +83,13 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 			return m.ExternalUpdate()
 		}
 
-		return nil, nil
+		p := &lcm.Property{
+			Name:  m.HarborCluster.Spec.Storage.Kind + ExternalStorageSecretSuffix,
+			Value: m.getExternalSecretName(),
+		}
+		properties := &lcm.Properties{p}
+
+		return minioReadyStatus(properties), nil
 	}
 
 	m.DesiredMinIOCR = m.generateMinIOCR()

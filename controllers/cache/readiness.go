@@ -3,6 +3,8 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	rediscli "github.com/go-redis/redis"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -10,7 +12,6 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strings"
 )
 
 const (
@@ -200,6 +201,9 @@ func (redis *RedisReconciler) GetExternalRedisPassword(spec *goharborv1.RedisSpe
 
 // GetInClusterRedisInfo returns inCluster redis sentinel pool client
 func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) {
+
+	var client *rediscli.Client
+
 	password, err := redis.GetRedisPassword(redis.HarborCluster.Name)
 	if err != nil {
 		return nil, err
@@ -222,26 +226,40 @@ func (redis *RedisReconciler) GetInClusterRedisInfo() (*rediscli.Client, error) 
 		return nil, errors.New("pod list is empty，pls wait")
 	}
 
-	sentinelPodArray := sentinelPodList.Items
-
-	_, currentSentinelPods := redis.GetPodsStatus(sentinelPodArray)
-
-	if len(currentSentinelPods) == 0 {
-		return nil, errors.New("need to requeue")
+	spec := redis.HarborCluster.Spec.Redis.Spec
+	switch spec.Schema {
+	case RedisSentinelSchema:
+		sentinelPodArray := sentinelPodList.Items
+		_, currentSentinelPods := redis.GetPodsStatus(sentinelPodArray)
+		if len(currentSentinelPods) == 0 {
+			return nil, errors.New("need to requeue")
+		}
+		endpoint := redis.GetSentinelServiceUrl(currentSentinelPods)
+		connect := &RedisConnect{
+			Endpoints: []string{endpoint},
+			Port:      RedisSentinelConnPort,
+			Password:  password,
+			GroupName: RedisSentinelConnGroup,
+		}
+		redis.RedisConnect = connect
+		client = connect.NewRedisPool()
+	case RedisServerSchema:
+		redisPodArray := redisPodList.Items
+		_, currentRedisPods := redis.GetPodsStatus(redisPodArray)
+		if len(currentRedisPods) == 0 {
+			return nil, errors.New("need to requeue")
+		}
+		endpoint := redis.GetRedisServiceUrl(currentRedisPods)
+		connect := &RedisConnect{
+			Endpoints: []string{endpoint},
+			Port:      RedisRedisConnPort,
+			Password:  password,
+			GroupName: spec.GroupName,
+			Schema:    RedisServerSchema,
+		}
+		redis.RedisConnect = connect
+		client = connect.NewRedisClient()
 	}
-
-	endpoint := redis.GetSentinelServiceUrl(currentSentinelPods)
-
-	connect := &RedisConnect{
-		Endpoints: []string{endpoint},
-		Port:      RedisSentinelConnPort,
-		Password:  password,
-		GroupName: RedisSentinelConnGroup,
-	}
-
-	redis.RedisConnect = connect
-
-	client := connect.NewRedisPool()
 
 	return client, nil
 }
