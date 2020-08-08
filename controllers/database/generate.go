@@ -46,7 +46,6 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 				},
 				"foo_user": {},
 			},
-			DockerImage: "harbor.ymmoa.com/monitoring/postgresql:12",
 			Patroni: api.Patroni{
 				InitDB: map[string]string{
 					"encoding":       "UTF8",
@@ -59,7 +58,10 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 				},
 			},
 			Databases: map[string]string{
-				"foo": "zalando",
+				"foo":          "zalando",
+				HarborClair:    "zalando",
+				"notaryserver": "zalando",
+				"notarysigner": "zalando",
 			},
 			PostgresqlParam: api.PostgresqlParam{
 				PgVersion: version,
@@ -79,9 +81,8 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 }
 
 //generateHarborDatabaseSecret returns database connection secret
-func (postgres *PostgreSQLReconciler) generateHarborDatabaseSecret(conn *Connect, secretName string) *corev1.Secret {
-
-	return &corev1.Secret{
+func (postgres *PostgreSQLReconciler) generateHarborDatabaseSecret(conn *Connect, secretName, propertyName string) *corev1.Secret {
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: postgres.HarborCluster.Namespace,
@@ -95,4 +96,15 @@ func (postgres *PostgreSQLReconciler) generateHarborDatabaseSecret(conn *Connect
 			"password": conn.Password,
 		},
 	}
+
+	if propertyName == HarborNotaryServer {
+		secret.StringData["database"] = NotaryServerDatabase
+		secret.StringData["ssl"] = "disable"
+	}
+	if propertyName == HarborNotarySigner {
+		secret.StringData["database"] = NotarySignerDatabase
+		secret.StringData["ssl"] = "disable"
+	}
+
+	return secret
 }

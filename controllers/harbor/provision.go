@@ -174,7 +174,7 @@ func (harbor *HarborReconciler) newNotaryComponentIfNecessary() *v1alpha1.Notary
 					NodeSelector:     nil,
 					ImagePullSecrets: harbor.getImagePullSecrets(),
 				},
-				DatabaseSecret: harbor.getDatabaseSecret(lcm.NotarySignerSecretForDatabase),
+				DatabaseSecret: harbor.getDatabaseSecret(lcm.NotaryServerSecretForDatabase),
 			},
 		}
 	}
