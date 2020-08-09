@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -19,16 +20,26 @@ import (
 const (
 	HarborCore         = "core"
 	HarborClair        = "clair"
-	HarborNotaryServer = "notary-server"
-	HarborNotarySigner = "notary-signer"
+	HarborNotaryServer = "notaryServer"
+	HarborNotarySigner = "notarySigner"
+
+	CoreDatabase         = "core"
+	ClairDatabase        = "clair"
+	NotaryServerDatabase = "notaryserver"
+	NotarySignerDatabase = "notarysigner"
+
+	CoreSecretName         = "core"
+	ClairSecretName        = "clair"
+	NotaryServerSecretName = "notary-server"
+	NotarySignerSecretName = "notary-signer"
 )
 
 var (
-	components = []string{
-		HarborCore,
-		HarborClair,
-		HarborNotaryServer,
-		HarborNotarySigner,
+	components = map[string]string{
+		HarborCore:         CoreSecretName,
+		HarborClair:        ClairSecretName,
+		HarborNotaryServer: NotaryServerSecretName,
+		HarborNotarySigner: NotarySignerSecretName,
 	}
 )
 
@@ -66,10 +77,10 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 	postgres.Log.Info("Database already ready.", "namespace", postgres.HarborCluster.Namespace, "name", postgres.HarborCluster.Name)
 
 	properties := &lcm.Properties{}
-	for _, component := range components {
+	for key, component := range components {
 		secretName := fmt.Sprintf("%s-database", component)
-		propertyName := fmt.Sprintf("%sSecret", component)
-		if err := postgres.DeployComponentSecret(conn, component, secretName); err != nil {
+		propertyName := getPropertyName(key)
+		if err := postgres.DeployComponentSecret(conn, component, secretName, key); err != nil {
 			return nil, err
 		}
 		properties.Add(propertyName, secretName)
@@ -83,10 +94,14 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 	return crStatus, nil
 }
 
+func getPropertyName(key string) string {
+	return fmt.Sprintf("%sSecret", key)
+}
+
 // DeployComponentSecret deploy harbor component database secret
-func (postgres *PostgreSQLReconciler) DeployComponentSecret(conn *Connect, component, secretName string) error {
+func (postgres *PostgreSQLReconciler) DeployComponentSecret(conn *Connect, component, secretName, propertyName string) error {
 	secret := &corev1.Secret{}
-	sc := postgres.generateHarborDatabaseSecret(conn, secretName)
+	sc := postgres.generateHarborDatabaseSecret(conn, secretName, propertyName)
 
 	if err := controllerutil.SetControllerReference(postgres.HarborCluster, sc, postgres.Scheme); err != nil {
 		return err
