@@ -82,5 +82,4 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 roll:
-	kubectl config use-context aliqa
 	kubectl -n harbor-cluster-operator-system patch deployment harbor-cluster-operator-controller-manager --patch "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"
