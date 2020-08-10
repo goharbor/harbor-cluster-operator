@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -45,12 +47,15 @@ type HarborClusterReconciler struct {
 	Recorder     record.EventRecorder
 }
 
-var ComponentToConditionType = map[goharborv1.Component]goharborv1.HarborClusterConditionType{
-	goharborv1.ComponentHarbor:   goharborv1.ServiceReady,
-	goharborv1.ComponentCache:    goharborv1.CacheReady,
-	goharborv1.ComponentStorage:  goharborv1.StorageReady,
-	goharborv1.ComponentDatabase: goharborv1.DatabaseReady,
-}
+var (
+	ComponentToConditionType = map[goharborv1.Component]goharborv1.HarborClusterConditionType{
+		goharborv1.ComponentHarbor:   goharborv1.ServiceReady,
+		goharborv1.ComponentCache:    goharborv1.CacheReady,
+		goharborv1.ComponentStorage:  goharborv1.StorageReady,
+		goharborv1.ComponentDatabase: goharborv1.DatabaseReady,
+	}
+	ReconcileWaitResult = reconcile.Result{RequeueAfter: 30 * time.Second}
+)
 
 // +kubebuilder:rbac:groups=goharbor.io,resources=harborclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=goharbor.io,resources=harborclusters/status,verbs=get;update;patch
@@ -73,18 +78,18 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	var harborCluster goharborv1.HarborCluster
 	if err := r.Get(ctx, req.NamespacedName, &harborCluster); err != nil {
 		log.Error(err, "unable to fetch HarborCluster")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ReconcileWaitResult, client.IgnoreNotFound(err)
 	}
 
 	// harborCluster will be gracefully deleted by server when DeletionTimestamp is non-null
 	if harborCluster.DeletionTimestamp != nil {
-		return ctrl.Result{}, nil
+		return ReconcileWaitResult, nil
 	}
 
 	dClient, err := k8s.NewDynamicClient()
 	if err != nil {
 		log.Error(err, "unable to create dynamic client")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 
 	option := &GetOptions{
@@ -98,19 +103,19 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile cache component.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 
 	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 
 	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 
 	componentToStatus := make(map[goharborv1.Component]*lcm.CRStatus)
@@ -124,10 +129,7 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 			string(goharborv1.ComponentDatabase), dbStatus,
 			string(goharborv1.ComponentStorage), storageStatus)
 		err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: time.Second * r.RequeueAfter,
-		}, err
+		return ReconcileWaitResult, err
 	}
 
 	getRegistry := func() *string {
@@ -139,20 +141,20 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	var imageGetter image.ImageGetter
 	if imageGetter, err = image.NewImageGetter(getRegistry(), harborCluster.Spec.Version); err != nil {
 		log.Error(err, "error when create ImageGetter.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 	option.ImageGetter = imageGetter
 	harborStatus, err := r.Harbor(ctx, &harborCluster, componentToStatus, option).Reconcile()
 	if err != nil {
 		log.Error(err, "error when reconcile harbor service.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 	componentToStatus[goharborv1.ComponentHarbor] = harborStatus
 
 	err = r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
 	if err != nil {
 		log.Error(err, "error when update harbor cluster status.")
-		return ctrl.Result{}, err
+		return ReconcileWaitResult, err
 	}
 
 	return ctrl.Result{}, nil
