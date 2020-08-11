@@ -80,3 +80,6 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+roll:
+	kubectl -n harbor-cluster-operator-system patch deployment harbor-cluster-operator-controller-manager --patch "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"

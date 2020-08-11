@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"fmt"
+
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +44,10 @@ func (redis *RedisReconciler) Deploy() (*lcm.CRStatus, error) {
 		return cacheNotReadyStatus(CreateRedisSecretError, err.Error()), err
 	}
 
+	if err := redis.DeployService(); err != nil {
+		return cacheNotReadyStatus(CreateRedisServerServiceError, err.Error()), err
+	}
+
 	redis.Log.Info("Creating Redis.", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 
 	_, err = crdClient.Create(expectCR, metav1.CreateOptions{})
@@ -66,6 +72,25 @@ func (redis *RedisReconciler) DeploySecret() error {
 	if err != nil && errors.IsNotFound(err) {
 		redis.Log.Info("Creating Redis Password Secret", "namespace", redis.HarborCluster.Namespace, "name", redis.HarborCluster.Name)
 		return redis.Client.Create(sc)
+	}
+
+	return err
+}
+
+// DeploySecret deploy the Redis Password Secret
+func (redis *RedisReconciler) DeployService() error {
+	service := &corev1.Service{}
+	name := fmt.Sprintf("%s-%s", "cluster", redis.GetHarborClusterName())
+	svc := redis.generateService()
+
+	if err := controllerutil.SetControllerReference(redis.HarborCluster, svc, redis.Scheme); err != nil {
+		return err
+	}
+
+	err := redis.Client.Get(types.NamespacedName{Name: name, Namespace: redis.HarborCluster.Namespace}, service)
+	if err != nil && errors.IsNotFound(err) {
+		redis.Log.Info("Creating Redis server service", "namespace", redis.HarborCluster.Namespace, "name", name)
+		return redis.Client.Create(svc)
 	}
 
 	return err

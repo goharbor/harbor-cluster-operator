@@ -3,6 +3,10 @@ package cache
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strings"
+	"time"
+
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
@@ -12,10 +16,7 @@ import (
 	labels1 "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
 
 const (
@@ -321,4 +322,18 @@ func cacheReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
 		WithReason("redis already ready").
 		WithMessage("harbor component redis secrets are already create.").
 		WithProperties(*properties)
+}
+
+// GetRedisServiceUrl returns the Redis server pod ip or service name
+func (redis *RedisReconciler) GetRedisServiceUrl(pods []corev1.Pod) string {
+	var url string
+	randomPod := pods[rand.Intn(len(pods))]
+	_, err := rest.InClusterConfig()
+	if err != nil {
+		url = randomPod.Status.PodIP
+	} else {
+		url = fmt.Sprintf("%s-%s.%s.svc", "cluster", redis.GetHarborClusterName(), redis.HarborCluster.Namespace)
+	}
+
+	return url
 }

@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"fmt"
+
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -8,6 +10,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -111,6 +114,37 @@ func (redis *RedisReconciler) generateHarborCacheSecret(component, secretName, u
 		StringData: map[string]string{
 			"url":       url,
 			"namespace": namespace,
+		},
+	}
+}
+
+func (redis *RedisReconciler) generateService() *corev1.Service {
+	name := fmt.Sprintf("%s-%s", "cluster", redis.GetHarborClusterName())
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: redis.GetHarborClusterNamespace(),
+			Labels:    redis.Labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Selector: map[string]string{
+				"app.kubernetes.io/component": "redis",
+				"app.kubernetes.io/name":      redis.GetHarborClusterName(),
+				"app.kubernetes.io/part-of":   "redis-failover",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Port:       6379,
+					TargetPort: intstr.FromInt(6379),
+					Protocol:   corev1.ProtocolTCP,
+					Name:       "redis",
+				},
+			},
 		},
 	}
 }
