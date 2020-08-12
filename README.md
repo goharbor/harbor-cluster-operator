@@ -77,7 +77,7 @@ See documents [here](./docs).
 * [Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 * [Underlying harbor-operator](https://github.com/goharbor/harbor-operator)
 * [Underlying PostgresSQL operator](https://github.com/zalando/postgres-operator)
-* [Underlying Redis operator](#)
+* [Underlying Redis operator](https://github.com/spotahome/redis-operator)
 * [Underlying Storage operator](https://github.com/minio/minio-operator)
 
 
