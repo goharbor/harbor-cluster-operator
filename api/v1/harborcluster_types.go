@@ -414,6 +414,12 @@ type HarborClusterCondition struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`,description="The semver Harbor version",priority=5
+// +kubebuilder:printcolumn:name="Public URL",type=string,JSONPath=`.spec.publicURL`,description="The public URL to the Harbor application",priority=0
+// +kubebuilder:printcolumn:name="HarborReady", type=string,JSONPath=`.status.conditions[?(@.type=="HarborReady")].status`,description="The current status of the new Harbor spec",priority=10
+// +kubebuilder:printcolumn:name="CacheReady", type=string,JSONPath=`.status.conditions[?(@.type=="CacheReady")].status`,description="The current status of the new Cache spec",priority=20
+// +kubebuilder:printcolumn:name="DatabaseReady", type=string,JSONPath=`.status.conditions[?(@.type=="DatabaseReady")].status`,description="The current status of the new Database spec",priority=20
+// +kubebuilder:printcolumn:name="StorageReady", type=string,JSONPath=`.status.conditions[?(@.type=="StorageReady")].status`,description="The current status of the new Storage spec",priority=20
 
 // HarborCluster is the Schema for the harborclusters API
 type HarborCluster struct {
