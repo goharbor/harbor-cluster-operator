@@ -145,7 +145,14 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Se
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			s3Storage: dataJson,
+			s3Storage:               dataJson,
+			"kind":                  []byte("amazon"),
+			"AWS_ACCESS_KEY_ID":     []byte(m.HarborCluster.Spec.Storage.S3.AccessKey),
+			"AWS_SECRET_ACCESS_KEY": []byte(m.HarborCluster.Spec.Storage.S3.SecretKey),
+			"AMAZON_BUCKET":         []byte(m.HarborCluster.Spec.Storage.S3.Bucket),
+			"AMAZON_PREFIX":         []byte(fmt.Sprintf("%s-subfloder", m.HarborCluster.Spec.Storage.S3.Bucket)),
+			"AMAZON_REGION":         []byte(m.HarborCluster.Spec.Storage.S3.Region),
+			"AMAZON_ENDPOINT":       []byte(m.HarborCluster.Spec.Storage.S3.RegionEndpoint),
 		},
 	}, nil
 }
