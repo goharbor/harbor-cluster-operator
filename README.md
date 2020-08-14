@@ -42,7 +42,7 @@ For more design details, check the [architecture](./docs/architecture.md) docume
 
 ## Installation
 
-You can follow the [installation guide](./docs/installation.md) to deploy this operator to your K8s clusters.
+You can follow the [installation guide](docs/installation.md) to deploy this operator to your K8s clusters.
 
 Additionally, follow [sample deployment guide](./docs/sample_deploy_guide.md) to have a try of deploying the sample to your K8s clusters.
 
