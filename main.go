@@ -25,7 +25,7 @@ import (
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
-	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -90,10 +90,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HarborCluster")
 		os.Exit(1)
 	}
-	if err = (&goharborv1.HarborCluster{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "HarborCluster")
-		os.Exit(1)
-	}
+	//if err = (&goharborv1.HarborCluster{}).SetupWebhookWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create webhook", "webhook", "HarborCluster")
+	//	os.Exit(1)
+	//}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

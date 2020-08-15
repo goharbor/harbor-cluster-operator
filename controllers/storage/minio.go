@@ -8,8 +8,7 @@ import (
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/google/go-cmp/cmp"
-	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
-	appsv1 "k8s.io/api/apps/v1"
+	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,8 +45,8 @@ type MinIOReconciler struct {
 	Log                   logr.Logger
 	Scheme                *runtime.Scheme
 	Recorder              record.EventRecorder
-	CurrentMinIOCR        *minio.MinIOInstance
-	DesiredMinIOCR        *minio.MinIOInstance
+	CurrentMinIOCR        *minio.Tenant
+	DesiredMinIOCR        *minio.Tenant
 	CurrentExternalSecret *corev1.Secret
 	DesiredExternalSecret *corev1.Secret
 	MinioClient           Minio
@@ -63,7 +62,7 @@ var (
 
 // Reconciler implements the reconcile logic of minIO service
 func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
-	var minioCR minio.MinIOInstance
+	var minioCR minio.Tenant
 	if m.HarborCluster.Spec.Storage.Kind != inClusterStorage {
 		var exSecret corev1.Secret
 		err := m.KubeClient.Get(m.getExternalSecretNamespacedName(), &exSecret)
@@ -115,7 +114,6 @@ func (m *MinIOReconciler) Reconcile() (*lcm.CRStatus, error) {
 	if m.checkMinIOUpdate() {
 		return m.Update()
 	}
-
 	isReady, err := m.checkMinIOReady()
 	if err != nil {
 		return minioNotReadyStatus(GetMinIOError, err.Error()), err
@@ -185,13 +183,12 @@ func (m *MinIOReconciler) checkMinIOScale() (bool, error) {
 }
 
 func (m *MinIOReconciler) checkMinIOReady() (bool, error) {
-	var minioStatefulSet appsv1.StatefulSet
-	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioStatefulSet)
+	var minioCR minio.Tenant
+	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 
-	if minioStatefulSet.Status.ReadyReplicas == m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas {
+	if minioCR.Status.CurrentState == "Ready" {
 		return true, err
 	}
-
 	return false, err
 }
 
