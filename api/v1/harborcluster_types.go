@@ -258,6 +258,8 @@ type MinIOSpec struct {
 	Replicas int32 `json:"replicas"`
 	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version,omitempty"`
+	// Number of persistent volumes that will be attached per server
+	VolumesPerServer int32 `json:"volumesPerServer"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
 	// +optional
 	VolumeClaimTemplate corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
