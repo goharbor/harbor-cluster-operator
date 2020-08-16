@@ -21,6 +21,7 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 	replica := postgres.GetPostgreReplica()
 	storageSize := postgres.GetPostgreStorageSize()
 	version := postgres.GetPostgreVersion()
+	databases := postgres.GetDatabases()
 	name := fmt.Sprintf("%s-%s", postgres.HarborCluster.Namespace, postgres.HarborCluster.Name)
 
 	conf := &api.Postgresql{
@@ -57,12 +58,7 @@ func (postgres *PostgreSQLReconciler) generatePostgresCR() (*unstructured.Unstru
 					"host    all all 0.0.0.0/0 md5",
 				},
 			},
-			Databases: map[string]string{
-				"foo":          "zalando",
-				HarborClair:    "zalando",
-				"notaryserver": "zalando",
-				"notarysigner": "zalando",
-			},
+			Databases: databases,
 			PostgresqlParam: api.PostgresqlParam{
 				PgVersion: version,
 			},
