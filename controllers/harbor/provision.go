@@ -70,6 +70,7 @@ func (harbor *HarborReconciler) newCoreComponent() *v1alpha1.CoreComponent {
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 		DatabaseSecret: harbor.getDatabaseSecret(lcm.CoreSecretForDatabase),
+		CacheSecret:    harbor.getCacheSecret(lcm.CoreURLSecretForCache),
 	}
 }
 
