@@ -14,6 +14,7 @@ const (
 )
 
 const (
+	CoreURLSecretForCache     string = "coreURLSecret"
 	RegisterSecretForCache    string = "registrySecret"
 	ClairSecretForCache       string = "clairSecret"
 	ChartMuseumSecretForCache string = "chartMuseumSecret"

@@ -19,6 +19,7 @@ const (
 	HarborClair       = "clair"
 	HarborJobService  = "jobService"
 	HarborRegistry    = "registry"
+	HarborCore        = "coreURL"
 )
 
 var (
@@ -27,6 +28,7 @@ var (
 		HarborClair,
 		HarborJobService,
 		HarborRegistry,
+		HarborCore,
 	}
 )
 
@@ -67,7 +69,7 @@ func (redis *RedisReconciler) Readiness() (*lcm.CRStatus, error) {
 
 	properties := lcm.Properties{}
 	for _, component := range components {
-		url := redis.RedisConnect.GenRedisConnURL()
+		url := redis.RedisConnect.GenRedisConnURL(component)
 		secretName := fmt.Sprintf("%s-redis", strings.ToLower(component))
 		propertyName := fmt.Sprintf("%sSecret", component)
 
