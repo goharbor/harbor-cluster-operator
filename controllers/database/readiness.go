@@ -18,17 +18,17 @@ import (
 )
 
 const (
-	HarborCore         = "registry"
+	HarborCore         = "core"
 	HarborClair        = "clair"
 	HarborNotaryServer = "notaryServer"
 	HarborNotarySigner = "notarySigner"
 
-	CoreDatabase         = "registry"
+	CoreDatabase         = "core"
 	ClairDatabase        = "clair"
 	NotaryServerDatabase = "notaryserver"
 	NotarySignerDatabase = "notarysigner"
 
-	CoreSecretName         = "registry"
+	CoreSecretName         = "core"
 	ClairSecretName        = "clair"
 	NotaryServerSecretName = "notary-server"
 	NotarySignerSecretName = "notary-signer"
