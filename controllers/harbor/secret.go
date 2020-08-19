@@ -12,6 +12,7 @@ import (
 
 const (
     _adminPasswordSecretNameTemplate = "%s-admin-password-secret"
+    _adminPasswordKey = "password"
 )
 
 // CheckAdminPasswordSecret will check whether .spec.adminPassword is empty in HarborCluster.
@@ -33,7 +34,7 @@ func (harbor *HarborReconciler) CheckAdminPasswordSecret() error {
             },
         },
         StringData: map[string]string{
-            "password": common.RandomString(16, common.UpperStringRandomType),
+           _adminPasswordKey: common.RandomString(16, common.UpperStringRandomType),
         },
     }
 
