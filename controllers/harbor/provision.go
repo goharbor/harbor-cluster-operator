@@ -18,6 +18,11 @@ func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
 		return harborClusterCRNotReadyStatus(CreateRegistryCertError, err.Error()), err
 	}
 
+	err = harbor.CheckAdminPasswordSecret()
+	if err != nil {
+		return harborClusterCRNotReadyStatus(AutoGenerateAdminPasswordError, err.Error()), err
+	}
+
 	harborCR := harbor.newHarborCR()
 	err = harbor.Create(harborCR)
 	if err != nil {

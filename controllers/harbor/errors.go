@@ -7,4 +7,5 @@ const (
 	UpdateHarborCRError      = "Update harbor.goharbor.io CR error"
 	EmptyHarborCRStatusError = "Empty harbor.goharbor.io CR status error"
 	CreateRegistryCertError  = "Create Registry Cert error"
+	AutoGenerateAdminPasswordError = "Auto generate admin password error"
 )
