@@ -108,16 +108,19 @@ func (harbor *HarborReconciler) newRegistryComponent() *v1alpha1.RegistryCompone
 }
 
 func (harbor *HarborReconciler) newJobServiceComponent() *v1alpha1.JobServiceComponent {
-	return &v1alpha1.JobServiceComponent{
-		HarborDeployment: v1alpha1.HarborDeployment{
-			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.JobService.Replicas),
-			Image:            image.String(harbor.ImageGetter.JobServiceImage()),
-			NodeSelector:     nil,
-			ImagePullSecrets: harbor.getImagePullSecrets(),
-		},
-		RedisSecret: harbor.getCacheSecret(lcm.JobServiceSecretForCache),
-		WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
+	if harbor.HarborCluster.Spec.JobService != nil {
+		return &v1alpha1.JobServiceComponent{
+			HarborDeployment: v1alpha1.HarborDeployment{
+				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.JobService.Replicas),
+				Image:            image.String(harbor.ImageGetter.JobServiceImage()),
+				NodeSelector:     nil,
+				ImagePullSecrets: harbor.getImagePullSecrets(),
+			},
+			RedisSecret: harbor.getCacheSecret(lcm.JobServiceSecretForCache),
+			WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
+		}
 	}
+	return nil
 }
 
 func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.ChartMuseumComponent {
