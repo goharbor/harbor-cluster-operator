@@ -100,28 +100,40 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		Scheme:   r.Scheme,
 	}
 
+	componentToStatus := r.DefaultComponentStatus()
 	cacheStatus, err := r.Cache(ctx, &harborCluster, option).Reconcile()
+	componentToStatus[goharborv1.ComponentCache] = cacheStatus
 	if err != nil {
 		log.Error(err, "error when reconcile cache component.")
+		updateErr := r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
+		if updateErr != nil {
+			log.Error(updateErr, "update harbor cluster status")
+		}
 		return ReconcileWaitResult, err
 	}
 
 	dbStatus, err := r.Database(ctx, &harborCluster, option).Reconcile()
+	componentToStatus[goharborv1.ComponentDatabase] = dbStatus
 	if err != nil {
 		log.Error(err, "error when reconcile database component.")
+		updateErr := r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
+		if updateErr != nil {
+			log.Error(updateErr, "update harbor cluster status")
+		}
 		return ReconcileWaitResult, err
 	}
 
 	storageStatus, err := r.Storage(ctx, &harborCluster, option).Reconcile()
+	componentToStatus[goharborv1.ComponentStorage] = storageStatus
 	if err != nil {
 		log.Error(err, "error when reconcile storage component.")
+		updateErr := r.UpdateHarborClusterStatus(ctx, &harborCluster, componentToStatus)
+		if updateErr != nil {
+			log.Error(updateErr, "update harbor cluster status")
+		}
 		return ReconcileWaitResult, err
 	}
 
-	componentToStatus := make(map[goharborv1.Component]*lcm.CRStatus)
-	componentToStatus[goharborv1.ComponentCache] = cacheStatus
-	componentToStatus[goharborv1.ComponentDatabase] = dbStatus
-	componentToStatus[goharborv1.ComponentStorage] = storageStatus
 	// if components is not all ready, requeue the HarborCluster
 	if !r.ComponentsAreAllReady(componentToStatus) {
 		log.Info("components not all ready.",
@@ -158,6 +170,15 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *HarborClusterReconciler) DefaultComponentStatus() map[goharborv1.Component]*lcm.CRStatus {
+	return map[goharborv1.Component]*lcm.CRStatus{
+		goharborv1.ComponentCache:    lcm.New(goharborv1.CacheReady).WithStatus(corev1.ConditionUnknown),
+		goharborv1.ComponentDatabase: lcm.New(goharborv1.DatabaseReady).WithStatus(corev1.ConditionUnknown),
+		goharborv1.ComponentStorage:  lcm.New(goharborv1.CacheReady).WithStatus(corev1.ConditionUnknown),
+		goharborv1.ComponentHarbor:   lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionUnknown),
+	}
 }
 
 // ServicesAreAllReady check whether these components(includes cache, db, storage) are all ready.
