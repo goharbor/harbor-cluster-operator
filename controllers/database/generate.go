@@ -92,6 +92,12 @@ func (postgres *PostgreSQLReconciler) generateHarborDatabaseSecret(conn *Connect
 			"password": conn.Password,
 		},
 	}
+
+	if propertyName == HarborClair {
+		secret.StringData["database"] = ClairDatabase
+		secret.StringData["ssl"] = "disable"
+	}
+
 	if propertyName == HarborNotaryServer {
 		secret.StringData["database"] = NotaryServerDatabase
 		secret.StringData["ssl"] = "disable"
