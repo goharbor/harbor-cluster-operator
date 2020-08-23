@@ -1,0 +1,94 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonAnnotations:
+  goharbor.io/cluster-version: "0.5.0"
+  goharbor.io/template-version: "20200823-2357"
+  goharbor.io/template-engine: "Kustomization"
+
+resources:
+  - namespaces/namespaces.yaml
+  - https://raw.githubusercontent.com/spotahome/redis-operator/master/example/operator/all-redis-operator-resources.yaml
+  - core-operator/all-core-operator-resources.yaml
+
+bases:
+  - ../config/default
+  - github.com/zalando/postgres-operator/manifests
+  - github.com/minio/operator?ref=master
+
+patchesJson6902:
+# Redis
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: redisoperator
+    path: patches/redis/namespace-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRoleBinding
+      name: redisoperator
+    path: patches/redis/cluster-rb-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: redisoperator
+    path: patches/redis/namespace-patch.yaml
+  - target:
+      version: v1
+      kind: ServiceAccount
+      #group: core
+      name: redisoperator
+    path: patches/redis/namespace-patch.yaml
+# Postgres
+  - target:
+      version: v1
+      kind: ConfigMap
+      #group: core
+      name: postgres-operator
+    path: patches/postgres/namespace-patch.yaml
+  - target:
+      version: v1
+      kind: ServiceAccount
+      #group: core
+      name: postgres-operator
+    path: patches/postgres/namespace-replace-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: postgres-operator
+    path: patches/postgres/namespace-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRoleBinding
+      name: postgres-operator
+    path: patches/postgres/cluster-rb-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: postgres-pod
+    path: patches/postgres/namespace-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: postgres-operator
+    path: patches/postgres/namespace-patch.yaml
+  - target:
+      version: v1
+      kind: Service
+      #group: core
+      name: postgres-operator
+    path: patches/postgres/namespace-patch.yaml
+
+images:
+  - name: controller
+    newName: goharbor/harbor-cluster-operator
+    newTag: latest
+  - name: goharbor/harbor-operator
+    newTag: latest
