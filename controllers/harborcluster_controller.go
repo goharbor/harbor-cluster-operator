@@ -187,6 +187,10 @@ func (r *HarborClusterReconciler) ComponentsAreAllReady(serviceToMap map[goharbo
 		if status == nil {
 			return false
 		}
+
+		if status.Condition.Type == goharborv1.ServiceReady {
+			continue
+		}
 		if status.Condition.Status != corev1.ConditionTrue {
 			return false
 		}
