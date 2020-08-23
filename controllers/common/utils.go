@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+const (
+	UpperStringRandomType = "A"
+	LowerStringRandomType = "a"
+	NumberRandomType = "0"
+)
+
 func RandomString(randLength int, randType string) (result string) {
 	var num = "0123456789"
 	var lower = "abcdefghijklmnopqrstuvwxyz"

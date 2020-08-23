@@ -8,7 +8,7 @@ import (
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
-	minio "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.MinIOInstance) (*lcm.CRStatus, error) {
+func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Tenant) (*lcm.CRStatus, error) {
 	inClusterSecret, err := m.generateInClusterSecret(minioInstamnce)
 	if err != nil {
 		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
@@ -34,7 +34,7 @@ func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Min
 	return minioReadyStatus(properties), nil
 }
 
-func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.MinIOInstance) (*corev1.Secret, error) {
+func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.Tenant) (*corev1.Secret, error) {
 	labels := m.getLabels()
 	labels[LabelOfStorageType] = inClusterStorage
 	accessKey, secretKey, err := m.getCredsFromSecret()
@@ -273,7 +273,7 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
 	}
 
-	var minioCR minio.MinIOInstance
+	var minioCR minio.Tenant
 	err = m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 	if err != nil {
 		return minioNotReadyStatus(CreateMinIOError, err.Error()), err
@@ -296,8 +296,8 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	return minioUnknownStatus(), nil
 }
 
-func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
-	return &minio.MinIOInstance{
+func (m *MinIOReconciler) generateMinIOCR() *minio.Tenant {
+	return &minio.Tenant{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       minio.MinIOCRDResourceKind,
 			APIVersion: minio.SchemeGroupVersion.String(),
@@ -311,10 +311,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
 			},
 		},
-		Spec: minio.MinIOInstanceSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: m.getLabels(),
-			},
+		Spec: minio.TenantSpec{
 			Metadata: &metav1.ObjectMeta{
 				Labels:      m.getLabels(),
 				Annotations: m.generateAnnotations(),
@@ -323,13 +320,14 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 			Image:       "minio/minio:" + m.HarborCluster.Spec.Storage.InCluster.Spec.Version,
 			Zones: []minio.Zone{
 				{
-					Name:    m.HarborCluster.Name + "-" + DefaultZone,
-					Servers: m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas,
+					Name:                DefaultZone,
+					Servers:             m.HarborCluster.Spec.Storage.InCluster.Spec.Replicas,
+					VolumesPerServer:    m.HarborCluster.Spec.Storage.InCluster.Spec.VolumesPerServer,
+					VolumeClaimTemplate: m.getVolumeClaimTemplate(),
+					Resources:           *m.getResourceRequirements(),
 				},
 			},
-			VolumesPerServer:    1,
-			Mountpath:           minio.MinIOVolumeMountPath,
-			VolumeClaimTemplate: m.getVolumeClaimTemplate(),
+			Mountpath: minio.MinIOVolumeMountPath,
 			CredsSecret: &corev1.LocalObjectReference{
 				Name: m.getMinIOSecretNamespacedName().Name,
 			},
@@ -346,12 +344,7 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.MinIOInstance {
 					Value: "on",
 				},
 			},
-			Resources: *m.getResourceRequirements(), //m.HarborCluster.Spec.Storage.InCluster.Spec.Resources,
 			Liveness: &minio.Liveness{
-				InitialDelaySeconds: 120,
-				PeriodSeconds:       60,
-			},
-			Readiness: &minio.Readiness{
 				InitialDelaySeconds: 120,
 				PeriodSeconds:       60,
 			},

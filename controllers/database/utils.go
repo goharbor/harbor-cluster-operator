@@ -16,40 +16,36 @@ const (
 	DefaultDatabaseVersion = "12"
 )
 
+func (postgres *PostgreSQLReconciler) GetDatabases() map[string]string {
+	databases := map[string]string{
+		CoreDatabase: "zalando",
+	}
+
+	if postgres.HarborCluster.Spec.Clair != nil {
+		databases[ClairDatabase] = "zalando"
+	}
+
+	if postgres.HarborCluster.Spec.Notary != nil {
+		databases[NotaryServerDatabase] = "zalando"
+		databases[NotarySignerDatabase] = "zalando"
+	}
+
+	return databases
+}
+
 // GetDatabaseConn is getting database connection
 func (postgres *PostgreSQLReconciler) GetDatabaseConn(secretName string) (*Connect, error) {
-	var (
-		host     string
-		port     string
-		username string
-		password string
-		database string
-	)
 	secret, err := postgres.GetSecret(secretName)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range secret {
-		switch k {
-		case "host":
-			host = string(v)
-		case "port":
-			port = string(v)
-		case "username":
-			username = string(v)
-		case "password":
-			password = string(v)
-		case "database":
-			database = string(v)
-		}
-	}
 
 	conn := &Connect{
-		Host:     host,
-		Port:     port,
-		Password: password,
-		Username: username,
-		Database: database,
+		Host:     string(secret["host"]),
+		Port:     string(secret["port"]),
+		Password: string(secret["password"]),
+		Username: string(secret["username"]),
+		Database: string(secret["database"]),
 	}
 
 	return conn, nil

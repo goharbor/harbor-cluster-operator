@@ -34,15 +34,6 @@ const (
 	NotarySignerSecretName = "notary-signer"
 )
 
-var (
-	components = map[string]string{
-		HarborCore:         CoreSecretName,
-		HarborClair:        ClairSecretName,
-		HarborNotaryServer: NotaryServerSecretName,
-		HarborNotarySigner: NotarySignerSecretName,
-	}
-)
-
 // Readiness reconcile will check postgre sql cluster if that has available.
 // It does:
 // - create postgre connection pool
@@ -77,8 +68,19 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 	postgres.Log.Info("Database already ready.", "namespace", postgres.HarborCluster.Namespace, "name", postgres.HarborCluster.Name)
 
 	properties := &lcm.Properties{}
+	components := map[string]string{
+		HarborCore: CoreSecretName,
+	}
+	if postgres.HarborCluster.Spec.Clair != nil {
+		components[HarborClair] = ClairSecretName
+	}
+	if postgres.HarborCluster.Spec.Notary != nil {
+		components[HarborNotaryServer] = NotaryServerSecretName
+		components[HarborNotarySigner] = NotarySignerSecretName
+	}
+
 	for key, component := range components {
-		secretName := fmt.Sprintf("%s-database", component)
+		secretName := getComponentSecretName(component)
 		propertyName := getPropertyName(key)
 		if err := postgres.DeployComponentSecret(conn, component, secretName, key); err != nil {
 			return nil, err
@@ -96,6 +98,10 @@ func (postgres *PostgreSQLReconciler) Readiness() (*lcm.CRStatus, error) {
 
 func getPropertyName(key string) string {
 	return fmt.Sprintf("%sSecret", key)
+}
+
+func getComponentSecretName(component string) string {
+	return fmt.Sprintf("%s-database", component)
 }
 
 // DeployComponentSecret deploy harbor component database secret

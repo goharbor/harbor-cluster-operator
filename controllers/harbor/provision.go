@@ -18,6 +18,11 @@ func (harbor *HarborReconciler) Provision() (*lcm.CRStatus, error) {
 		return harborClusterCRNotReadyStatus(CreateRegistryCertError, err.Error()), err
 	}
 
+	err = harbor.CheckAdminPasswordSecret()
+	if err != nil {
+		return harborClusterCRNotReadyStatus(AutoGenerateAdminPasswordError, err.Error()), err
+	}
+
 	harborCR := harbor.newHarborCR()
 	err = harbor.Create(harborCR)
 	if err != nil {
@@ -70,6 +75,7 @@ func (harbor *HarborReconciler) newCoreComponent() *v1alpha1.CoreComponent {
 			ImagePullSecrets: harbor.getImagePullSecrets(),
 		},
 		DatabaseSecret: harbor.getDatabaseSecret(lcm.CoreSecretForDatabase),
+		CacheSecret:    harbor.getCacheSecret(lcm.CoreURLSecretForCache),
 	}
 }
 
@@ -102,16 +108,19 @@ func (harbor *HarborReconciler) newRegistryComponent() *v1alpha1.RegistryCompone
 }
 
 func (harbor *HarborReconciler) newJobServiceComponent() *v1alpha1.JobServiceComponent {
-	return &v1alpha1.JobServiceComponent{
-		HarborDeployment: v1alpha1.HarborDeployment{
-			Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.JobService.Replicas),
-			Image:            image.String(harbor.ImageGetter.JobServiceImage()),
-			NodeSelector:     nil,
-			ImagePullSecrets: harbor.getImagePullSecrets(),
-		},
-		RedisSecret: harbor.getCacheSecret(lcm.JobServiceSecretForCache),
-		WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
+	if harbor.HarborCluster.Spec.JobService != nil {
+		return &v1alpha1.JobServiceComponent{
+			HarborDeployment: v1alpha1.HarborDeployment{
+				Replicas:         IntToInt32Ptr(harbor.HarborCluster.Spec.JobService.Replicas),
+				Image:            image.String(harbor.ImageGetter.JobServiceImage()),
+				NodeSelector:     nil,
+				ImagePullSecrets: harbor.getImagePullSecrets(),
+			},
+			RedisSecret: harbor.getCacheSecret(lcm.JobServiceSecretForCache),
+			WorkerCount: harbor.HarborCluster.Spec.JobService.WorkerCount,
+		}
 	}
+	return nil
 }
 
 func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.ChartMuseumComponent {

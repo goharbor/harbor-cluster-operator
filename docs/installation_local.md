@@ -93,7 +93,7 @@ curl localhost/bar
 
 ### Cert-manager
 
-Follow the guide shown [here](https://cert-manager.io/docs/installation/upgrading/upgrading-0.15-0.16/#issue-with-older-versions-of-kubectl) to deploy the cert-manager into the kind cluster.
+Follow the guide shown [here](https://cert-manager.io/docs/installation/kubernetes/) to deploy the cert-manager into the kind cluster.
 
 ## Deploy operator
 

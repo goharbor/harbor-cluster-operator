@@ -260,19 +260,19 @@ func (redis *RedisReconciler) GetPodsStatus(podArray []corev1.Pod) ([]corev1.Pod
 }
 
 // GenRedisConnURL returns harbor component redis secret
-func (c *RedisConnect) GenRedisConnURL() string {
+func (c *RedisConnect) GenRedisConnURL(component string) string {
 	switch c.Schema {
 	case RedisSentinelSchema:
-		return c.genRedisSentinelConnURL()
+		return c.genRedisSentinelConnURL(component)
 	case RedisServerSchema:
-		return c.genRedisServerConnURL()
+		return c.genRedisServerConnURL(component)
 	default:
 		return ""
 	}
 }
 
 // genRedisSentinelConnURL returns redis sentinel connection url
-func (c *RedisConnect) genRedisSentinelConnURL() string {
+func (c *RedisConnect) genRedisSentinelConnURL(component string) string {
 
 	hostInfo := GenHostInfo(c.Endpoints, c.Port)
 	if c.Password != "" {
@@ -283,9 +283,11 @@ func (c *RedisConnect) genRedisSentinelConnURL() string {
 }
 
 // genRedisServerConnURL returns redis server connection url
-func (c *RedisConnect) genRedisServerConnURL() string {
-
+func (c *RedisConnect) genRedisServerConnURL(component string) string {
 	hostInfo := GenHostInfo(c.Endpoints, c.Port)
+	if component == HarborCore {
+		return fmt.Sprintf("%s,100,%s", hostInfo[0], c.Password)
+	}
 	if c.Password != "" {
 		return fmt.Sprintf("redis://:%s@%s/0", c.Password, hostInfo[0])
 	}
