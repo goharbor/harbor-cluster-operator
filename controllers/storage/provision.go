@@ -17,7 +17,7 @@ import (
 )
 
 func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Tenant) (*lcm.CRStatus, error) {
-	inClusterSecret, err := m.generateInClusterSecret(minioInstamnce)
+	inClusterSecret, chartMuseumSecret, err := m.generateInClusterSecret(minioInstamnce)
 	if err != nil {
 		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
 	}
@@ -26,20 +26,26 @@ func (m *MinIOReconciler) ProvisionInClusterSecretAsS3(minioInstamnce *minio.Ten
 		return minioNotReadyStatus(GetMinIOSecretError, err.Error()), err
 	}
 
-	p := &lcm.Property{
-		Name:  lcm.InClusterSecretForStorage,
-		Value: inClusterSecret.Name,
+	err = m.KubeClient.Create(chartMuseumSecret)
+	if err != nil && !k8serror.IsAlreadyExists(err) {
+		return minioNotReadyStatus(CreateChartMuseumStorageSecretError, err.Error()), err
 	}
-	properties := &lcm.Properties{p}
+
+	properties := &lcm.Properties{}
+	properties.Add(lcm.InClusterSecretForStorage, inClusterSecret.Name)
+	if m.HarborCluster.Spec.ChartMuseum != nil {
+		properties.Add(lcm.ChartMuseumSecretForStorage, m.getChartMuseumSecretName())
+	}
+
 	return minioReadyStatus(properties), nil
 }
 
-func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.Tenant) (*corev1.Secret, error) {
+func (m *MinIOReconciler) generateInClusterSecret(minioInstance *minio.Tenant) (inClusterSecret *corev1.Secret, chartMuseumSecret *corev1.Secret, err error) {
 	labels := m.getLabels()
 	labels[LabelOfStorageType] = inClusterStorage
 	accessKey, secretKey, err := m.getCredsFromSecret()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	endpoint := fmt.Sprintf("http://%s.%s.svc:%s", m.getServiceName(), m.HarborCluster.Namespace, "9000")
@@ -55,7 +61,7 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.Tenant) 
 		"v4auth":         "false",
 	}
 	dataJson, _ := json.Marshal(&data)
-	inClusterSecret := &corev1.Secret{
+	inClusterSecret = &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -66,7 +72,7 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.Tenant) 
 			Labels:      m.getLabels(),
 			Annotations: m.generateAnnotations(),
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(minioInstamnce, HarborClusterMinIOGVK),
+				*metav1.NewControllerRef(minioInstance, HarborClusterMinIOGVK),
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
@@ -75,7 +81,34 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstamnce *minio.Tenant) 
 		},
 	}
 
-	return inClusterSecret, nil
+	chartMuseumSecret = &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        m.getChartMuseumSecretName(),
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      m.getLabels(),
+			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(minioInstance, goharborv1.HarborClusterGVK),
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"kind":                  []byte("amazon"),
+			"AWS_ACCESS_KEY_ID":     accessKey,
+			"AWS_SECRET_ACCESS_KEY": secretKey,
+			// use same bucket.
+			"AMAZON_BUCKET":   []byte(DefaultBucket),
+			"AMAZON_PREFIX":   []byte(fmt.Sprintf("%s-subfloder", DefaultBucket)),
+			"AMAZON_REGION":   []byte(DefaultRegion),
+			"AMAZON_ENDPOINT": []byte(endpoint),
+		},
+	}
+
+	return inClusterSecret, chartMuseumSecret, nil
 }
 
 func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
@@ -89,11 +122,21 @@ func (m *MinIOReconciler) ProvisionExternalStorage() (*lcm.CRStatus, error) {
 		minioNotReadyStatus(CreateExternalSecretError, err.Error())
 	}
 
-	p := &lcm.Property{
-		Name:  m.HarborCluster.Spec.Storage.Kind + ExternalStorageSecretSuffix,
-		Value: m.getExternalSecretName(),
+	chartMuseumSecret, err := m.generateSecretForChartMuseum()
+	if err != nil {
+		return minioNotReadyStatus(GenerateChartMuseumStorageSecretError, err.Error()), err
 	}
-	properties := &lcm.Properties{p}
+
+	err = m.KubeClient.Create(chartMuseumSecret)
+	if err != nil {
+		minioNotReadyStatus(CreateChartMuseumStorageSecretError, err.Error())
+	}
+
+	properties := &lcm.Properties{}
+	properties.Add(m.HarborCluster.Spec.Storage.Kind+ExternalStorageSecretSuffix, m.getExternalSecretName())
+	if m.HarborCluster.Spec.ChartMuseum != nil {
+		properties.Add(lcm.ChartMuseumSecretForStorage, chartMuseumSecret.Name)
+	}
 
 	return minioReadyStatus(properties), nil
 }
@@ -145,7 +188,43 @@ func (m *MinIOReconciler) generateS3Secret(labels map[string]string) (*corev1.Se
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			s3Storage:               dataJson,
+			s3Storage: dataJson,
+		},
+	}, nil
+}
+
+func (m *MinIOReconciler) generateSecretForChartMuseum() (secret *corev1.Secret, err error) {
+	if m.HarborCluster.Spec.ChartMuseum == nil {
+		return secret, nil
+	}
+	labels := m.getLabels()
+	switch m.HarborCluster.Spec.Storage.Kind {
+	case s3Storage:
+		labels[LabelOfStorageType] = s3Storage
+		secret, err = m.generateS3SecretForChartMuseum(labels)
+	default:
+		return secret, fmt.Errorf(NotSupportType)
+	}
+	return secret, nil
+}
+
+func (m *MinIOReconciler) generateS3SecretForChartMuseum(labels map[string]string) (*corev1.Secret, error) {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        m.getChartMuseumSecretName(),
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      labels,
+			Annotations: m.generateAnnotations(),
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(m.HarborCluster, goharborv1.HarborClusterGVK),
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
 			"kind":                  []byte("amazon"),
 			"AWS_ACCESS_KEY_ID":     []byte(m.HarborCluster.Spec.Storage.S3.AccessKey),
 			"AWS_SECRET_ACCESS_KEY": []byte(m.HarborCluster.Spec.Storage.S3.SecretKey),
