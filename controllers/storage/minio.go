@@ -26,7 +26,9 @@ const (
 	swiftStorage     = "swift"
 	ossStorage       = "oss"
 
-	DefaultExternalSecretSuffix = "harbor-cluster-storage"
+	DefaultExternalSecretSuffix     = "harbor-cluster-storage"
+	ChartMuseumExternalSecretSuffix = "chart-museum-storage"
+
 	DefaultCredsSecret          = "minio-creds"
 	ExternalStorageSecretSuffix = "Secret"
 
@@ -215,6 +217,10 @@ func (m *MinIOReconciler) getExternalSecretNamespacedName() types.NamespacedName
 
 func (m *MinIOReconciler) getExternalSecretName() string {
 	return m.HarborCluster.Name + "-" + DefaultExternalSecretSuffix
+}
+
+func (m *MinIOReconciler) getChartMuseumSecretName() string {
+	return fmt.Sprintf("%s-%s", m.HarborCluster.Name, ChartMuseumExternalSecretSuffix)
 }
 
 func minioNotReadyStatus(reason, message string) *lcm.CRStatus {

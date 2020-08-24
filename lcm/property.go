@@ -35,6 +35,8 @@ const (
 	SwiftSecretForStorage     string = "swiftSecret"
 	S3SecretForStorage        string = "s3Secret"
 	OssSecretForStorage       string = "ossSecret"
+
+	ChartMuseumSecretForStorage string = "chartMuseumSecret"
 )
 
 //Property is the current property of component.
