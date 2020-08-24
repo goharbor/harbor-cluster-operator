@@ -1,0 +1,6 @@
+- op: add
+  path: /metadata/namespace
+  value: psql-operator-ns
+- op: replace
+  path: /subjects/0/namespace
+  value: psql-operator-ns
