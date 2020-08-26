@@ -140,12 +140,6 @@ Clone the repo:
 git clone https://github.com/minio/operator
 ```
 
-Check out the related commits:
-
-```shell script
-git checkout -b tmp/legancy_code 8d6919ae93fe
-```
-
 Deploy the operator:
 
 ```shell script
