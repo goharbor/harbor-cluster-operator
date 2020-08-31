@@ -24,7 +24,7 @@ This [document](cr_HarborCluster_spec.md) explains the various fields supported 
 
 ## Reconcile flow
 
-[TBD]
+Read [reconcile flow document](./reconcile_flow.md) to learn the overall flow.
 
 ## Misc
 

@@ -195,7 +195,8 @@ storage:
       # Supply number of replicas.
       # For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
       # Note that the operator does not support upgrading from standalone to distributed mode.
-      replicas: 4
+      replicas: 3
+      volumesPerServer: 2
       version: RELEASE.2020-01-03T19-12-21Z
       # VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
       volumeClaimTemplate:
