@@ -32,8 +32,8 @@ metadata:
 spec:
   selfSigned:
     crlDistributionPoints:
-    - "https://sample.goharbor.io"
-    - "https://notary.goharbor.io"
+    - "https://harbor.goharbor.io"
+    - "https://notary-harbor.goharbor.io"
 ---
 apiVersion: goharbor.io/v1
 kind: HarborCluster

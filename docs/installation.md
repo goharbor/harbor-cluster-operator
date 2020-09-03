@@ -25,7 +25,7 @@ A kustomization template is provided to install all the related operators requir
 Use the command shown below to start the installation:
 
 ```shell script
-kubectl -f manifests/all-in-one.yaml
+kubectl apply -f manifests/all-in-one.yaml
 ```
 
 or 
