@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: |
+        curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
+        sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
+    - name: Docker Build & Push to Docker Hub
+      uses: opspresso/action-docker@master
+      with:
+        args: --docker
+      env:
+        USERNAME: ${{ secrets.DOCKER_USER }}
+        PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+        DOCKERFILE: Dockerfile
+        IMAGE_NAME: goharbor/harbor-cluster-operator
+        TAG_NAME: dev
+        LATEST: 'false'

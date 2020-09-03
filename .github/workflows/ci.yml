@@ -5,31 +5,240 @@ on:
     branches:
     - '**'
   pull_request:
-    branches:
-    - master
 
 jobs:
-  # Dockerfile tests
-  docker-build-test:
+  docker-lint:
     runs-on: ubuntu-latest
-    name: Build and Test
+    name: DockerLint
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: lint
+      uses: brpaz/hadolint-action@master
 
+  # Golang tests
+  go-lint:
+    runs-on: ubuntu-latest
+    name: GoLint
     steps:
     - uses: actions/checkout@v2
-    - name: install kubebuilder
-      run: |
-        curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
-        sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
-    - run: make test docker-build
-    - name: Docker Build & Push to Docker Hub
-      if: ${{ github.ref == 'refs/heads/master' }}
-      uses: opspresso/action-docker@master
+    - name: Run golangci-lint
+      uses: actions-contrib/golangci-lint@v1
       with:
-        args: --docker
-      env:
-        USERNAME: ${{ secrets.DOCKER_USER }}
-        PASSWORD: ${{ secrets.DOCKER_TOKEN }}
-        DOCKERFILE: Dockerfile
-        IMAGE_NAME: goharbor/harbor-cluster-operator
-        TAG_NAME: dev
-        LATEST: 'false'
+        golangci_lint_version: 1.22.2
+
+  # go-dependencies:
+  #   runs-on: ubuntu-latest
+  #   name: Dependencies are up to date
+  #   steps:
+  #   - uses: actions/setup-go@v1
+  #     with:
+  #       go-version: 1.14
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - run: go mod tidy
+  #   - run: go mod vendor
+  #   - run: go mod graph
+  #   - run: git status
+  #   - name: Check diff
+  #     run: |
+  #       git diff-index --diff-filter=d --name-only --ignore-cr-at-eol HEAD -- 'vendor'
+  #       test -z "$(git diff-index --diff-filter=d --name-only --ignore-cr-at-eol HEAD -- 'vendor' | grep -v 'vendor/modules.txt')"
+  #   - run: make generate
+  #   - name: Check diff
+  #     run: |
+  #       git restore -- go.mod go.sum
+  #       git diff-index --exit-code --ignore-cr-at-eol HEAD
+
+  go-tests:
+    runs-on: ubuntu-latest
+    name: K8S v${{ matrix.k8sVersion }} (CM v${{ matrix.certManager }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # https://github.com/jetstack/cert-manager/tags
+        certManager: ["0.15.2", "0.16.1"]
+        # https://snapcraft.io/microk8s
+        k8sVersion: ["1.17", "1.18"]
+
+    steps: 
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+
+    - name: Install Kubernetes v${{ matrix.k8sVersion }}
+      run: |
+        which kind || (curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64; sudo install kind /usr/local/bin/)
+        ls /usr/local/kubebuilder || (curl -sSL "https://go.kubebuilder.io/dl/2.0.1/$(go env GOOS)/$(go env GOARCH)" | tar -xz -C /tmp/;sudo mv /tmp/kubebuilder_2.0.1_$(go env GOOS)_$(go env GOARCH) /usr/local/kubebuilder)
+        cat <<EOF | kind create cluster --name harbor --config=-
+        kind: Cluster
+        apiVersion: kind.x-k8s.io/v1alpha4
+        nodes:
+        - role: control-plane
+        - role: worker
+        - role: worker
+        - role: worker
+        EOF
+
+    - uses: actions/checkout@v2
+
+    - name: Install CertManager v${{ matrix.certManager }}
+      run: |
+        # Try the recet way to install crd or fallback to the old one
+        version='${{ matrix.certManager }}'
+        kubectl apply -f "https://github.com/jetstack/cert-manager/releases/download/v${version}/cert-manager.yaml"
+        sleep 5
+        kubectl -n cert-manager wait --for=condition=Available deployment --all --timeout 300s
+
+    - name: Install Ingress
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.35.0/deploy/static/provider/baremetal/deploy.yaml
+        sleep 5
+        kubectl -n ingress-nginx wait --for=condition=Available deployment --all --timeout 300s
+
+    - name: Install harbor-cluster-operator
+      run: |
+        set -xe
+        make docker-build
+        kubectl apply -f manifests/all-in-one.yaml
+        sleep 10
+        kubectl -n harbor-cluster-operator-system wait --for=condition=Available deployment --all --timeout 300s
+        kubectl get all -n harbor-cluster-operator-system
+        kubectl get all -n harbor-operator-system
+
+    - name: Install harbor
+      run: |
+        set -xe
+        IP=`hostname -I | awk '{print $1}'`
+        echo "::set-env name=IP::$IP"
+
+        cat <<EOF | kubectl apply -f -
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: harbor
+        ---
+        # A secret of harbor admin password.
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: admin-secret
+          namespace: harbor
+        data:
+          password: SGFyYm9yMTIzNDU=
+        type: Opaque
+        ---
+        apiVersion: cert-manager.io/v1alpha2
+        kind: Issuer
+        metadata:
+          name: selfsigned-issuer
+          namespace: harbor
+        spec:
+          selfSigned:
+            crlDistributionPoints:
+            - "https://harbor.${IP}.xip.io"
+            - "https://notary-harbor.${IP}.xip.io"
+        ---
+        apiVersion: goharbor.io/v1
+        kind: HarborCluster
+        metadata:
+          name: sz-harbor-cluster
+          namespace: harbor
+        spec:
+          redis:
+            kind: "inCluster"
+            spec:
+              server:
+                replicas: 1
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "300Mi"
+                storage: "10Gi"
+              sentinel:
+                replicas: 1
+              schema: "redis"
+          adminPasswordSecret: "admin-secret"
+          certificateIssuerRef:
+            name: selfsigned-issuer
+          tlsSecret: public-certificate
+          database:
+            kind: "inCluster"
+            spec:
+              replicas: 1
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "300Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "500Mi"
+          publicURL: "https://harbor.${IP}.xip.io"
+          replicas: 1
+          notary:
+            publicUrl: "https://notary-harbor.${IP}.xip.io"
+          disableRedirect: true
+          jobService:
+            workerCount: 10
+            replicas: 1
+          chartMuseum:
+            absoluteURL: true
+          clair:
+            updateInterval: 10
+            vulnerabilitySources:
+            - ubuntu
+            - alphine
+          storage:
+            kind: "inCluster"
+            options:
+              provider: minIO
+              spec:
+                replicas: 3
+                volumesPerServer: 2
+                version: RELEASE.2020-08-13T02-39-50Z
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: standard
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 10Gi
+                resources:
+                  requests:
+                    memory: 200Mi
+                    cpu: 200m
+                  limits:
+                    memory: 500Mi
+                    cpu: 500m
+          version: 1.10.0
+        EOF
+
+        free -h
+        # currently we don't have a good way to wait install done
+        for i in $(seq 1 4);do
+          sleep 30
+          echo $i
+          kubectl get all -n harbor
+        done
+        if ! kubectl -n harbor wait --for=condition=Ready pod --all --timeout 600s ;then
+          echo install harbor failed
+          kubectl get all -n harbor
+          
+          for n in $(kubectl get po -n harbor |grep -v Running|grep 'sz-harbor'|awk '{print $1}');do
+            echo describe $n
+            kubectl describe pod -n harbor $n
+          done
+        else
+          kubectl get all -n harbor
+        fi
+        free -h
+        
+ 
+    - name: tests
+      run: |
+        sudo kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 443:443 --address=0.0.0.0 &
+        sleep 10
+        curl -L -k -f -i -o- "https://127.0.0.1/api/systeminfo" -H "Host: harbor.${IP}.xip.io"

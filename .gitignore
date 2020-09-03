@@ -30,5 +30,3 @@ pkged.go
 ## Mac file
 .DS_Store
 
-## vendor directory
-vendor/
