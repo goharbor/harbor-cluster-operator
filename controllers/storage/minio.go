@@ -6,9 +6,9 @@ import (
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
+	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/google/go-cmp/cmp"
-	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -188,7 +188,9 @@ func (m *MinIOReconciler) checkMinIOReady() (bool, error) {
 	var minioCR minio.Tenant
 	err := m.KubeClient.Get(m.getMinIONamespacedName(), &minioCR)
 
-	if minioCR.Status.CurrentState == "Ready" {
+	// For different version of minIO have different Status.
+	// Ref https://github.com/minio/operator/commit/d387108ea494cf5cec57628c40d40604ac8d57ec#diff-48972613166d50a2acb9d562e33c5247
+	if minioCR.Status.CurrentState == minio.StatusReady || minioCR.Status.CurrentState == minio.StatusInitialized {
 		return true, err
 	}
 	return false, err

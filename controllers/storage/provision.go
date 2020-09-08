@@ -7,8 +7,8 @@ import (
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
+	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
-	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"

@@ -10,7 +10,7 @@ import (
 const (
 	UpperStringRandomType = "A"
 	LowerStringRandomType = "a"
-	NumberRandomType = "0"
+	NumberRandomType      = "0"
 )
 
 func RandomString(randLength int, randType string) (result string) {
