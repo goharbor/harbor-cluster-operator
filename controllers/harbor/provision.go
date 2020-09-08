@@ -132,7 +132,7 @@ func (harbor *HarborReconciler) newChartMuseumComponentIfNecessary() *v1alpha1.C
 				NodeSelector:     nil,
 				ImagePullSecrets: harbor.getImagePullSecrets(),
 			},
-			StorageSecret: harbor.getStorageSecret(),
+			StorageSecret: harbor.getStorageSecretForChartMuseum(),
 			CacheSecret:   harbor.getCacheSecret(lcm.ChartMuseumSecretForCache),
 		}
 	}
@@ -227,6 +227,15 @@ func (harbor *HarborReconciler) getStorageSecret() string {
 		name = lcm.InClusterSecretForStorage
 	}
 	p := harbor.getProperty(goharborv1.ComponentStorage, name)
+	if p != nil {
+		return p.ToString()
+	}
+	return ""
+}
+
+// getStorageSecretForChartMuseum will get the secret name of chart museum storage config.
+func (harbor *HarborReconciler) getStorageSecretForChartMuseum() string {
+	p := harbor.getProperty(goharborv1.ComponentStorage, lcm.ChartMuseumSecretForStorage)
 	if p != nil {
 		return p.ToString()
 	}

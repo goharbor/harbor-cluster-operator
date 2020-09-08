@@ -25,7 +25,7 @@ import (
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
-	minio "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

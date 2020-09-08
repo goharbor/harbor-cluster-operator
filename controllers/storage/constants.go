@@ -15,5 +15,7 @@ const (
 	UpdateExternalSecretError = "Update external storage secret error"
 	NotSupportType            = "The type of storage are not supported"
 	CreateDefaultBucketError  = "Create default bucket in minIO Error"
-	CreateDefaultBucketeError = "Create default buckete in minIO Error"
+
+	CreateChartMuseumStorageSecretError   = "Create chart museum storage secret err"
+	GenerateChartMuseumStorageSecretError = "Generate chart museum storage secret err"
 )

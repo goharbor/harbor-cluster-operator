@@ -129,25 +129,14 @@ kubectl create clusterrolebinding --clusterrole=cluster-admin  --user=system:ser
 #### Storage(minIO)
 
 **NOTES:**
-> The cluster operator is rely on a lower version of minIO operator and we cannot follow the regualr guide to install minIO
->operator. To make compatible with current cluster operator, here we'll install it from the source code.
->
->The related fixing work has been started.
-
-Clone the repo:
-
-```shell script
-git clone https://github.com/minio/operator
-```
-
-Check out the related commits:
-
-```shell script
-git checkout -b tmp/legancy_code 8d6919ae93fe
-```
 
 Deploy the operator:
 
+```shell script
+kubectl apply -k github.com/minio/operator
+```
+
+or using the command shown below after doing overaly pacthing
 ```shell script
 kustomize build | kubectl apply -f -
 ```

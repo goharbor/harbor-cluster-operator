@@ -11,7 +11,6 @@ require (
 	github.com/jackc/pgx/v4 v4.8.1
 	github.com/jetstack/cert-manager v0.16.1
 	github.com/minio/minio-go/v6 v6.0.57
-	github.com/minio/operator v0.0.0-20200814200655-60bf757aac60
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
 	github.com/spotahome/redis-operator v1.0.0
