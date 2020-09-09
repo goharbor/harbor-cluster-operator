@@ -1,11 +1,8 @@
 package cache
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
-	"strings"
-	"time"
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -25,7 +22,6 @@ const (
 
 	RoleName          = "harbor-cluster"
 	RedisSentinelPort = "26379"
-	redisRoleMaster   = "role:master"
 )
 
 // GetRedisName returns the name for redis resources
@@ -35,38 +31,6 @@ func (redis *RedisReconciler) GetRedisName() string {
 
 func generateName(typeName, metaName string) string {
 	return fmt.Sprintf("%s-%s", typeName, metaName)
-}
-
-// Deprecated
-func RandomString(randLength int, randType string) (result string) {
-	var num string = "0123456789"
-	var lower string = "abcdefghijklmnopqrstuvwxyz"
-	var upper string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	b := bytes.Buffer{}
-	if strings.Contains(randType, "0") {
-		b.WriteString(num)
-	}
-	if strings.Contains(randType, "a") {
-		b.WriteString(lower)
-	}
-	if strings.Contains(randType, "A") {
-		b.WriteString(upper)
-	}
-	var str = b.String()
-	var strLen = len(str)
-	if strLen == 0 {
-		result = ""
-		return
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	b = bytes.Buffer{}
-	for i := 0; i < randLength; i++ {
-		b.WriteByte(str[rand.Intn(strLen)])
-	}
-	result = b.String()
-	return
 }
 
 // GetRedisPassword is get redis password

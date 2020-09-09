@@ -141,11 +141,3 @@ func databaseUnknownStatus() *lcm.CRStatus {
 	return lcm.New(goharborv1.DatabaseReady).
 		WithStatus(corev1.ConditionUnknown)
 }
-
-func databaseReadyStatus(properties *lcm.Properties) *lcm.CRStatus {
-	return lcm.New(goharborv1.DatabaseReady).
-		WithStatus(corev1.ConditionTrue).
-		WithReason("database already ready").
-		WithMessage("harbor component database secrets are already create.").
-		WithProperties(*properties)
-}

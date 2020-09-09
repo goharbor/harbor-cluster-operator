@@ -95,7 +95,7 @@ type ImageLocator interface {
 func GetImage(registry *string, image string) string {
 	var imageAddr string
 	if registry == nil {
-		imageAddr = fmt.Sprintf("%s", image)
+		imageAddr = image
 	} else {
 		imageAddr = fmt.Sprintf("%s/%s", *registry, image)
 	}

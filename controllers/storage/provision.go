@@ -201,14 +201,14 @@ func (m *MinIOReconciler) generateSecretForChartMuseum() (secret *corev1.Secret,
 	switch m.HarborCluster.Spec.Storage.Kind {
 	case s3Storage:
 		labels[LabelOfStorageType] = s3Storage
-		secret, err = m.generateS3SecretForChartMuseum(labels)
+		secret = m.generateS3SecretForChartMuseum(labels)
 	default:
 		return secret, fmt.Errorf(NotSupportType)
 	}
 	return secret, nil
 }
 
-func (m *MinIOReconciler) generateS3SecretForChartMuseum(labels map[string]string) (*corev1.Secret, error) {
+func (m *MinIOReconciler) generateS3SecretForChartMuseum(labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -233,7 +233,7 @@ func (m *MinIOReconciler) generateS3SecretForChartMuseum(labels map[string]strin
 			"AMAZON_REGION":         []byte(m.HarborCluster.Spec.Storage.S3.Region),
 			"AMAZON_ENDPOINT":       []byte(m.HarborCluster.Spec.Storage.S3.RegionEndpoint),
 		},
-	}, nil
+	}
 }
 
 func (m *MinIOReconciler) generateAzureSecret(labels map[string]string) (*corev1.Secret, error) {
