@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	"github.com/goharbor/harbor-cluster-operator/controllers/common"
+
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -66,9 +68,8 @@ func (redis *RedisReconciler) generateRedisCR() (*unstructured.Unstructured, err
 
 //generateRedisSecret returns redis password secret
 func (redis *RedisReconciler) generateRedisSecret() *corev1.Secret {
-	//labels := MergeLabels(redis.Labels, generateLabels(RoleName, redis.HarborCluster.Name))
 
-	passStr := RandomString(8, "a")
+	passStr := common.RandomString(8, "a")
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

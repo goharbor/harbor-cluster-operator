@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
@@ -154,11 +155,7 @@ func (m *MinIOReconciler) minioInit() error {
 }
 
 func (m *MinIOReconciler) checkMinIOUpdate() bool {
-	if m.DesiredMinIOCR.Spec.Image != m.CurrentMinIOCR.Spec.Image {
-		return true
-	}
-
-	return false
+	return m.DesiredMinIOCR.Spec.Image != m.CurrentMinIOCR.Spec.Image
 }
 
 func (m *MinIOReconciler) checkExternalUpdate() bool {
