@@ -1,84 +1,105 @@
 package image
 
-import "fmt"
+import (
+	"fmt"
 
-// ImageGetter will proxy the ImageLocator
-type ImageGetter interface {
-	ImageLocator
+	"github.com/blang/semver"
+)
+
+// Getter will proxy the Locator
+type Getter interface {
+	Locator
 }
 
-// ImageGetterImpl contains the concrete ImageLocator instance,
-// if registry is not null, all the methods in ImageGetter will be wrapped to add the registry prefix.
-type ImageGetterImpl struct {
-	locator       ImageLocator
+// GetterImpl contains the concrete Locator instance,
+// if registry is not null, all the methods in Getter will be wrapped to add the registry prefix.
+type GetterImpl struct {
+	locator       Locator
 	registry      *string
 	harborVersion string
 }
 
-func NewImageGetter(registry *string, harborVersion string) (ImageGetter, error) {
+func NewImageGetter(registry *string, harborVersion string) (Getter, error) {
 	// The version should be validated at the spec level to make sure it's in the supported list
 	// or keep the current returns
-	var locator ImageGetter
-	switch harborVersion {
-	case "1.10.0":
+	hv, err := semver.Parse(harborVersion)
+	if err != nil {
+		return nil, fmt.Errorf("invalid harbor version in the CR: %w", err)
+	}
+
+	versionRange, err := semver.ParseRange(">1.10.0 <2.0.0")
+	if err != nil {
+		return nil, fmt.Errorf("invalid harbor version range: %w", err)
+	}
+
+	// As "1.10.0" is compatible with semver, ignore the make error
+	vM1m10p0, _ := semver.Make("1.10.0")
+
+	var locator Getter
+
+	if hv.Compare(vM1m10p0) == 0 {
 		locator = &harborV1_10_0_ImageLocator{}
+	} else if versionRange(hv) {
+		locator = &harborVM1m10pxImageLocator{
+			HarborVersion: harborVersion,
+		}
+	} else {
+		return nil, fmt.Errorf("failed to get relate images with harbor version %s, only support '1.10.x'", harborVersion)
 	}
-	if locator == nil {
-		return nil, fmt.Errorf("failed to get relate images with this harbor version %s ", harborVersion)
-	}
-	return &ImageGetterImpl{
+
+	return &GetterImpl{
 		locator:       locator,
 		registry:      registry,
 		harborVersion: harborVersion,
 	}, nil
 }
 
-func (i *ImageGetterImpl) CoreImage() string {
+func (i *GetterImpl) CoreImage() string {
 	return GetImage(i.registry, i.locator.CoreImage())
 }
 
-func (i *ImageGetterImpl) ChartMuseumImage() string {
+func (i *GetterImpl) ChartMuseumImage() string {
 	return GetImage(i.registry, i.locator.ChartMuseumImage())
 }
 
-func (i *ImageGetterImpl) ClairImage() string {
+func (i *GetterImpl) ClairImage() string {
 	return GetImage(i.registry, i.locator.ClairImage())
 }
 
-func (i *ImageGetterImpl) ClairAdapterImage() string {
+func (i *GetterImpl) ClairAdapterImage() string {
 	return GetImage(i.registry, i.locator.ClairAdapterImage())
 }
 
-func (i *ImageGetterImpl) JobServiceImage() string {
+func (i *GetterImpl) JobServiceImage() string {
 	return GetImage(i.registry, i.locator.JobServiceImage())
 }
 
-func (i *ImageGetterImpl) NotaryServerImage() string {
+func (i *GetterImpl) NotaryServerImage() string {
 	return GetImage(i.registry, i.locator.NotaryServerImage())
 }
 
-func (i *ImageGetterImpl) NotarySingerImage() string {
+func (i *GetterImpl) NotarySingerImage() string {
 	return GetImage(i.registry, i.locator.NotarySingerImage())
 }
 
-func (i *ImageGetterImpl) NotaryDBMigratorImage() string {
+func (i *GetterImpl) NotaryDBMigratorImage() string {
 	return GetImage(i.registry, i.locator.NotaryDBMigratorImage())
 }
 
-func (i *ImageGetterImpl) PortalImage() string {
+func (i *GetterImpl) PortalImage() string {
 	return GetImage(i.registry, i.locator.PortalImage())
 }
 
-func (i *ImageGetterImpl) RegistryImage() string {
+func (i *GetterImpl) RegistryImage() string {
 	return GetImage(i.registry, i.locator.RegistryImage())
 }
 
-func (i *ImageGetterImpl) RegistryControllerImage() string {
+func (i *GetterImpl) RegistryControllerImage() string {
 	return GetImage(i.registry, i.locator.RegistryControllerImage())
 }
 
-// ImageLocator provider method to get harbor component image.
-type ImageLocator interface {
+// Locator provider method to get harbor component image.
+type Locator interface {
 	CoreImage() string
 	ChartMuseumImage() string
 	ClairImage() string

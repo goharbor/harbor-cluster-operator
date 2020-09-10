@@ -3,6 +3,7 @@ module github.com/goharbor/harbor-cluster-operator
 go 1.13
 
 require (
+	github.com/blang/semver v3.5.0+incompatible
 	github.com/go-logr/logr v0.2.1-0.20200730175230-ee2de8da5be6
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/goharbor/harbor-operator v0.5.2-0.20200817115335-b421dca2f798

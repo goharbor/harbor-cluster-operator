@@ -25,7 +25,7 @@ type HarborReconciler struct {
 	HarborCluster       *goharborv1.HarborCluster
 	CurrentHarborCR     *v1alpha1.Harbor
 	DesiredHarborCR     *v1alpha1.Harbor
-	ImageGetter         image.ImageGetter
+	ImageGetter         image.Getter
 	ComponentToCRStatus map[goharborv1.Component]*lcm.CRStatus
 }
 

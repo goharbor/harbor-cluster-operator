@@ -40,7 +40,7 @@ type GetOptions struct {
 	Log         logr.Logger
 	DClient     k8s.DClient
 	Scheme      *runtime.Scheme
-	ImageGetter image.ImageGetter
+	ImageGetter image.Getter
 }
 
 type ServiceGetterImpl struct {
