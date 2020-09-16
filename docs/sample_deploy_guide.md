@@ -28,12 +28,23 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: selfsigned-issuer
-  namespace: harbor
+  namespace: sample
 spec:
-  selfSigned:
-    crlDistributionPoints:
-    - "https://harbor.goharbor.io"
-    - "https://notary-harbor.goharbor.io"
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: public-certificate
+  namespace: sample
+spec:
+  secretName: public-certificate
+  dnsNames:
+  - sample.goharbor.io
+  - notary.goharbor.io
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
 ---
 apiVersion: goharbor.io/v1
 kind: HarborCluster
@@ -107,7 +118,7 @@ spec:
           limits:
             memory: 1Gi
             cpu: 1000m
-  version: 1.10.0
+  version: 1.10.4
 ```
 
 ## Deploy
