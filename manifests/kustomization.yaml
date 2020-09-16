@@ -3,7 +3,7 @@ kind: Kustomization
 
 commonAnnotations:
   goharbor.io/cluster-version: "0.5.0"
-  goharbor.io/template-version: "20200823-2357"
+  goharbor.io/template-version: "2020915-1140"
   goharbor.io/template-engine: "Kustomization"
 
 resources:
@@ -14,7 +14,7 @@ resources:
 bases:
   - ../config/default
   - github.com/zalando/postgres-operator/manifests
-  - github.com/minio/operator?ref=master
+  - github.com/minio/operator?ref=60bf757aac607a914b414e554188a77a4760aa0e
 
 patchesJson6902:
 # Redis
