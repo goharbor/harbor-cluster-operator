@@ -168,8 +168,8 @@ func (r *HarborClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		log.Error(err, "error when update harbor cluster status.")
 		return ReconcileWaitResult, err
 	}
-
-	return ctrl.Result{}, nil
+	// wait to resync to update status.
+	return ReconcileWaitResult, nil
 }
 
 func (r *HarborClusterReconciler) DefaultComponentStatus() map[goharborv1.Component]*lcm.CRStatus {
