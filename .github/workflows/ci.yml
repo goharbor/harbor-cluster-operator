@@ -25,7 +25,8 @@ jobs:
     - name: Run golangci-lint
       uses: actions-contrib/golangci-lint@v1
       with:
-        golangci_lint_version: 1.22.2
+        golangci_lint_version: 1.23
+        args: run -v --timeout 300s
 
   # go-dependencies:
   #   runs-on: ubuntu-latest
@@ -52,6 +53,30 @@ jobs:
 
   go-tests:
     runs-on: ubuntu-latest
+    name: go tests
+
+    steps: 
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.14
+
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: make test
+      run: |
+        go env
+        test -d /usr/local/kubebuilder || (curl -sSL "https://go.kubebuilder.io/dl/2.0.1/$(go env GOOS)/$(go env GOARCH)" | tar -xz -C /tmp/;sudo mv /tmp/kubebuilder_2.0.1_$(go env GOOS)_$(go env GOARCH) /usr/local/kubebuilder)
+        make test
+
+  k8s-tests:
+    runs-on: ubuntu-latest
     name: K8S v${{ matrix.k8sVersion }} (CM v${{ matrix.certManager }})
 
     strategy:
@@ -60,10 +85,10 @@ jobs:
         # https://github.com/jetstack/cert-manager/tags
         certManager: ["0.15.2", "0.16.1"]
         # https://snapcraft.io/microk8s
-        k8sVersion: ["1.17", "1.18"]
+        k8sVersion: ["1.17", "1.18", "1.19"]
 
     steps: 
-    - name: Set up Go 1.13
+    - name: Set up Go
       uses: actions/setup-go@v1
       with:
         go-version: 1.14
@@ -71,7 +96,7 @@ jobs:
     - name: Install Kubernetes v${{ matrix.k8sVersion }}
       run: |
         which kind || (curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64; sudo install kind /usr/local/bin/)
-        ls /usr/local/kubebuilder || (curl -sSL "https://go.kubebuilder.io/dl/2.0.1/$(go env GOOS)/$(go env GOARCH)" | tar -xz -C /tmp/;sudo mv /tmp/kubebuilder_2.0.1_$(go env GOOS)_$(go env GOARCH) /usr/local/kubebuilder)
+        test -d /usr/local/kubebuilder || (curl -sSL "https://go.kubebuilder.io/dl/2.0.1/$(go env GOOS)/$(go env GOARCH)" | tar -xz -C /tmp/;sudo mv /tmp/kubebuilder_2.0.1_$(go env GOOS)_$(go env GOARCH) /usr/local/kubebuilder)
         cat <<EOF | kind create cluster --name harbor --config=-
         kind: Cluster
         apiVersion: kind.x-k8s.io/v1alpha4
@@ -218,7 +243,7 @@ jobs:
 
         free -h
         # currently we don't have a good way to wait install done
-        for i in $(seq 1 4);do
+        for i in $(seq 1 6);do
           sleep 30
           echo $i
           kubectl get all -n harbor
@@ -235,6 +260,10 @@ jobs:
           kubectl get all -n harbor
         fi
         free -h
+        if ! kubectl -n harbor wait --for=condition=Available deployment/sz-harbor-cluster-harbor-core;then
+          echo harbor-core not ready
+          exit 1;
+        fi
         
  
     - name: tests
