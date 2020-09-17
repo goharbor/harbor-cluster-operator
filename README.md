@@ -46,15 +46,26 @@ You can follow the [installation guide](docs/installation.md) to deploy this ope
 
 Additionally, follow [sample deployment guide](./docs/sample_deploy_guide.md) to have a try of deploying the sample to your K8s clusters.
 
-## Compatibility
+## Versioning & Dependencies
 
-| Versions (Underlying\Operator) |  1.0  |  1.1  |  x.y |
-|--------------------------------|-------|-------|------|
-| Kubernetes | 1.17+ | [TBD] | [TBD] |
-| harbor-operator | 1.0 | [TBD] | [TBD] |
-| PostgresSQL operator | [TBD] | [TBD] | [TBD] |
-| Redis operator | [TBD] | [TBD] | [TBD] |
-| minIO operator | [TBD] | [TBD] | [TBD] |
+| Component \ Versions |  0.5.0 | 1.0.0 | 1.1.0 |
+|----------------------|--------|-------|-------|
+| **Harbor**           | 1.10.x | [TBD] | [TBD] |
+|                      |        |               |
+| harbor-operator      | 0.5.2  | [TBD] | [TBD] |
+| PostgresSQL operator | [TBD]  | [TBD] | [TBD] |
+| Redis operator       | [TBD]  | [TBD] | [TBD] |
+| minIO operator       | 3.0.13 | [TBD] | [TBD] |
+
+## Compatibilities
+
+| Kubernetes / Versions |  0.5.0  |  1.0.0  | 1.1.0 |
+|-----------------------|---------|---------|------|
+|     1.17              |    +    | [TBD] | [TBD] |
+|     1.18              |    +    | [TBD] | [TBD] |
+|     1.19              |    +    | [TBD] | [TBD] |
+
+**Notes:** `+`= verified `-`= not verified
 
 
 ## Development
