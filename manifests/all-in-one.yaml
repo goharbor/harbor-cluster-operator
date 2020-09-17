@@ -4,7 +4,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     control-plane: controller-manager
   name: harbor-cluster-operator-system
@@ -15,7 +15,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-system
 ---
 apiVersion: v1
@@ -24,7 +24,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: minio-operator
 ---
 apiVersion: v1
@@ -33,7 +33,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: psql-operator-ns
 ---
 apiVersion: v1
@@ -42,7 +42,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: redis-operator-ns
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -52,7 +52,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.2.4
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   creationTimestamp: null
   name: harborclusters.goharbor.io
 spec:
@@ -710,7 +710,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.2.4
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbors.goharbor.io
 spec:
   additionalPrinterColumns:
@@ -751,7 +751,8 @@ spec:
     singular: harbor
   preserveUnknownFields: false
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Harbor is the Schema for the harbors API
@@ -1125,7 +1126,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.3.0
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   creationTimestamp: null
   name: tenants.minio.min.io
 spec:
@@ -2192,7 +2193,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: minio-operator
   namespace: minio-operator
 ---
@@ -2202,7 +2203,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 ---
@@ -2212,7 +2213,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: redisoperator
   namespace: redis-operator-ns
 ---
@@ -2222,7 +2223,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-leader-election-role
   namespace: harbor-cluster-operator-system
 rules:
@@ -2259,7 +2260,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-leader-election-role
   namespace: harbor-operator-system
 rules:
@@ -2296,7 +2297,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 rules:
@@ -2479,7 +2480,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-pod
   namespace: psql-operator-ns
 rules:
@@ -2527,7 +2528,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: redisoperator
   namespace: redis-operator-ns
 rules:
@@ -2579,7 +2580,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   creationTimestamp: null
   name: harbor-cluster-operator-manager-role
 rules:
@@ -2713,7 +2714,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-proxy-role
 rules:
 - apiGroups:
@@ -2735,7 +2736,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   creationTimestamp: null
   name: harbor-operator-manager-role
 rules:
@@ -2834,7 +2835,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-proxy-role
 rules:
 - apiGroups:
@@ -2856,7 +2857,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: minio-operator-role
 rules:
 - apiGroups:
@@ -2938,7 +2939,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-leader-election-rolebinding
   namespace: harbor-cluster-operator-system
 roleRef:
@@ -2956,7 +2957,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-leader-election-rolebinding
   namespace: harbor-operator-system
 roleRef:
@@ -2974,7 +2975,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 roleRef:
@@ -2992,7 +2993,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: redisoperator
   namespace: redis-operator-ns
 roleRef:
@@ -3010,7 +3011,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3027,7 +3028,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3044,7 +3045,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3061,7 +3062,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3078,7 +3079,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: minio-operator-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3098,8 +3099,8 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
-  name: harbor-operator-operator-config-4k8gmmdgm2
+    goharbor.io/template-version: 2020915-1140
+  name: harbor-operator-operator-config-6g2hb7ttdf
   namespace: harbor-operator-system
 ---
 apiVersion: v1
@@ -3148,7 +3149,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 ---
@@ -3158,7 +3159,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     control-plane: controller-manager
   name: harbor-cluster-operator-controller-manager-metrics-service
@@ -3177,7 +3178,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-webhook-service
   namespace: harbor-cluster-operator-system
 spec:
@@ -3193,7 +3194,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     control-plane: controller-manager
   name: harbor-operator-controller-manager-metrics-service
@@ -3212,7 +3213,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-webhook-service
   namespace: harbor-operator-system
 spec:
@@ -3228,7 +3229,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     name: minio-operator
   name: operator
@@ -3249,7 +3250,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 spec:
@@ -3267,7 +3268,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     control-plane: controller-manager
   name: harbor-cluster-operator-controller-manager
@@ -3282,7 +3283,7 @@ spec:
       annotations:
         goharbor.io/cluster-version: 0.5.0
         goharbor.io/template-engine: Kustomization
-        goharbor.io/template-version: 20200823-2357
+        goharbor.io/template-version: 2020915-1140
       labels:
         control-plane: controller-manager
     spec:
@@ -3332,7 +3333,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     control-plane: controller-manager
   name: harbor-operator-controller-manager
@@ -3347,7 +3348,7 @@ spec:
       annotations:
         goharbor.io/cluster-version: 0.5.0
         goharbor.io/template-engine: Kustomization
-        goharbor.io/template-version: 20200823-2357
+        goharbor.io/template-version: 2020915-1140
       labels:
         control-plane: controller-manager
     spec:
@@ -3362,7 +3363,7 @@ spec:
           value: 'env:'
         envFrom:
         - configMapRef:
-            name: harbor-operator-operator-config-4k8gmmdgm2
+            name: harbor-operator-operator-config-6g2hb7ttdf
             optional: true
         image: goharbor/harbor-operator:latest
         name: manager
@@ -3372,10 +3373,10 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 1000m
+            cpu: 500m
             memory: 300Mi
           requests:
-            cpu: 500m
+            cpu: 300m
             memory: 200Mi
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -3404,7 +3405,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: minio-operator
   namespace: minio-operator
 spec:
@@ -3417,7 +3418,7 @@ spec:
       annotations:
         goharbor.io/cluster-version: 0.5.0
         goharbor.io/template-engine: Kustomization
-        goharbor.io/template-version: 20200823-2357
+        goharbor.io/template-version: 2020915-1140
       labels:
         name: minio-operator
     spec:
@@ -3440,7 +3441,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: postgres-operator
   namespace: psql-operator-ns
 spec:
@@ -3453,7 +3454,7 @@ spec:
       annotations:
         goharbor.io/cluster-version: 0.5.0
         goharbor.io/template-engine: Kustomization
-        goharbor.io/template-version: 20200823-2357
+        goharbor.io/template-version: 2020915-1140
       labels:
         name: postgres-operator
     spec:
@@ -3483,7 +3484,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   labels:
     app: redisoperator
   name: redisoperator
@@ -3500,7 +3501,7 @@ spec:
       annotations:
         goharbor.io/cluster-version: 0.5.0
         goharbor.io/template-engine: Kustomization
-        goharbor.io/template-version: 20200823-2357
+        goharbor.io/template-version: 2020915-1140
       labels:
         app: redisoperator
     spec:
@@ -3528,7 +3529,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-serving-cert
   namespace: harbor-cluster-operator-system
 spec:
@@ -3546,7 +3547,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-serving-cert
   namespace: harbor-operator-system
 spec:
@@ -3564,7 +3565,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-selfsigned-issuer
   namespace: harbor-cluster-operator-system
 spec:
@@ -3576,7 +3577,7 @@ metadata:
   annotations:
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-selfsigned-issuer
   namespace: harbor-operator-system
 spec:
@@ -3589,7 +3590,7 @@ metadata:
     cert-manager.io/inject-ca-from: harbor-cluster-operator-system/harbor-cluster-operator-serving-cert
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-mutating-webhook-configuration
 webhooks:
 - clientConfig:
@@ -3618,7 +3619,7 @@ metadata:
     cert-manager.io/inject-ca-from: harbor-operator-system/harbor-operator-serving-cert
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-operator-mutating-webhook-configuration
 webhooks:
 - clientConfig:
@@ -3647,7 +3648,7 @@ metadata:
     cert-manager.io/inject-ca-from: harbor-cluster-operator-system/harbor-cluster-operator-serving-cert
     goharbor.io/cluster-version: 0.5.0
     goharbor.io/template-engine: Kustomization
-    goharbor.io/template-version: 20200823-2357
+    goharbor.io/template-version: 2020915-1140
   name: harbor-cluster-operator-validating-webhook-configuration
 webhooks:
 - clientConfig:
