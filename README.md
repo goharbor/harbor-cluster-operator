@@ -1,6 +1,6 @@
 # harbor-cluster-operator
 
-**ATTENTIONS: THIS PROJECT IS STILL UNDER DEVELOPMENT AND NOT READY YET.**
+**NOTES:** The `master` branch may be in an *unstable or even broken state* during development. Currently, please use branch [release-0.5.0](https://github.com/goharbor/harbor-cluster-operator/tree/release-0.5.0) instead of the `master` branch in order to get a stable deployment.
 
 [Harbor](https://github.com/goharbor/harbor) is a CNCF hosted open source trusted cloud native registry project that stores, signs, and scans content.
 
