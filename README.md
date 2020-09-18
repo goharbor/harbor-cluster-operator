@@ -21,16 +21,16 @@ Project codebase is scaffolded by [kubebuilder](https://kubebuilder.io/) V2(.2).
 
 With this operator, you're able to deploy and manage a full Harbor stack:
 
-- Provision a full Harbor stack including the relevant dependent services like database(PostgresSQL), cache(Redis) and 
+- [x] Provision a full Harbor stack including the relevant dependent services like database(PostgresSQL), cache(Redis) and 
 in-cluster storage(minIO) services in a scalable and high-available way.
-- Inherit deployment customization capabilities from the underlying harbor-operator, the following components could be optional:
+- [x] Inherit deployment customization capabilities from the underlying harbor-operator, the following components could be optional:
   - ChartMuseum
   - Notary
   - Clair
   - Trivy
-- Update the spec of the deployed Harbor stack to do adjustments like replicas (scalability) and service properties.
-- Upgrade the deployed Harbor stack to a newer version.
-- Delete the Harbor stack and all the related resources owned by the stack.
+- [x] Update the spec of the deployed Harbor stack to do adjustments like replicas (scalability) and service properties.
+- [ ] Upgrade the deployed Harbor stack to a newer version.
+- [x] Delete the Harbor stack and all the related resources owned by the stack.
 
 ## Design
 
