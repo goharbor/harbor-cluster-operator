@@ -6,7 +6,8 @@ Make sure the operators have been deployed to the target K8s cluster by followin
 
 ## Create deployment manifest
 
-Refer the `HarborCluster` [spec](./cr_HarborCluster_spec.md) to create a deployment manifest. e.g.(including namespace and secrets):
+Refer the `HarborCluster` [spec](./cr_HarborCluster_spec.md) to create a deployment manifest. e.g.(including namespace and secrets) 
+or clone and modify the sample manifest shown [here](../samples/incluster/inCluster.yaml):
 
 ```yaml
 apiVersion: v1
