@@ -89,6 +89,6 @@ patchesJson6902:
 images:
   - name: controller
     newName: goharbor/harbor-cluster-operator
-    newTag: latest
+    newTag: 0.5.0-rc1
   - name: goharbor/harbor-operator
-    newTag: latest
+    newTag: 0.5.2-rc1
