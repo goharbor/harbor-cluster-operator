@@ -4,7 +4,7 @@
 
 OS Debian 9, 8G mem 4 CPU
 
-## Prerequirement
+## Prerequisites
 
 Kubernetes API running. Or create a local k8s using KIND.
 
@@ -46,8 +46,8 @@ Before using kind, be sure docker has been installed.
 ```shell script
 curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64
 mv ./kind /usr/local/bin/kind
-// create a local k8s in docker
-./kind create cluster
+# create a local k8s in docker
+kind create cluster
 ```
 
 Deploy ingress-nginx-controller
@@ -55,7 +55,6 @@ Deploy ingress-nginx-controller
 ```shell script
 helm install nginx stable/nginx-ingress \
    --set-string 'controller.config.proxy-body-size'=0 \
-   --set-string 'controller.nodeSelector.ingress-ready'=true \
    --set 'controller.service.type'=NodePort \
    --set 'controller.tolerations[0].key'=node-role.kubernetes.io/master \
    --set 'controller.tolerations[0].operator'=Equal \
@@ -93,7 +92,7 @@ Deploy an external minio cluster in k8s for test.
 If you want harbor cluster operator to auto deploy a redis cluster, or you already have an external storage service. ignore it.
 
 ```shell script
-// deploy a minio cluster using helm chart. create a default bucket harbor（in default namespace）
+# deploy a minio cluster using helm chart. create a default bucket harbor（in default namespace）
 helm install all-in-one-minio stable/minio --set defaultBucket.enabled=true,defaultBucket.bucketName=harbor
 ```
 
@@ -172,6 +171,7 @@ spec:
     kind: external
     spec:
       resources: {}
+      # we create it when install postgresql
       secretName: db-secret
   jobService:
     replicas: 1
