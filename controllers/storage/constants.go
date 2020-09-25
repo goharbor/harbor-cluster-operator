@@ -6,6 +6,7 @@ const (
 	UpdateMinIOError        = "Update minIO error"
 	CreateMinIOSecretError  = "Create minIO secret error"
 	CreateMinIOServiceError = "Create service of minIO error"
+	CreateMinIOIngressError = "Create ingress of minIO error"
 	GetMinIOSecretError     = "Get minIO secret error"
 	CreateMinIOError        = "Create minIO CR error"
 	ScaleMinIOError         = "Scale minIO error"
