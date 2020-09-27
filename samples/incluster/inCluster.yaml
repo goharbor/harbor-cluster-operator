@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample
+---
+# A secret of harbor admin password.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-secret
+  namespace: sample
+data:
+  password: SGFyYm9yMTIzNDU=
+type: Opaque
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: sample
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: public-certificate
+  namespace: sample
+spec:
+  secretName: public-certificate
+  dnsNames:
+  - sample.goharbor.io
+  - notary.goharbor.io
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
+apiVersion: goharbor.io/v1
+kind: HarborCluster
+metadata:
+  name: sz-harbor-cluster
+  namespace: sample
+spec:
+  redis:
+    kind: "inCluster"
+    spec:
+      server:
+        replicas: 1
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        storage: "10Gi"
+      sentinel:
+        replicas: 1
+      schema: "redis"
+  adminPasswordSecret: "admin-secret"
+  certificateIssuerRef:
+    name: selfsigned-issuer
+  tlsSecret: public-certificate
+  database:
+    kind: "inCluster"
+    spec:
+      replicas: 2
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+  publicURL: "https://sample.goharbor.io"
+  disableRedirect: true
+  replicas: 2
+  notary:
+    publicUrl: "https://notary.goharbor.io"
+  jobService:
+    workerCount: 10
+    replicas: 2
+  chartMuseum:
+    absoluteURL: true
+  clair:
+    updateInterval: 10
+    vulnerabilitySources:
+     - ubuntu
+     - alphine
+  storage:
+    kind: "inCluster"
+    options:
+      provider: minIO
+      spec:
+        replicas: 2 
+        volumesPerServer: 2
+        version: RELEASE.2020-08-13T02-39-50Z
+        volumeClaimTemplate:
+          spec:
+            storageClassName: standard
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+  version: 1.10.4
