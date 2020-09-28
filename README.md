@@ -1,6 +1,9 @@
 # harbor-cluster-operator
 
-**ATTENTIONS: THIS PROJECT IS STILL UNDER DEVELOPMENT AND NOT READY YET.**
+![CI](https://github.com/goharbor/harbor-cluster-operator/workflows/CI/badge.svg)
+![Code scanning - action](https://github.com/goharbor/harbor-cluster-operator/workflows/Code%20scanning%20-%20action/badge.svg)
+
+>**NOTES:** The `master` branch may be in an *unstable or even broken state* during development. Currently, please use branch [release-0.5.0](https://github.com/goharbor/harbor-cluster-operator/tree/release-0.5.0) instead of the `master` branch in order to get a stable deployment.
 
 [Harbor](https://github.com/goharbor/harbor) is a CNCF hosted open source trusted cloud native registry project that stores, signs, and scans content.
 
@@ -21,16 +24,16 @@ Project codebase is scaffolded by [kubebuilder](https://kubebuilder.io/) V2(.2).
 
 With this operator, you're able to deploy and manage a full Harbor stack:
 
-- Provision a full Harbor stack including the relevant dependent services like database(PostgresSQL), cache(Redis) and 
+- [x] Provision a full Harbor stack including the relevant dependent services like database(PostgresSQL), cache(Redis) and 
 in-cluster storage(minIO) services in a scalable and high-available way.
-- Inherit deployment customization capabilities from the underlying harbor-operator, the following components could be optional:
+- [x] Inherit deployment customization capabilities from the underlying harbor-operator, the following components could be optional:
   - ChartMuseum
   - Notary
   - Clair
   - Trivy
-- Update the spec of the deployed Harbor stack to do adjustments like replicas (scalability) and service properties.
-- Upgrade the deployed Harbor stack to a newer version.
-- Delete the Harbor stack and all the related resources owned by the stack.
+- [x] Update the spec of the deployed Harbor stack to do adjustments like replicas (scalability) and service properties.
+- [ ] Upgrade the deployed Harbor stack to a newer version.
+- [x] Delete the Harbor stack and all the related resources owned by the stack.
 
 ## Design
 
