@@ -3,13 +3,17 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
+	"net/url"
 	"reflect"
+	"strings"
 
 	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/common"
 	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1beta1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +52,15 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstance *minio.Tenant) (
 		return nil, nil, err
 	}
 
-	endpoint := fmt.Sprintf("http://%s.%s.svc:%s", m.getServiceName(), m.HarborCluster.Namespace, "9000")
+	var endpoint string
+	if !m.HarborCluster.Spec.DisableRedirect {
+		_, endpoint, err = GetMinIOHostAndSchema(m.HarborCluster.Spec.PublicURL)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		endpoint = fmt.Sprintf("http://%s.%s.svc:%s", m.getServiceName(), m.HarborCluster.Namespace, "9000")
+	}
 
 	data := map[string]string{
 		"accesskey":      string(accessKey),
@@ -364,6 +376,22 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 		return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
 	}
 
+	// if disable redirect docker registry, we will expose minIO access endpoint by ingress.
+	if !m.HarborCluster.Spec.DisableRedirect {
+		ingress := m.generateIngress()
+		err = m.KubeClient.Create(ingress)
+		if err != nil && !k8serror.IsAlreadyExists(err) {
+			return minioNotReadyStatus(CreateMinIOIngressError, err.Error()), err
+		}
+		ingress.OwnerReferences = []metav1.OwnerReference{
+			*metav1.NewControllerRef(&minioCR, HarborClusterMinIOGVK),
+		}
+		err = m.KubeClient.Update(ingress)
+		if err != nil {
+			return minioNotReadyStatus(CreateMinIOServiceError, err.Error()), err
+		}
+	}
+
 	service.OwnerReferences = []metav1.OwnerReference{
 		*metav1.NewControllerRef(&minioCR, HarborClusterMinIOGVK),
 	}
@@ -373,6 +401,74 @@ func (m *MinIOReconciler) Provision() (*lcm.CRStatus, error) {
 	}
 
 	return minioUnknownStatus(), nil
+}
+
+func GetMinIOHostAndSchema(accessURL string) (scheme string, host string, err error) {
+	u, err := url.Parse(accessURL)
+	if err != nil {
+		return "", "", errors.Wrap(err, "invalid public URL")
+	}
+
+	hosts := strings.SplitN(u.Host, ":", 1)
+	minioHost := "minio." + hosts[0]
+
+	return u.Scheme, minioHost, nil
+}
+
+func (m *MinIOReconciler) generateIngress() *netv1.Ingress {
+	scheme, minioHost, err := GetMinIOHostAndSchema(m.HarborCluster.Spec.PublicURL)
+	if err != nil {
+		panic(err)
+	}
+
+	var tls []netv1.IngressTLS
+	if scheme == "https" {
+		tls = []netv1.IngressTLS{
+			{
+				SecretName: m.HarborCluster.Spec.TLSSecret,
+				Hosts: []string{
+					minioHost,
+				},
+			},
+		}
+	}
+
+	annotations := make(map[string]string)
+	annotations["nginx.ingress.kubernetes.io/proxy-body-size"] = "0"
+
+	return &netv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Ingress",
+			APIVersion: netv1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        m.getServiceName(),
+			Namespace:   m.HarborCluster.Namespace,
+			Labels:      m.getLabels(),
+			Annotations: annotations,
+		},
+		Spec: netv1.IngressSpec{
+			TLS: tls,
+			Rules: []netv1.IngressRule{
+				{
+					Host: minioHost,
+					IngressRuleValue: netv1.IngressRuleValue{
+						HTTP: &netv1.HTTPIngressRuleValue{
+							Paths: []netv1.HTTPIngressPath{
+								{
+									Path: "/",
+									Backend: netv1.IngressBackend{
+										ServiceName: "minio",
+										ServicePort: intstr.FromInt(9000),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 func (m *MinIOReconciler) generateMinIOCR() *minio.Tenant {
@@ -433,6 +529,10 @@ func (m *MinIOReconciler) generateMinIOCR() *minio.Tenant {
 
 func (m *MinIOReconciler) getServiceName() string {
 	return m.HarborCluster.Name + "-" + DefaultMinIO
+}
+
+func (m *MinIOReconciler) getServicePort() int32 {
+	return 9000
 }
 
 func (m *MinIOReconciler) getResourceRequirements() *corev1.ResourceRequirements {
@@ -499,7 +599,8 @@ func (m *MinIOReconciler) generateService() *corev1.Service {
 			Selector: m.getLabels(),
 			Ports: []corev1.ServicePort{
 				{
-					Port:       9000,
+					Name:       "minio",
+					Port:       m.getServicePort(),
 					TargetPort: intstr.FromInt(9000),
 					Protocol:   corev1.ProtocolTCP,
 				},
