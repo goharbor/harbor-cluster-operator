@@ -56,8 +56,8 @@ Additionally, follow [sample deployment guide](./docs/sample_deploy_guide.md) to
 | **Harbor**           | 1.10.x | [TBD] | [TBD] |
 |                      |        |               |
 | harbor-operator      | 0.5.2  | [TBD] | [TBD] |
-| PostgresSQL operator | [TBD]  | [TBD] | [TBD] |
-| Redis operator       | [TBD]  | [TBD] | [TBD] |
+| PostgresSQL operator | 12  | [TBD] | [TBD] |
+| Redis operator       | 5.0.0  | [TBD] | [TBD] |
 | minIO operator       | 3.0.13 | [TBD] | [TBD] |
 
 ## Compatibilities
