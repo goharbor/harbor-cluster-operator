@@ -458,7 +458,7 @@ func (m *MinIOReconciler) generateIngress() *netv1.Ingress {
 								{
 									Path: "/",
 									Backend: netv1.IngressBackend{
-										ServiceName: "minio",
+										ServiceName: m.getServiceName(),
 										ServicePort: intstr.FromInt(9000),
 									},
 								},
