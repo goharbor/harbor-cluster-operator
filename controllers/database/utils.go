@@ -1,7 +1,7 @@
 package database
 
 import (
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/database/api"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 

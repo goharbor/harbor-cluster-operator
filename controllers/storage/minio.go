@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"

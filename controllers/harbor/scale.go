@@ -1,7 +1,7 @@
 package harbor
 
 import (
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
 )

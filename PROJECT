@@ -1,7 +1,7 @@
 domain: goharbor.io
 repo: src/github.com/goharbor/harbor-cluster-operator
 resources:
-- group: cluster
+- group: goharbor
   kind: HarborCluster
-  version: v1
+  version: v1alpha1
 version: "2"

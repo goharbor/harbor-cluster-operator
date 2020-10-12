@@ -23,7 +23,7 @@ import (
 	"github.com/goharbor/harbor-operator/api/v1alpha1"
 	certv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
 	"github.com/goharbor/harbor-cluster-operator/controllers"
 	minio "github.com/goharbor/harbor-cluster-operator/controllers/storage/minio/api/v1"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
