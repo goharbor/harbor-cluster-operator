@@ -34,7 +34,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/api/v1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
 )
 
 // HarborClusterReconciler reconciles a HarborCluster object
