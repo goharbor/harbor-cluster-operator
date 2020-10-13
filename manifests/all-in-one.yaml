@@ -3111,13 +3111,14 @@ data:
   cluster_history_entries: "1000"
   cluster_labels: application:spilo
   cluster_name_label: cluster-name
-  connection_pooler_image: registry.opensource.zalan.do/acid/pgbouncer:master-9
+  connection_pooler_image: registry.opensource.zalan.do/acid/pgbouncer:master-11
   db_hosted_zone: db.example.com
   debug_logging: "true"
-  docker_image: registry.opensource.zalan.do/acid/spilo-12:1.6-p3
+  docker_image: registry.opensource.zalan.do/acid/spilo-12:1.6-p5
   enable_master_load_balancer: "false"
   enable_replica_load_balancer: "false"
   enable_teams_api: "false"
+  external_traffic_policy: Cluster
   logical_backup_docker_image: registry.opensource.zalan.do/acid/logical-backup
   logical_backup_s3_bucket: my-bucket-url
   logical_backup_s3_sse: AES256
@@ -3293,7 +3294,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: goharbor/harbor-cluster-operator:latest
+        image: goharbor/harbor-cluster-operator:v0.5.0
         name: manager
         ports:
         - containerPort: 9443
@@ -3365,7 +3366,7 @@ spec:
         - configMapRef:
             name: harbor-operator-operator-config-6g2hb7ttdf
             optional: true
-        image: goharbor/harbor-operator:latest
+        image: goharbor/harbor-operator:v0.5.2
         name: manager
         ports:
         - containerPort: 9443
