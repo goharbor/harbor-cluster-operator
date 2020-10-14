@@ -91,4 +91,5 @@ images:
     newName: goharbor/harbor-cluster-operator
     newTag: latest
   - name: goharbor/harbor-operator
+    newName: goharbor/harbor-operator
     newTag: latest

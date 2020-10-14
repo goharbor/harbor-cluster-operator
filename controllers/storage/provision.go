@@ -53,11 +53,18 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstance *minio.Tenant) (
 	}
 
 	var endpoint string
+	secure := "false"
+	skipverify := "false"
 	if !m.HarborCluster.Spec.DisableRedirect {
-		_, endpoint, err = GetMinIOHostAndSchema(m.HarborCluster.Spec.PublicURL)
+		schema, host, err := GetMinIOHostAndSchema(m.HarborCluster.Spec.PublicURL)
 		if err != nil {
 			return nil, nil, err
 		}
+
+		endpoint = schema + "://" + host
+		secure = "true"
+		skipverify = "true"
+
 	} else {
 		endpoint = fmt.Sprintf("http://%s.%s.svc:%s", m.getServiceName(), m.HarborCluster.Namespace, "9000")
 	}
@@ -68,8 +75,9 @@ func (m *MinIOReconciler) generateInClusterSecret(minioInstance *minio.Tenant) (
 		"region":         DefaultRegion,
 		"bucket":         DefaultBucket,
 		"regionendpoint": endpoint,
+		"secure":         secure,
+		"skipverify":     skipverify,
 		"encrypt":        "false",
-		"secure":         "false",
 		"v4auth":         "false",
 	}
 	dataJson, _ := json.Marshal(&data)
@@ -458,7 +466,7 @@ func (m *MinIOReconciler) generateIngress() *netv1.Ingress {
 								{
 									Path: "/",
 									Backend: netv1.IngressBackend{
-										ServiceName: "minio",
+										ServiceName: m.getServiceName(),
 										ServicePort: intstr.FromInt(9000),
 									},
 								},
