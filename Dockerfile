@@ -11,7 +11,7 @@ COPY go.sum go.sum
 
 # Copy the go source
 COPY main.go main.go
-COPY apis api/
+COPY apis apis/
 COPY controllers/ controllers/
 COPY lcm/ lcm/
 

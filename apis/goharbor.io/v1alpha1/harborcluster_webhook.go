@@ -35,7 +35,7 @@ func (r *HarborCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-goharbor-io-v1-harborcluster,mutating=true,failurePolicy=fail,groups=goharbor.io,resources=harborclusters,verbs=create;update,versions=v1,name=mharborcluster.kb.io
+// +kubebuilder:webhook:path=/mutate-goharbor-io-v1-harborcluster,mutating=true,failurePolicy=fail,groups=goharbor.io,resources=harborclusters,verbs=create;update,versions=v1alpha1,name=mharborcluster.kb.io
 
 var _ webhook.Defaulter = &HarborCluster{}
 
@@ -47,7 +47,7 @@ func (r *HarborCluster) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-goharbor-io-v1-harborcluster,mutating=false,failurePolicy=fail,groups=goharbor.io,resources=harborclusters,versions=v1,name=vharborcluster.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-goharbor-io-v1-harborcluster,mutating=false,failurePolicy=fail,groups=goharbor.io,resources=harborclusters,versions=v1alpha1,name=vharborcluster.kb.io
 
 var _ webhook.Validator = &HarborCluster{}
 
