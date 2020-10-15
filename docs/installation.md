@@ -34,6 +34,17 @@ or
 kustomize build manifests/ | kubectl apply -f -
 ```
 
+**SecurityContext Issue:**
+
+If your cluster is a strict cluster that has applied some security settings, you may probably meet the security context related issues. To avoid such issues, the following workground solution you can have a try.
+
+Execute the following command to grant more perssions to the authenticated users:
+
+```shell
+# Replace <YOUR_PRIVILEGED_ROLE_NAME> with the real name
+kubectl create clusterrolebinding privileged-cluster-role-binding --clusterrole=<YOUR_PRIVILEGED_ROLE_NAME> --group=system:authenticated
+```
+
 ## Uninstall Operators
 
 Use K8s delete command and the deployment manifest to uninstall all resources of operators.
