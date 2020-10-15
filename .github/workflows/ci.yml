@@ -143,14 +143,14 @@ jobs:
         apiVersion: v1
         kind: Namespace
         metadata:
-          name: harbor
+          name: sample
         ---
         # A secret of harbor admin password.
         apiVersion: v1
         kind: Secret
         metadata:
           name: admin-secret
-          namespace: harbor
+          namespace: sample
         data:
           password: SGFyYm9yMTIzNDU=
         type: Opaque
@@ -159,18 +159,29 @@ jobs:
         kind: Issuer
         metadata:
           name: selfsigned-issuer
-          namespace: harbor
+          namespace: sample
         spec:
-          selfSigned:
-            crlDistributionPoints:
-            - "https://harbor.${IP}.xip.io"
-            - "https://notary-harbor.${IP}.xip.io"
+          selfSigned: {}
         ---
-        apiVersion: goharbor.io/v1
+        apiVersion: cert-manager.io/v1alpha2
+        kind: Certificate
+        metadata:
+          name: public-certificate
+          namespace: sample
+        spec:
+          secretName: public-certificate
+          dnsNames:
+          - harbor.${IP}.xip.io
+          - notary-harbor.${IP}.xip.io
+          issuerRef:
+            name: selfsigned-issuer
+            kind: Issuer
+        ---
+        apiVersion: goharbor.io/v1alpha1
         kind: HarborCluster
         metadata:
           name: sz-harbor-cluster
-          namespace: harbor
+          namespace: sample
         spec:
           redis:
             kind: "inCluster"
@@ -201,10 +212,10 @@ jobs:
                   cpu: "500m"
                   memory: "500Mi"
           publicURL: "https://harbor.${IP}.xip.io"
+          disableRedirect: true
           replicas: 1
           notary:
             publicUrl: "https://notary-harbor.${IP}.xip.io"
-          disableRedirect: true
           jobService:
             workerCount: 10
             replicas: 1
@@ -220,7 +231,7 @@ jobs:
             options:
               provider: minIO
               spec:
-                replicas: 3
+                replicas: 2
                 volumesPerServer: 2
                 version: RELEASE.2020-08-13T02-39-50Z
                 volumeClaimTemplate:
@@ -238,7 +249,8 @@ jobs:
                   limits:
                     memory: 500Mi
                     cpu: 500m
-          version: 1.10.0
+          version: 1.10.4
+
         EOF
 
         free -h
@@ -246,21 +258,22 @@ jobs:
         for i in $(seq 1 6);do
           sleep 30
           echo $i
-          kubectl get all -n harbor
+          kubectl get all -n sample
         done
-        if ! kubectl -n harbor wait --for=condition=Ready pod --all --timeout 600s ;then
+        if ! kubectl -n sample wait --for=condition=Ready pod --all --timeout 600s ;then
           echo install harbor failed
-          kubectl get all -n harbor
+          kubectl get all -n sample
           
-          for n in $(kubectl get po -n harbor |grep -v Running|grep 'sz-harbor'|awk '{print $1}');do
+          for n in $(kubectl get po -n sample |grep -v Running|grep 'sz-harbor'|awk '{print $1}');do
             echo describe $n
-            kubectl describe pod -n harbor $n
+            kubectl describe pod -n sample $n
           done
+          exit 1
         else
-          kubectl get all -n harbor
+          kubectl get all -n sample
         fi
         free -h
-        if ! kubectl -n harbor wait --for=condition=Available deployment/sz-harbor-cluster-harbor-core;then
+        if ! kubectl -n sample wait --for=condition=Available deployment/sz-harbor-cluster-harbor-core;then
           echo harbor-core not ready
           exit 1;
         fi
