@@ -66,7 +66,7 @@ Additionally, follow [sample deployment guide](./docs/sample_deploy_guide.md) to
 |-----------------------|---------|---------|------|
 |     1.17              |    +    | [TBD] | [TBD] |
 |     1.18              |    +    | [TBD] | [TBD] |
-|     1.19              |    +    | [TBD] | [TBD] |
+|     1.19              |    -    | [TBD] | [TBD] |
 
 **Notes:** `+`= verified `-`= not verified
 
