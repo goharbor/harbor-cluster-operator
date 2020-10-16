@@ -104,7 +104,6 @@ jobs:
         - role: control-plane
         - role: worker
         - role: worker
-        - role: worker
         EOF
 
     - uses: actions/checkout@v2
@@ -126,10 +125,15 @@ jobs:
     - name: Install harbor-cluster-operator
       run: |
         set -xe
-        make docker-build
-        kubectl apply -f manifests/all-in-one.yaml
+        make manifests docker-build IMG=harbor-cluster-operator:test
+        kind load docker-image --name harbor harbor-cluster-operator:test
+        cd manifests && kustomize edit set image controller=harbor-cluster-operator:test && kustomize build | kubectl apply -f -
         sleep 10
-        kubectl -n harbor-cluster-operator-system wait --for=condition=Available deployment --all --timeout 300s
+        if ! kubectl -n harbor-cluster-operator-system wait --for=condition=Available deployment --all --timeout 300s; then
+          kubectl get all -n harbor-cluster-operator-system
+          kubectl get all -n harbor-operator-system
+          exit 1
+        fi
         kubectl get all -n harbor-cluster-operator-system
         kubectl get all -n harbor-operator-system
 
