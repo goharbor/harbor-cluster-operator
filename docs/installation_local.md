@@ -217,7 +217,7 @@ Create an admin secret with the manifest like:
 cat <<EOF | kubectl apply -f -
 # A secret of harbor admin password.
 # Password is encoded with base64.
-apiVersion: v1
+apiVersion: v1alpha1
 kind: Secret
 metadata:
   name: admin-secret
@@ -247,7 +247,7 @@ and `notary.goharbor.io` as Notary public URL):
 
 ```shell script
 cat <<EOF | kubectl apply -f -
-apiVersion: goharbor.io/v1
+apiVersion: goharbor.io/v1alpha1
 kind: HarborCluster
 metadata:
   name: sz-harbor-cluster
