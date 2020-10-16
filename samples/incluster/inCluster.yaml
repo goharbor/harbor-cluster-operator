@@ -82,8 +82,8 @@ spec:
   clair:
     updateInterval: 10
     vulnerabilitySources:
-     - ubuntu
-     - alphine
+    - ubuntu
+    - alphine
   storage:
     kind: "inCluster"
     options:

@@ -13,14 +13,14 @@ or clone and modify the sample manifest shown [here](../samples/incluster/inClus
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: harbor
+  name: sample
 ---
 # A secret of harbor admin password.
 apiVersion: v1
 kind: Secret
 metadata:
   name: admin-secret
-  namespace: harbor
+  namespace: sample
 data:
   password: SGFyYm9yMTIzNDU=
 type: Opaque
@@ -47,11 +47,11 @@ spec:
     name: selfsigned-issuer
     kind: Issuer
 ---
-apiVersion: goharbor.io/v1
+apiVersion: goharbor.io/v1alpha1
 kind: HarborCluster
 metadata:
   name: sz-harbor-cluster
-  namespace: harbor
+  namespace: sample
 spec:
   redis:
     kind: "inCluster"
@@ -81,14 +81,14 @@ spec:
         limits:
           cpu: "1"
           memory: "2Gi"
-  publicURL: "https://harbor.goharbor.io"
-  replicas: 3
-  notary:
-    publicUrl: "https://notary-harbor.goharbor.io"
+  publicURL: "https://sample.goharbor.io"
   disableRedirect: true
+  replicas: 2
+  notary:
+    publicUrl: "https://notary.goharbor.io"
   jobService:
     workerCount: 10
-    replicas: 3
+    replicas: 2
   chartMuseum:
     absoluteURL: true
   clair:
@@ -101,7 +101,7 @@ spec:
     options:
       provider: minIO
       spec:
-        replicas: 3
+        replicas: 2
         volumesPerServer: 2
         version: RELEASE.2020-08-13T02-39-50Z
         volumeClaimTemplate:
