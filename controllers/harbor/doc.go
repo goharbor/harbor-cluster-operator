@@ -26,7 +26,7 @@ package harbor
 //-
 //
 //
-//apiVersion: goharbor.io/v1alpha1
+//apiVersion: goharbor.io/v1alpha2
 //kind: Harbor
 //metadata:
 //...

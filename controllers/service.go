@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/go-logr/logr"
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha2"
 	"github.com/goharbor/harbor-cluster-operator/controllers/cache"
 	"github.com/goharbor/harbor-cluster-operator/controllers/database"
 	"github.com/goharbor/harbor-cluster-operator/controllers/harbor"

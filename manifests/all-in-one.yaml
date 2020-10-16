@@ -690,9 +690,9 @@ spec:
               type: array
           type: object
       type: object
-  version: v1alpha1
+  version: v1alpha2
   versions:
-  - name: v1alpha1
+  - name: v1alpha2
     served: true
     storage: true
 status:
@@ -1107,9 +1107,9 @@ spec:
               type: integer
           type: object
       type: object
-  version: v1alpha1
+  version: v1alpha2
   versions:
-  - name: v1alpha1
+  - name: v1alpha2
     served: true
     storage: true
 status:
@@ -3291,6 +3291,16 @@ spec:
     spec:
       containers:
       - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      - args:
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
         command:
@@ -3312,16 +3322,6 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-      - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert
@@ -3600,14 +3600,14 @@ webhooks:
     service:
       name: harbor-cluster-operator-webhook-service
       namespace: harbor-cluster-operator-system
-      path: /mutate-goharbor-io-v1alpha1-harborcluster
+      path: /mutate-goharbor-io-v1alpha2-harborcluster
   failurePolicy: Fail
   name: mharborcluster.kb.io
   rules:
   - apiGroups:
     - goharbor.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -3629,14 +3629,14 @@ webhooks:
     service:
       name: harbor-operator-webhook-service
       namespace: harbor-operator-system
-      path: /mutate-goharbor-io-v1alpha1-harbor
+      path: /mutate-goharbor-io-v1alpha2-harbor
   failurePolicy: Fail
   name: mharbor.kb.io
   rules:
   - apiGroups:
     - goharbor.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -3658,14 +3658,14 @@ webhooks:
     service:
       name: harbor-cluster-operator-webhook-service
       namespace: harbor-cluster-operator-system
-      path: /validate-goharbor-io-v1alpha1-harborcluster
+      path: /validate-goharbor-io-v1alpha2-harborcluster
   failurePolicy: Fail
   name: vharborcluster.kb.io
   rules:
   - apiGroups:
     - goharbor.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE

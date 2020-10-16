@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha2"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
 	redisCli "github.com/spotahome/redis-operator/api/redisfailover/v1"
 	appsv1 "k8s.io/api/apps/v1"

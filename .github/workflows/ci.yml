@@ -181,7 +181,7 @@ jobs:
             name: selfsigned-issuer
             kind: Issuer
         ---
-        apiVersion: goharbor.io/v1alpha1
+        apiVersion: goharbor.io/v1alpha2
         kind: HarborCluster
         metadata:
           name: sz-harbor-cluster

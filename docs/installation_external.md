@@ -158,7 +158,7 @@ type: Opaque
 
 # Using all external service.
 ---
-apiVersion: goharbor.io/v1alpha1
+apiVersion: goharbor.io/v1alpha2
 kind: HarborCluster
 metadata:
   name: harborcluster-sample

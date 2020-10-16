@@ -400,9 +400,9 @@ spec:
               type: integer
           type: object
       type: object
-  version: v1alpha1
+  version: v1alpha2
   versions:
-  - name: v1alpha1
+  - name: v1alpha2
     served: true
     storage: true
 status:
@@ -732,14 +732,14 @@ webhooks:
     service:
       name: harbor-operator-webhook-service
       namespace: harbor-operator-system
-      path: /mutate-goharbor-io-v1alpha1-harbor
+      path: /mutate-goharbor-io-v1alpha2-harbor
   failurePolicy: Fail
   name: mharbor.kb.io
   rules:
   - apiGroups:
     - goharbor.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE

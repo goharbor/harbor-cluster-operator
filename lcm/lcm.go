@@ -1,7 +1,7 @@
 package lcm
 
 import (
-	v1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
+	v1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

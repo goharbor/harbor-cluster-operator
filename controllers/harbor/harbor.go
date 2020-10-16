@@ -3,7 +3,7 @@ package harbor
 import (
 	"context"
 	"fmt"
-	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha1"
+	goharborv1 "github.com/goharbor/harbor-cluster-operator/apis/goharbor.io/v1alpha2"
 	"github.com/goharbor/harbor-cluster-operator/controllers/image"
 	"github.com/goharbor/harbor-cluster-operator/controllers/k8s"
 	"github.com/goharbor/harbor-cluster-operator/lcm"
@@ -59,7 +59,7 @@ func (harbor *HarborReconciler) Reconcile() (*lcm.CRStatus, error) {
 	return harborClusterCRStatus(&harborCR), nil
 }
 
-// unsetReplicas will set replicas to nil for all components in v1alpha1.Harbor.
+// unsetReplicas will set replicas to nil for all components in v1alpha2.Harbor.
 // This is a helper method to check whether harbor cr is equal expect replicas.
 func unsetReplicas(harbor *v1alpha1.Harbor) {
 	if harbor.Spec.Components.Core != nil {
@@ -134,7 +134,7 @@ func harborClusterCRUnknownStatus(reason, message string) *lcm.CRStatus {
 	return lcm.New(goharborv1.ServiceReady).WithStatus(corev1.ConditionUnknown).WithReason(reason).WithMessage(message)
 }
 
-// harborClusterCRStatus will assembly the harbor cluster status according the v1alpha1.Harbor status
+// harborClusterCRStatus will assembly the harbor cluster status according the v1alpha2.Harbor status
 func harborClusterCRStatus(harbor *v1alpha1.Harbor) *lcm.CRStatus {
 	for _, condition := range harbor.Status.Conditions {
 		if condition.Type == v1alpha1.ReadyConditionType {

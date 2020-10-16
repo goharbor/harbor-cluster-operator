@@ -247,7 +247,7 @@ and `notary.goharbor.io` as Notary public URL):
 
 ```shell script
 cat <<EOF | kubectl apply -f -
-apiVersion: goharbor.io/v1alpha1
+apiVersion: goharbor.io/v1alpha2
 kind: HarborCluster
 metadata:
   name: sz-harbor-cluster
