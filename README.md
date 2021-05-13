@@ -3,7 +3,8 @@
 ![CI](https://github.com/goharbor/harbor-cluster-operator/workflows/CI/badge.svg)
 ![Code scanning - action](https://github.com/goharbor/harbor-cluster-operator/workflows/Code%20scanning%20-%20action/badge.svg)
 
->**NOTES:** The `master` branch may be in an *unstable or even broken state* during development. Currently, please use branch [release-0.5.0](https://github.com/goharbor/harbor-cluster-operator/tree/release-0.5.0) instead of the `master` branch in order to get a stable deployment.
+**NOTES: All the functionalities of this project has been merged into the [harbor-operator](https://github.com/goharbor/harbor-operator) project, please navigate to that project repository for trying Harbor operator. This repository is archived!**
+
 
 [Harbor](https://github.com/goharbor/harbor) is a CNCF hosted open source trusted cloud native registry project that stores, signs, and scans content.
 
